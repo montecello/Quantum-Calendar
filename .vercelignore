@@ -1,13 +1,22 @@
-# Ignore local env and build artifacts
+# Local env and caches
 .venv/
 venv/
+**/.venv/**
+**/venv/**
 __pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
+.DS_Store
+node_modules/
+**/node_modules/**
 
-# Ignore heavy astro-service from the main app deployment
+# Don’t upload the separate service
 astro-service/
+**/astro-service/**
 
-# Ignore ephemeris or other large binaries if they appear
+# Large binaries
 *.bsp
 *.bin
+*.dat
+*.ipynb
