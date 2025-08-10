@@ -6,6 +6,7 @@ from config import GEOAPIFY_API_KEY
 from cachetools import TTLCache
 from backend.calendar import get_calendar_for_year
 from backend.astronomy.years import get_multi_year_calendar_data
+from config import ASTRO_API_BASE
 
 api = Blueprint('api', __name__)
 
@@ -150,3 +151,17 @@ def api_geocode():
     except Exception as e:
         logging.exception('Unexpected error in /api/geocode')
         return jsonify({'error': str(e)}), 500
+
+
+# Optional pass-through to astro-service (keeps browser same-origin)
+@api.route('/api/astro/illumination/moon')
+def api_astro_moon():
+    try:
+        iso = request.args.get('iso')
+        if not iso:
+            return jsonify({'error': 'iso required'}), 400
+        r = requests.get(f"{ASTRO_API_BASE}/illumination/moon", params={'iso': iso}, timeout=8)
+        return (r.text, r.status_code, {'Content-Type': r.headers.get('Content-Type', 'application/json')})
+    except Exception as e:
+        logging.exception('Error proxying to astro-service')
+        return jsonify({'error': str(e)}), 502

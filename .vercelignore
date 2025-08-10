@@ -1,0 +1,13 @@
+# Ignore local env and build artifacts
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore heavy astro-service from the main app deployment
+astro-service/
+
+# Ignore ephemeris or other large binaries if they appear
+*.bsp
+*.bin

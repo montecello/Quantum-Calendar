@@ -9,6 +9,9 @@ __pycache__/
 .venv/
 venv/
 
+# Skyfield kernel files
+*.bsp
+
 # OS/editor
 .DS_Store
 

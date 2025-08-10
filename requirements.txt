@@ -4,12 +4,10 @@ geopy
 timezonefinder
 pytz
 astral
-skyfield
 pandas
 numpy
 tqdm
 gunicorn
 cachetools
 Pillow
-jplephem
 python-dotenv

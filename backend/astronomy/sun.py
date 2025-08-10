@@ -1,6 +1,7 @@
 import os
-from skyfield.api import load
-from skyfield import almanac
+import requests
+import time
+from config import ASTRO_API_BASE
 
 # Returns both plain text and JSON for sun events and moon illumination
 def get_sun_events_for_date(lat, lon, timezone, date_, location_name=None):
@@ -38,20 +39,38 @@ def get_sun_events_for_date(lat, lon, timezone, date_, location_name=None):
     else:
         lines.append("Dusk: --:-- (not found)")
 
-    # Moon illumination at dawn and next dawn using Skyfield
+    # Moon illumination at dawn and next dawn via astro-service (Skyfield offloaded)
+    illum1 = illum2 = None
     try:
-        bsp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../de421.bsp'))
-        eph = load(bsp_path)
-        ts = load.timescale()
         dawn_utc = dawn_time.astimezone(pytz.UTC) if dawn_time else None
         tomorrow = date_ + timedelta(days=1)
         dawn_time2, _ = get_event_with_fallback('dawn', lat, lon, timezone, tomorrow)
         dawn2_utc = dawn_time2.astimezone(pytz.UTC) if dawn_time2 else None
-        illum1 = illum2 = None
+        iso_list = []
         if dawn_utc:
-            illum1 = almanac.fraction_illuminated(eph, 'moon', ts.from_datetime(dawn_utc)) * 100
+            iso_list.append(dawn_utc.isoformat().replace('+00:00', 'Z'))
         if dawn2_utc:
-            illum2 = almanac.fraction_illuminated(eph, 'moon', ts.from_datetime(dawn2_utc)) * 100
+            iso_list.append(dawn2_utc.isoformat().replace('+00:00', 'Z'))
+        if iso_list:
+            params = [('iso', s) for s in iso_list]
+            last_exc = None
+            for attempt in range(3):
+                try:
+                    resp = requests.get(f"{ASTRO_API_BASE}/illumination/moon-batch", params=params, timeout=20)
+                    resp.raise_for_status()
+                    arr = resp.json()
+                    break
+                except Exception as e:
+                    last_exc = e
+                    if attempt < 2:
+                        time.sleep(0.5 * (attempt + 1))
+                    else:
+                        raise
+            # Map back in order
+            if len(arr) >= 1:
+                illum1 = float(arr[0]['percent'])
+            if len(arr) >= 2:
+                illum2 = float(arr[1]['percent'])
         if illum1 is not None and illum2 is not None:
             lines.append(f"Moon %: {illum1:.2f}% -> {illum2:.2f}%")
         else:
@@ -212,27 +231,40 @@ def print_today_sun_events(lat, lon, timezone):
     else:
         print("Dusk: --:-- (not found)")
 
-    # Moon illumination at dawn and next dawn using Skyfield's built-in illumination
+    # Moon illumination via astro-service
     try:
-        import os
-        from skyfield.api import load
-        from skyfield import almanac
-        bsp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../de421.bsp'))
-        eph = load(bsp_path)
-        ts = load.timescale()
-        # Get dawn time for today and tomorrow (in UTC)
         dawn_utc = dawn_time.astimezone(pytz.UTC) if dawn_time else None
         tomorrow = today + timedelta(days=1)
         dawn_time2, _ = get_event_with_fallback('dawn', lat, lon, timezone, tomorrow)
         dawn2_utc = dawn_time2.astimezone(pytz.UTC) if dawn_time2 else None
-        illum1 = None
-        illum2 = None
+        iso_list = []
         if dawn_utc:
-            illum1 = almanac.fraction_illuminated(eph, 'moon', ts.from_datetime(dawn_utc)) * 100
+            iso_list.append(dawn_utc.isoformat().replace('+00:00', 'Z'))
         if dawn2_utc:
-            illum2 = almanac.fraction_illuminated(eph, 'moon', ts.from_datetime(dawn2_utc)) * 100
-        if illum1 is not None and illum2 is not None:
-            print(f"Moon %: {illum1:.2f}% -> {illum2:.2f}%")
+            iso_list.append(dawn2_utc.isoformat().replace('+00:00', 'Z'))
+        if iso_list:
+            params = [('iso', s) for s in iso_list]
+            last_exc = None
+            for attempt in range(3):
+                try:
+                    resp = requests.get(f"{ASTRO_API_BASE}/illumination/moon-batch", params=params, timeout=20)
+                    resp.raise_for_status()
+                    arr = resp.json()
+                    break
+                except Exception as e:
+                    last_exc = e
+                    if attempt < 2:
+                        time.sleep(0.5 * (attempt + 1))
+                    else:
+                        raise
+            if len(arr) >= 1:
+                illum1 = float(arr[0]['percent'])
+            if len(arr) >= 2:
+                illum2 = float(arr[1]['percent'])
+            if illum1 is not None and illum2 is not None:
+                print(f"Moon %: {illum1:.2f}% -> {illum2:.2f}%")
+            else:
+                print("Moon %: --")
         else:
             print("Moon %: --")
     except Exception as e:
