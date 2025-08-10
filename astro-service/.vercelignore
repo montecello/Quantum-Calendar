@@ -1,0 +1,22 @@
+# Local env and caches
+.venv/
+venv/
+**/.venv/**
+**/venv/**
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.DS_Store
+node_modules/
+**/node_modules/**
+
+# Exclude the separate service
+astro-service/
+**/astro-service/**
+
+# Large binaries
+*.bsp
+*.bin
+*.dat
+*.ipynb
