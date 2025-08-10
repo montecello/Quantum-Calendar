@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantum Clock v1.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Basic SEO -->
+    <meta name="description" content="Quantum Clock: sun and moon events, lunar months, and accurate dawn-based timing for any location.">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="{{ (request.url_root | trim('/')) }}/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Quantum Clock">
+    <meta property="og:site_name" content="Quantum Clock">
+    <meta property="og:description" content="A natural way to keep time and organize life">
+    <meta property="og:url" content="{{ (request.url_root | trim('/')) }}/">
+    <meta property="og:image" content="{{ (request.url_root | trim('/')) }}/static/img/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Quantum Clock">
+    <meta name="twitter:description" content="Calendar of the Future...">
+    <meta name="twitter:image" content="{{ (request.url_root | trim('/')) }}/static/img/og-image.png">
+
+    <!-- Theme color (mobile address bar) -->
+    <meta name="theme-color" content="#20639b">
+
+    <link rel="preload" href="/static/fonts/Pictocrypto-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/calendar_grid.css">
+    <link rel="stylesheet" href="/static/css/side_panel.css">
+
+
+
+    <link rel="preload" href="/static/fonts/Pictocrypto-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/calendar_grid.css">
+    <link rel="stylesheet" href="/static/css/side_panel.css">
+</head>
+<body>
+    <!-- Live background canvas -->
+    <canvas id="bg-matrix" aria-hidden="true"></canvas>
+
+    <div class="app-root">
+        <div class="title-placemat">
+            <h1 class="calendar-title">Quantum Clock v1.0</h1>
+        </div>
+        <div class="search-bar-container">
+            <input type="text" class="search-bar" id="location-input" placeholder="Enter location...('Greenwich, England')">
+            <div id="suggestions"></div>
+        </div>
+
+        <!-- Calendar mode toggle -->
+        <div class="calendar-mode-toggle" style="display:flex;gap:8px;justify-content:center;margin:8px 0 0 0;">
+            <button id="mode-custom" class="mode-btn" aria-pressed="true">Quantum</button>
+            <button id="mode-gregorian" class="mode-btn" aria-pressed="false">Gregorian</button>
+        </div>
+
+        <div class="calendar-container">
+            <div id="calendar-grid-root"></div>
+        </div>
+        <!-- Accordion: below calendar and schedule list -->
+        <div class="accordion" id="extra-accordion" aria-label="Additional sections">
+            <h2 class="accordion-title">Notes</h2>
+
+            <!-- Intro -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Intro</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <p>Quantum Clock builds time from nature: a day starts at first light (dawn), months are anchored to the full moon, and events are shown in the selected location’s local time. Click a day to see dawn, sunrise, sunset, dusk, and moon illumination percentages. You can also view the same dates in the Gregorian calendar.</p>
+                        <ul>
+                            <li>Accurate sun events (dawn/sunrise/sunset/dusk) per location </li>
+                            <li>(if astronomical twilight is not available, it gives and highlights the next best alternative, needed in extreme north/south areas)</li>
+                            <li>Moon illumination computed with Skyfield at dawn today and dawn tomorrow</li>
+                            <li>Lunar months anchored to the full moon (100% illumination), 'New Moon' is 'Full Moon'</li>
+                            <li>Click/Tap a day, and a side panel shows all relevant daily events in local time for the chosen place</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- When a Day Begins -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">When a Day Begins</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <p>A day begins at first light (astronomical dawn) for the selected location. If astronomical dawn is not available (high latitudes/seasonal extremes), the app falls back to nautical or civil dawn. The side panel labels these as secondary types, e.g., <strong class="secondary-tag">(secondary: nautical/civil/sunrise)</strong>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- When a Month Begins -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">When a Month Begins: Full Moon IS New Moon</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <p>Month begins at daybreak past full moon. Can't visually see a dark moon to verify if you were on a desert island. What does a 'new' pizza look like? How about a new cookie? Or a new house?</p>
+                        <img src="/static/img/special/New_Moon.png" alt="New Moon" style="height:300px;vertical-align:middle;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- When a Week Begins -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">When a Week Begins</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <p>Weeks are anchored to the being the first day after New Moon Day, for every month, thats why you will never see the calendar grid structure ever change.It is a more organic, natural rhythm. The month is divided into four 7‑day periods tied to the full moon and its quarters, so weekly markers track the moon’s changing light rather than an arbitrary continuous cycle not found in anything in nature.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- When a Year Begins -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">When a Year Begins (Current Calculations)</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <p>Ideally it's the first full moon day after Spica visibly crosses the moon and is seen leading it.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Special Days (Legend) -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Special Days (Legend)</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <p>Calendar cells are colored to highlight special days. These colors/styles are identical in both Custom and Gregorian views.</p>
+                        <ul>
+                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:gold;margin-right:8px;vertical-align:middle;"></span><strong>New Moon Day</strong> — First dawn after full moon (100%). <img src="/static/img/special/month-start.png" alt="Month Start" style="height:14px;vertical-align:middle;margin-left:6px;"></li>
+                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:royalblue;margin-right:8px;vertical-align:middle;"></span><strong>7th Day Rests</strong> — Always will be 8th, 15th, 22nd, 29th days of the month <img src="/static/img/special/quarter.png" alt="Weekly Rests" style="height:14px;vertical-align:middle;margin-left:6px;"></li>
+                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:green;margin-right:8px;vertical-align:middle;"></span><strong>Main Bi-Yearly Week-Long Festival Commencements</strong> — Days near peak illumination. <img src="/static/img/special/full-moon.png" alt="Festival Starts" style="height:14px;vertical-align:middle;margin-left:6px;"></li>
+                            
+                        </ul>
+                        <p>More color clarifications to come in v2.0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Limitations -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Limitations/Likely Errors</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <ul>
+                            <li><strong>Limited Range</strong>: The calendar covers a specific range of dates (2000-2048)</li>
+                            <li><strong>Atmospheric refraction</strong>: Local conditions can shift observed dawn a few minutes.</li>
+                            <li><strong>Time zones/DST</strong>: Transitions are handled, but extreme offsets can surprise.</li>
+                            <li><strong>Year Start Error</strong>: script used to calculate New Year's Day uses alignment thresholds that need refinement. Currently it selects the full moon with the smallest time gap to its preceding Spica crossing. If that chosen full moon is on/after the Sun–Hamal crossing for the year, it goes back to the previous full moon. This is causing the New Year to begin a month earlier in many cases than it should.</li>
+                            <li><strong>Festivals and appointments currently not carrying over to the Gregorian Calendar to view equivalents.</strong></li>
+                            <li><strong>Jubilee/Sabbaticals</strong>: 50 Year and 7 Year Cycles currently cannot be determined with limited astronomical knowledge.</li> 
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version 2 -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Version 2 (Under Construction)</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <ul>
+                            <li>Refinement of calculating the new year with refined set of rules that the computer can understand</li>
+                            <li>World map with the revised int’l date line after the next New Moon Day to see how that changes with each month.</li>
+                            <li>Transpose special days to their Gregorian equivalents</li>
+                            <li>Numbered co-ordinates to be digital and DD*MM'SS" compatible in search bar</li>
+                            <li>Ability to search areas over bodies of water (currently unavailable)</li>
+                            <li>Including the retrograde schedule of the 'wandering stars'</li>
+                            <li>More visuals on the how the festivals line up with astronomy using this reckoning</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Engage -->
+            <div class="accordion-item">
+                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Engage</span></button>
+                <div class="accordion-panel" hidden>
+                    <div class="accordion-content">
+                        <p>Discord and other Links coming soon.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/geoapify.js"></script>
+    <script src="/static/js/gregorian.js"></script>
+    <script src="/static/js/calendar.js"></script>
+    <script src="/static/js/accordion.js"></script>
+    <script src="/static/js/matrix_rain.js"></script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+body, .calendar-title, .search-bar, #suggestions {
+    font-family: 'Pictocrypto', sans-serif;
+}
+
+@font-face {
+    font-family: 'Pictocrypto';
+    src: url('/static/fonts/Pictocrypto-Regular.woff2') format('woff2'),
+         url('/static/fonts/Pictocrypto-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Title placemat */
+.title-placemat {
+  width: min(640px, 92vw);
+  margin: 24px auto 12px auto;
+  background: #ffffff;
+  border: 2px solid #3caea3; /* similar to search bar */
+  border-radius: 12px;        /* curved edges */
+  box-shadow: 0 2px 12px #0001;
+  padding: 12px 16px;
+  box-sizing: border-box; /* ensure width includes padding/border */
+}
+
+/* Alias font-face for canvas Hebrew rendering. Apply to all glyphs so Latin/digits use it too. */
+@font-face {
+  font-family: 'HebrewMatrix';
+  src: url('/static/fonts/Pictocrypto-Regular.ttf') format('truetype'); /* swap to a Hebrew-capable TTF when added */
+  font-display: swap;
+}
+
+
+.calendar-title {
+    text-align: center;
+    font-size: clamp(1.8rem, 6vw, 2.2rem);
+    font-weight: bold;
+    color: #20639b;
+    margin: 0; /* reset margins inside placemat */
+    letter-spacing: 2px;
+    text-shadow: 0 2px 8px #3caea344;
+}
+
+.search-bar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.search-bar {
+    width: 100%;
+    max-width: min(340px, 90vw);
+    padding: 10px 16px;
+    font-size: 1.1rem;
+    border: 2px solid #3caea3;
+    border-radius: 8px;
+    outline: none;
+    margin-bottom: 4px;
+    box-shadow: 0 2px 8px #0001;
+    transition: border-color 0.2s;
+}
+.search-bar:focus {
+    border-color: #20639b;
+}
+
+#suggestions {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: min(340px, 90vw);
+    background: #fff;
+    border: 1px solid #3caea3;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 12px #0002;
+    z-index: 10;
+    color: #173f5f;
+    font-size: 1rem;
+    display: none;
+}
+#suggestions.active { display: block; }
+#suggestions div { padding: 8px 12px; cursor: pointer; }
+#suggestions div:last-child { border-radius: 0 0 8px 8px; }
+#suggestions div:hover { background: #f5f5f5; }
+
+@media (max-width: 480px) {
+    .search-bar-container { padding: 0 12px; width: 100%; box-sizing: border-box; }
+}
+
+/* Live background canvas */
+#bg-matrix {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;              /* behind content */
+  pointer-events: none;    /* don’t block clicks */
+}
+/* Ensure content stays above canvas */
+.app-root { position: relative; z-index: 1; }
+
+/* Respect reduced motion: hide background */
+@media (prefers-reduced-motion: reduce) {
+  #bg-matrix { display: none; }
+}
+
+/* Accordion styles */
+.accordion { 
+  max-width: 820px; 
+  margin: 24px auto; 
+  background: #173f5f; 
+  border-radius: 12px; 
+  box-shadow: 0 2px 12px #0004; 
+  padding: 16px; 
+  color: #e0e6ed; 
+}
+.accordion-title { 
+  margin: 0 0 8px 0; 
+  text-align: center; 
+  color: #fff; 
+  font-size: 1.2rem; 
+}
+.accordion-item { 
+  border: 1px solid #284b63; 
+  border-radius: 8px; 
+  background: #0a2342; 
+  margin: 8px 0; 
+  overflow: hidden; 
+}
+.accordion-header { 
+  width: 100%; 
+  text-align: left; 
+  background: transparent; 
+  color: #e0e6ed; 
+  border: none; 
+  padding: 12px 14px; 
+  font-weight: bold; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+}
+.accordion-header:hover { background: #173f5f; }
+.accordion-icon { width: 1em; display: inline-block; }
+.accordion-panel { padding: 0 14px 12px 36px; }
+.accordion-content { color: #cfe0f2; }
+
+/* Mobile fit for title placemat */
+@media (max-width: 480px) {
+  .title-placemat {
+    width: calc(100vw - 24px); /* safe gutters */
+    margin: 16px auto 10px auto;
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+}
+@media (max-width: 360px) {
+  .title-placemat {
+    width: calc(100vw - 16px);
+    margin: 12px auto 8px auto;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+}
+
+/* Segmented toggle for calendar mode */
+.calendar-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a2342;
+  border: 2px solid #3caea3;
+  border-radius: 999px;
+  padding: 4px;
+  gap: 0;
+  box-shadow: 0 2px 8px #0003;
+}
+.calendar-mode-toggle .mode-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #e0e6ed;
+  padding: 8px 14px;
+  font-weight: 700;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.calendar-mode-toggle .mode-btn.active,
+.calendar-mode-toggle .mode-btn[aria-pressed="true"] {
+  background: #3caea3;
+  color: #0a2342;
+  box-shadow: 0 2px 8px #3caea355 inset, 0 2px 8px #0002;
+}
+.calendar-mode-toggle .mode-btn:not(.active):hover {
+  background: rgba(60,174,163,0.18);
+}
+
+/* On small phones, compact toggle */
+@media (max-width: 420px) {
+  .calendar-mode-toggle { padding: 3px; }
+  .calendar-mode-toggle .mode-btn { padding: 6px 10px; font-weight: 600; }
+}

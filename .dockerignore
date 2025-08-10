@@ -1,0 +1,4 @@
+# Files to exclude from Docker build
+venv/
+__pycache__/
+*.pyc

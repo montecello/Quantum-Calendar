@@ -1,0 +1,70 @@
+from astral.sun import sunset, dusk
+def get_sunset(lat, lon, timezone, date):
+    """Calculate sunset for a given date and location."""
+    try:
+        location = LocationInfo("Custom", "Custom", timezone, lat, lon)
+        sunset_time = sunset(location.observer, date=date, tzinfo=timezone)
+        print(f"Sunset: {sunset_time} (timezone: {timezone})")
+        return sunset_time
+    except Exception as e:
+        print(f"Error calculating sunset: {e}, lat={lat}, lon={lon}, date={date}")
+        return None
+
+def get_astronomical_dusk(lat, lon, timezone, date):
+    """Calculate astronomical dusk (sun 18° below horizon) for a given date and location."""
+    try:
+        location = LocationInfo("Custom", "Custom", timezone, lat, lon)
+        dusk_time = dusk(location.observer, date=date, tzinfo=timezone, depression=18)
+        print(f"Astronomical dusk: {dusk_time} (timezone: {timezone})")
+        return dusk_time
+    except Exception as e:
+        print(f"Error calculating astronomical dusk: {e}, lat={lat}, lon={lon}, date={date}")
+        return None
+from astral import LocationInfo
+from astral.sun import dawn, sunrise
+from datetime import datetime
+import pytz
+
+def get_astronomical_dawn(lat, lon, timezone, date):
+    """Calculate astronomical dawn (sun 18° below horizon) for a given date and location."""
+    try:
+        location = LocationInfo("Custom", "Custom", timezone, lat, lon)
+        dawn_time = dawn(location.observer, date=date, tzinfo=timezone, depression=18)
+        print(f"Dawn: {dawn_time} (timezone: {timezone})")
+        return dawn_time
+    except Exception as e:
+        print(f"Error calculating astronomical dawn: {e}, lat={lat}, lon={lon}, date={date}")
+        return None
+
+def get_nautical_dawn(lat, lon, timezone, date):
+    """Calculate nautical dawn (sun 12° below horizon) for a given date and location."""
+    try:
+        location = LocationInfo("Custom", "Custom", timezone, lat, lon)
+        dawn_time = dawn(location.observer, date=date, tzinfo=timezone, depression=12)
+        print(f"Nautical dawn: {dawn_time} (timezone: {timezone})")
+        return dawn_time
+    except Exception as e:
+        print(f"Error calculating nautical dawn: {e}, lat={lat}, lon={lon}, date={date}")
+        return None
+
+def get_civil_dawn(lat, lon, timezone, date):
+    """Calculate civil dawn (sun 6° below horizon) for a given date and location."""
+    try:
+        location = LocationInfo("Custom", "Custom", timezone, lat, lon)
+        dawn_time = dawn(location.observer, date=date, tazinfo=timezone, depression=6)
+        print(f"Civil dawn: {dawn_time} (timezone: {timezone})")
+        return dawn_time
+    except Exception as e:
+        print(f"Error calculating civil dawn: {e}, lat={lat}, lon={lon}, date={date}")
+        return None
+
+def get_sunrise(lat, lon, timezone, date):
+    """Calculate sunrise for a given date and location."""
+    try:
+        location = LocationInfo("Custom", "Custom", timezone, lat, lon)
+        sunrise_time = sunrise(location.observer, date=date, tzinfo=timezone)
+        print(f"Sunrise: {sunrise_time} (timezone: {timezone})")
+        return sunrise_time
+    except Exception as e:
+        print(f"Error calculating sunrise: {e}, lat={lat}, lon={lon}, date={date}")
+        return None

@@ -1,0 +1,12 @@
+.sun-events-pre {
+  white-space: pre-wrap;
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: clamp(12px, 1.6vw, 14px);
+  color: #173f5f;
+  line-height: 1.5;
+}
+.secondary-tag {
+  color: #ff7f0e; /* orange */
+  font-weight: 700; /* bold */
+}

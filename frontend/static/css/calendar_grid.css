@@ -1,0 +1,425 @@
+/* Center and align calendar grid with side panel and schedule */
+.calendar-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin: 40px 0;
+    padding: 0 12px; /* safe gutter on mobile */
+    overflow-x: auto; /* allow horizontal scroll on small screens */
+}
+
+/* Two-column layout container for grid and side panel */
+.calendar-columns {
+    display: grid;
+    grid-template-columns: auto; /* single column fits content width */
+    gap: 24px;
+    align-items: start;
+    justify-content: center; /* center the grid when single column */
+    width: 100%;
+    max-width: 1160px;
+    margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+    .calendar-columns.two-col { grid-template-columns: 520px 1fr; }
+}
+
+/* Keep a reasonable max width but allow responsive behavior */
+.calendar-grid {
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #173f5f;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px #0006;
+    overflow: hidden;
+    width: 100%;
+    max-width: 480px;
+}
+
+.calendar-grid th,
+.calendar-grid td {
+    border: 1px solid #284b63;
+    text-align: center;
+    font-size: 1.2rem;
+    padding: 16px 0;
+    min-width: 60px; /* preserve backgrounds, do not alter colors */
+    background: #173f5f;
+    color: #e0e6ed;
+}
+
+/* Smooth hover/focus lighting effect for day cells without changing their background */
+.calendar-grid td.day-cell {
+    transition: filter 150ms ease, box-shadow 150ms ease;
+}
+.calendar-grid td.day-cell:hover,
+.calendar-grid td.day-cell:focus-visible {
+    filter: brightness(1.08);
+    box-shadow: 0 0 10px 2px rgba(255,255,255,0.18), 0 0 12px 2px rgba(32,99,155,0.25);
+    cursor: pointer;
+}
+
+/* Side panel responsive centering */
+.side-panel {
+    max-width: 560px;
+    width: min(100%, 560px);
+    margin: 24px auto 0 auto;
+    background: #fffbe6;
+    border: 2px solid #ffd700;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px #ffd70033;
+    padding: 24px 20px 16px 20px;
+    position: relative;
+    display: none;
+    opacity: 0;
+    transform: translateY(-30px);
+    transition: opacity 0.35s cubic-bezier(.4,0,.2,1), transform 0.35s cubic-bezier(.4,0,.2,1);
+    z-index: 20;
+}
+
+.side-panel.open { display: block; opacity: 1; transform: translateY(0); }
+
+.side-panel .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 1.6em;
+    color: #d72660;
+    cursor: pointer;
+    font-weight: bold;
+    transition: color 0.2s;
+}
+.side-panel .close-btn:hover {
+    color: #20639b;
+}
+/* Fade-in animation for grid transitions */
+
+body, .calendar-title, .search-bar, #suggestions {
+    font-family: 'Pictocrypto', sans-serif;
+}
+
+/* Old: .fade-in (kept for compatibility, not used) */
+.fade-in { animation: fadeInGrid 0.5s ease-in-out; }
+@keyframes fadeInGrid {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* New gentle grid pulse for month/year transitions */
+.grid-pulse { animation: gridPulse 0.9s ease-in-out; }
+@keyframes gridPulse {
+  0%   { opacity: 1; }
+  45%  { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .grid-pulse { animation: none; }
+}
+
+/* Dark pink special day for the day after n=50 on the silver counter */
+.calendar-grid td.dark-pink-day {
+    background: linear-gradient(135deg, #d72660 70%, #ffb7c5 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #d7266055;
+    position: relative;
+    z-index: 2;
+}
+/* Silver counter for special consecutive days after bronze counter */
+.calendar-grid .silver-counter {
+    color: #888a8a !important;
+    font-weight: bold;
+    font-size: 0.95em;
+    margin-left: 2px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 4px #888a8a88;
+}
+/* Indigo/Purple special days for 1st month, 17th-22nd days */
+.calendar-grid td.indigo-purple-day {
+    background: linear-gradient(135deg, #6a5acd 70%, #8e24aa 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #6a5acd55;
+}
+/* Emerald green special day for 7th month, 1st day */
+.calendar-grid td.seventh-emerald-green-day {
+    background: linear-gradient(135deg, #50c878 70%, #228b22 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #50c87855;
+}
+/* Orange special day for 7th month, 1st day, 9th-10th, 15th, 22nd days */
+.calendar-grid td.seventh-orange-day {
+    background: linear-gradient(135deg, #ff9800 70%, #ffb347 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #ff980055;
+}
+/* Ruby red special day for 7th month, 9th-10th, 15th, 22nd days */
+.calendar-grid td.seventh-ruby-red-day {
+    background: linear-gradient(135deg, #e0115f 70%, #b22234 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #e0115f55;
+}
+/* Pink special day for 7th month, 15th and 22nd days */
+.calendar-grid td.seventh-pink-day {
+    background: linear-gradient(135deg, #ffb7c5 70%, #ff69b4 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #ffb7c555;
+}
+/* Indigo/Purple style for 7th month, 16th-21st days */
+.calendar-grid td.seventh-indigo-purple-day {
+    background: linear-gradient(135deg, #6a5acd 70%, #8e24aa 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #6a5acd55;
+}
+/* Orange special day for 1st month, 16th day */
+.calendar-grid td.orange-day {
+    background: linear-gradient(135deg, #ff9800 70%, #ffb347 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #ff980055;
+}
+/* Emerald green special day for 1st month, 15th day and 7th month, 15th/22nd days */
+.calendar-grid td.emerald-green-day {
+    background: linear-gradient(135deg, #50c878 70%, #228b22 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #50c87855;
+}
+/* Ruby red special day for 1st month, 14th day */
+.calendar-grid td.ruby-red-day {
+    background: linear-gradient(135deg, #e0115f 70%, #b22234 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #e0115f55;
+}
+/* Special day backgrounds for calendar grid */
+
+.calendar-grid td.gold-bronze-day {
+    background: linear-gradient(135deg, #ffd700 60%, #b08d57 100%) !important;
+    color: #4b3200 !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #ffd70055;
+}
+
+
+.calendar-grid td.royal-blue-day {
+    background: linear-gradient(135deg, #4169e1 70%, #27408b 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 8px 2px #4169e155;
+}
+/* Navigation button styles for calendar navigation */
+.calendar-nav-btns {
+    margin-bottom: 16px;
+    text-align: center;
+    font-family: 'Pictocrypto', sans-serif;
+}
+.calendar-nav-btns button {
+    background: #20639b;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin: 0 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: 'Pictocrypto', sans-serif;
+}
+.calendar-nav-btns button:hover {
+    font-family: 'Pictocrypto', sans-serif;
+    background: #3caea3;
+}
+.year-months-link.current {
+    background: linear-gradient(90deg, #ffd700 0%, #fffbe6 100%);
+    color: #173f5f;
+    box-shadow: 0 0 8px 2px #ffd70088;
+    border: 2px solid #ffd700;
+    font-weight: bold;
+    position: relative;
+    z-index: 1;
+}
+.year-months-link {
+    color: #3caea3;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+}
+.year-months-link:hover {
+    background: #20639b;
+    color: #fff;
+}
+.year-months-link.active {
+    background: #3caea3;
+    color: #fff;
+}
+.year-months-list {
+    margin: 32px auto 0 auto;
+    max-width: 480px;
+    background: #173f5f;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px #0004;
+    padding: 24px 32px;
+    color: #e0e6ed;
+}
+.year-months-title {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+    color: #fff;
+    text-align: center;
+    letter-spacing: 1px;
+}
+.year-months-ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.year-months-li {
+    font-size: 1.1rem;
+    padding: 8px 0;
+    border-bottom: 1px solid #284b63;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.year-months-li:last-child {
+    border-bottom: none;
+}
+.year-months-days {
+    font-weight: bold;
+    color: #3caea3;
+    background: #0a2342;
+    border-radius: 6px;
+    padding: 2px 10px;
+    margin-left: 12px;
+}
+
+.calendar-grid td.day-cell.current-day {
+    /* Overlay via inset box-shadow so text stays readable */
+    color: #fff !important;
+    font-weight: bold;
+    position: relative;
+    animation: current-pulse 1s ease-in-out infinite; /* 1s cycle */
+    /* Start with full overlay + subtle outer glow */
+    box-shadow: inset 0 0 0 9999px rgba(60,174,163,1), 0 0 12px 2px #3caea366;
+    z-index: 2;
+}
+
+@keyframes current-pulse {
+  0%   { box-shadow: inset 0 0 0 9999px rgba(60,174,163,1), 0 0 12px 2px #3caea366; }
+  50%  { box-shadow: inset 0 0 0 9999px rgba(60,174,163,0), 0 0 0 0 rgba(0,0,0,0); }
+  100% { box-shadow: inset 0 0 0 9999px rgba(60,174,163,1), 0 0 12px 2px #3caea366; }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .calendar-grid td.day-cell.current-day {
+    animation: none;
+    box-shadow: inset 0 0 0 9999px rgba(60,174,163,1), 0 0 12px 2px #3caea366;
+  }
+}
+
+/* Ensure side panel boxes size includes padding/border */
+.side-panel { box-sizing: border-box; }
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .calendar-grid th,
+    .calendar-grid td {
+        font-size: 1rem;
+        padding: 12px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-columns { padding: 0 8px; box-sizing: border-box; width: 100%; max-width: 100vw; }
+    .calendar-container { overflow-x: visible; }
+    .calendar-grid { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
+    .side-panel { width: 100%; max-width: 100%; margin-left: 0; margin-right: 0; }
+    .calendar-container { margin: 24px 0; padding: 0 8px; }
+    .calendar-grid th,
+    .calendar-grid td {
+        font-size: 0.95rem;
+        padding: 10px 0;
+        min-width: 48px; /* tighter but keeps colors */
+    }
+    .side-panel { margin-top: 16px; padding: 18px 16px 12px 16px; max-width: 100%; width: calc(100% - 16px); }
+    .side-panel .close-btn { top: 8px; right: 10px; font-size: 1.4em; }
+    /* Mobile sizing for nav buttons */
+    .calendar-nav-btns { padding: 0 6px; }
+    .calendar-nav-btns button {
+      font-size: 0.8rem;
+      padding: 6px 8px;
+      margin: 0 2px;
+      border-radius: 5px;
+    }
+}
+
+/* Final mobile-fit overrides */
+@media (max-width: 480px) {
+  #side-panel {
+    box-sizing: border-box;
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    margin: 16px auto 0 auto; /* center with small gutters */
+  }
+  .calendar-columns {
+    max-width: 100vw;
+    overflow-x: hidden; /* prevent off-screen shift */
+  }
+  html, body { overflow-x: hidden; }
+}
+
+/* Nav buttons: default styles remain above ... */
+.calendar-nav-btns button .icon { display: inline-block; font-weight: 800; }
+.calendar-nav-btns button .label { display: inline-block; }
+
+/* On very small screens, hide labels to fit one row */
+@media (max-width: 420px) {
+  .calendar-nav-btns { padding: 0 4px; }
+  .calendar-nav-btns button { font-size: 0.9rem; padding: 6px 8px; margin: 0 2px; }
+  .calendar-nav-btns button .label { display: none; }
+}
+
+/* Even tighter phones */
+@media (max-width: 360px) {
+  .calendar-nav-btns button { font-size: 0.85rem; padding: 6px 6px; margin: 0 2px; }
+}
+
+/* Home button styling to match nav button height */
+.calendar-nav-btns .home-btn {
+  background: #ffffff;
+  color: #20639b;
+  border: 2px solid #20639b;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  padding: 0;
+  line-height: 38px;
+  text-align: center;
+  font-size: 1rem;
+  vertical-align: middle;
+  cursor: pointer;
+  margin: 0 6px;
+}
+.calendar-nav-btns .home-btn:hover { background: #3caea3; color: #fff; border-color: #3caea3; }
+
+/* Align icon baseline with neighbor buttons */
+.calendar-nav-btns .home-btn .icon { font-weight: normal; }
+
+/* Mobile adjustments so it still fits one row */
+@media (max-width: 420px) {
+  .calendar-nav-btns .home-btn { width: 36px; height: 36px; line-height: 34px; margin: 0 4px; }
+}
+@media (max-width: 360px) {
+  .calendar-nav-btns .home-btn { width: 34px; height: 34px; line-height: 32px; margin: 0 3px; }
+}
