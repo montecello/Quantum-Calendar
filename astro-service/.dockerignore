@@ -1,0 +1,22 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+.DS_Store
+node_modules/
+**/node_modules/**
+
+# Exclude local ephemerides and large binaries from build context
+*.bsp
+app/data/*.bsp
+*.bin
+*.dat
+*.ipynb
+
+# Tests and local artifacts
+tests/
+coverage/
+.pytest_cache/

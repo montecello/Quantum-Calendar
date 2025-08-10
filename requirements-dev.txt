@@ -1,0 +1,6 @@
+# Dev-only tools used for data prep or local utilities
+pandas
+Pillow
+tqdm
+# gunicorn is not needed on Vercel; install only if running your own server
+# gunicorn

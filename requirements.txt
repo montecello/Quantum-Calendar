@@ -4,9 +4,5 @@ geopy
 timezonefinder
 pytz
 astral
-pandas
-tqdm
-gunicorn
 cachetools
-Pillow
 python-dotenv
