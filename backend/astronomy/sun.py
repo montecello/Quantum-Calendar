@@ -40,7 +40,9 @@ def get_sun_events_for_date(lat, lon, timezone, date_, location_name=None):
         lines.append("Dusk: --:-- (not found)")
 
     # Moon illumination at dawn and next dawn via astro-service (Skyfield offloaded)
-    illum1 = illum2 = None
+    illum1 = None
+    illum2 = None
+    arr = []
     try:
         dawn_utc = dawn_time.astimezone(pytz.UTC) if dawn_time else None
         tomorrow = date_ + timedelta(days=1)
@@ -232,6 +234,8 @@ def print_today_sun_events(lat, lon, timezone):
         print("Dusk: --:-- (not found)")
 
     # Moon illumination via astro-service
+    illum1 = None
+    illum2 = None
     try:
         dawn_utc = dawn_time.astimezone(pytz.UTC) if dawn_time else None
         tomorrow = today + timedelta(days=1)
@@ -245,6 +249,7 @@ def print_today_sun_events(lat, lon, timezone):
         if iso_list:
             params = [('iso', s) for s in iso_list]
             last_exc = None
+            arr = []
             for attempt in range(3):
                 try:
                     resp = requests.get(f"{ASTRO_API_BASE}/illumination/moon-batch", params=params, timeout=20)

@@ -65,96 +65,95 @@ def select_location():
     name = data.get('name')
     year = data.get('year')
     tz = get_timezone(lat, lon)
-    print(f"Selected location: {name} | {lat}, {lon} | Timezone: {tz.zone} | Year: {year}")
-    from backend.astronomy.sun import print_today_sun_events
-    from backend.astronomy.moon import print_today_moon_events
-    from backend.astronomy.year import print_yearly_events, find_prev_next_new_year
-    print(f"\n--- Sun Events for Today ({name}, lat={lat}, lon={lon}, tz={tz.zone}) ---")
-    print_today_sun_events(lat, lon, tz.zone)
-    print("--- End Sun Events ---\n")
-    # Get moon events for calendar rendering
-    from datetime import datetime
+    tz_name = tz.zone or 'UTC'
+    from datetime import datetime, timedelta
     import pytz
+    now_local = datetime.now(pytz.timezone(tz_name))
+    print(f"Selected location: {name} | {lat}, {lon} | Timezone: {tz_name} | Year: {year}")
+
+    # Sun events summary (console)
+    print(f"\n--- Sun Events for Today ({name}, lat={lat}, lon={lon}, tz={tz_name}) ---")
+    print_today_sun_events(lat, lon, tz_name)
+    print("--- End Sun Events ---\n")
+
+    # Moon/month calculations
     now_utc = datetime.utcnow().replace(tzinfo=pytz.UTC)
     from backend.astronomy.moon import find_prev_next_full_moon, find_first_dawn_after, count_dawn_cycles
     from backend.astronomy.sun import get_event_with_fallback
-    from datetime import timedelta
     prev_full, next_full = find_prev_next_full_moon(now_utc)
-    dawn_after_prev, _ = find_first_dawn_after(prev_full, lat, lon, tz.zone)
-    dawn_after_next, _ = find_first_dawn_after(next_full, lat, lon, tz.zone)
-    days_in_month = count_dawn_cycles(dawn_after_prev, dawn_after_next, lat, lon, tz.zone) if (dawn_after_prev and dawn_after_next) else 29
-    # Find current day in month
-    dawns = [dawn_after_prev]
-    current = dawn_after_prev
-    now_local = datetime.now(pytz.timezone(tz.zone))
-    while True:
-        next_date = (current + timedelta(days=1)).date()
-        next_dawn, _ = get_event_with_fallback('dawn', lat, lon, tz.zone, next_date)
-        if not next_dawn or next_dawn > dawn_after_next:
-            break
-        dawns.append(next_dawn)
-        current = next_dawn
-    if dawns[-1] < dawn_after_next:
-        dawns.append(dawn_after_next)
+    dawn_after_prev, _ = find_first_dawn_after(prev_full, lat, lon, tz_name)
+    dawn_after_next, _ = find_first_dawn_after(next_full, lat, lon, tz_name)
+    days_in_month = count_dawn_cycles(dawn_after_prev, dawn_after_next, lat, lon, tz_name) if (dawn_after_prev and dawn_after_next) else 29
+
+    # Current day in month
     current_day = None
-    for i in range(len(dawns)-1):
-        if dawns[i] <= now_local < dawns[i+1]:
-            current_day = i+1
-            break
+    if dawn_after_prev and dawn_after_next:
+        dawns = [dawn_after_prev]
+        current = dawn_after_prev
+        while True:
+            next_date = (current + timedelta(days=1)).date()
+            nd, _ = get_event_with_fallback('dawn', lat, lon, tz_name, next_date)
+            if not nd or nd > dawn_after_next:
+                break
+            dawns.append(nd)
+            current = nd
+        if dawns and dawns[-1] < dawn_after_next:
+            dawns.append(dawn_after_next)
+        for i in range(len(dawns) - 1):
+            if dawns[i] <= now_local < dawns[i + 1]:
+                current_day = i + 1
+                break
     if current_day is None:
-        if now_local < dawns[0]:
-            current_day = 1
-        else:
-            current_day = days_in_month
-    # Find current month in year
+        current_day = 1 if (dawn_after_prev and now_local < dawn_after_prev) else days_in_month
+
+    # Current month in year
     from backend.astronomy.year import find_prev_next_new_year, get_full_moons_in_range
     prev_anchor, next_anchor = find_prev_next_new_year(now_utc)
     moons = get_full_moons_in_range(prev_anchor, next_anchor)
     month_num = None
-    for i, moon in enumerate(moons):
-        dawn, _ = find_first_dawn_after(moon, lat, lon, tz.zone)
-        next_dawn, _ = find_first_dawn_after(moons[i+1] if i+1 < len(moons) else next_anchor, lat, lon, tz.zone)
-        if dawn and next_dawn and dawn <= now_local < next_dawn:
-            month_num = i+1
+    for i, m in enumerate(moons):
+        d1, _ = find_first_dawn_after(m, lat, lon, tz_name)
+        d2, _ = find_first_dawn_after(moons[i + 1] if i + 1 < len(moons) else next_anchor, lat, lon, tz_name)
+        if d1 and d2 and d1 <= now_local < d2:
+            month_num = i + 1
             break
     if month_num is None:
-        if now_local < dawn_after_prev:
-            month_num = 1
-        else:
-            month_num = len(moons)
-    print_today_moon_events(lat, lon, tz.zone, location_name=name)
-    # If year is provided, anchor yearly events to that year
+        month_num = 1 if (dawn_after_prev and now_local < dawn_after_prev) else len(moons)
+
+    print_today_moon_events(lat, lon, tz_name, location_name=name)
     if year:
         anchor_year = int(year)
-        jan1 = pytz.UTC.localize(datetime(anchor_year, 1, 1))
-        prev_anchor, next_anchor = find_prev_next_new_year(jan1)
-        print_yearly_events(lat, lon, tz.zone, location_name=name, anchor_override=prev_anchor)
+        _ = pytz.UTC.localize(datetime(anchor_year, 1, 1))  # keep simple; yearly decides anchors
+        print_yearly_events(lat, lon, tz_name, location_name=name)
     else:
-        print_yearly_events(lat, lon, tz.zone, location_name=name)
+        print_yearly_events(lat, lon, tz_name, location_name=name)
 
-    # Print multi-year calendar for selected location (previous, current, next year)
+    # Multi-year calendar summary
     from backend.astronomy.years import print_multi_year_calendar
     now = datetime.now(pytz.UTC)
     print(f"\n--- Multi-Year Calendar ({name}, {now.year-1}-{str(now.year+1)[-2:]}) ---")
-    print_multi_year_calendar(now.year-1, now.year+1, lat, lon, tz.zone)
+    print_multi_year_calendar(now.year - 1, now.year + 1, lat, lon, tz_name)
     print("--- End Multi-Year Calendar ---\n")
+
     # Build monthsInYear list
     months_in_year = []
-    for i, moon in enumerate(moons):
-        dawn, _ = find_first_dawn_after(moon, lat, lon, tz.zone)
-        next_dawn, _ = find_first_dawn_after(moons[i+1] if i+1 < len(moons) else next_anchor, lat, lon, tz.zone)
-        if dawn and next_dawn:
-            days = count_dawn_cycles(dawn, next_dawn, lat, lon, tz.zone)
+    for i, m in enumerate(moons):
+        d1, _ = find_first_dawn_after(m, lat, lon, tz_name)
+        d2, _ = find_first_dawn_after(moons[i + 1] if i + 1 < len(moons) else next_anchor, lat, lon, tz_name)
+        if d1 and d2:
+            days = count_dawn_cycles(d1, d2, lat, lon, tz_name)
         else:
             days = '--'
         months_in_year.append({'days': days})
-    # Calculate year range string
+
+    # Year range string
     start_year = prev_anchor.year
     end_year = next_anchor.year if next_anchor.month > 6 else next_anchor.year - 1
     year_range = f"{start_year}-{str(end_year)[-2:]}"
+
     return jsonify({
         'status': 'ok',
-        'timezone': tz.zone,
+        'timezone': tz_name,
         'year': year,
         'monthNum': month_num,
         'currentDay': current_day,

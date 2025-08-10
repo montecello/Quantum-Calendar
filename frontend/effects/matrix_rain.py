@@ -55,14 +55,19 @@ def load_font(font_path: str | None, font_size: int) -> ImageFont.FreeTypeFont:
 
 
 def measure_char(font: ImageFont.FreeTypeFont, sample: str = "א") -> Tuple[int, int]:
-    # getbbox is more accurate than getsize for FreeTypeFont
+    # Prefer getbbox; it returns precise integer bbox
     try:
         bbox = font.getbbox(sample)
-        w = bbox[2] - bbox[0]
-        h = bbox[3] - bbox[1]
+        w = int(bbox[2] - bbox[0])
+        h = int(bbox[3] - bbox[1])
         return max(1, w), max(1, h)
     except Exception:
-        w, h = font.getsize(sample)
+        # Fallback: use textbbox via a tiny ImageDraw for better compatibility
+        img = Image.new("RGB", (64, 64), (0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        bbox = draw.textbbox((0, 0), sample, font=font)
+        w = int(bbox[2] - bbox[0])
+        h = int(bbox[3] - bbox[1])
         return max(1, w), max(1, h)
 
 
