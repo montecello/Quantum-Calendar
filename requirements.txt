@@ -5,7 +5,6 @@ timezonefinder
 pytz
 astral
 pandas
-numpy
 tqdm
 gunicorn
 cachetools
