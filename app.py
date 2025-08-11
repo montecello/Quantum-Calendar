@@ -12,6 +12,7 @@ from backend.astronomy.years import print_multi_year_calendar
 from backend.astronomy.year import print_yearly_events
 
 import os
+import logging
 
 # Load .env for local development (safe on Vercel; ignored if no .env)
 try:
@@ -37,7 +38,10 @@ app.register_blueprint(api)
 # Move heavy data loads under __main__ to avoid cold-start costs on Vercel imports
 # load_all_data()
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+def data_path(*parts: str) -> str:
+    return os.path.join(BASE_DIR, *parts)
 
 
 # Print today's sun, moon, and yearly events for a default location (Greenwich, UTC)
@@ -50,6 +54,13 @@ app.register_blueprint(api)
 
 # Print yearly events for London, UK (Europe/London timezone)
 # print_yearly_events(51.5074, -0.1278, 'Europe/London', location_name="London, ENG, United Kingdom")
+
+@app.route("/api/health")
+def api_health():
+    return {
+        "ok": True,
+        "astro": os.environ.get("ASTRO_API_BASE", ""),
+    }
 
 
 @app.route('/')
