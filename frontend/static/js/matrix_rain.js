@@ -42,8 +42,8 @@
 
   const settings = {
     trailAlpha: 0.08,
-    minSpeed: 0.24375, // was 0.375 (−35%)
-    maxSpeed: 0.73125, // was 1.125 (−35%)
+    minSpeed: 0.121875, // slowed by 50%
+    maxSpeed: 0.365625, // slowed by 50%
     replaceProb: 0.06
   };
 
