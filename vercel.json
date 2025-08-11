@@ -9,14 +9,5 @@
   ],
   "env": {
     "PYTHONUNBUFFERED": "1"
-  },
-
-  "functions": {
-    "api/**/*": {
-      "excludeFiles": "{astro-service/**,.venv/**,venv/**,**/.venv/**,**/venv/**,node_modules/**,**/*.bsp,**/*.bin,**/*.dat,**/__pycache__/**}"
-    },
-    "*.py": {
-      "excludeFiles": "{astro-service/**,.venv/**,venv/**,**/.venv/**,**/venv/**,node_modules/**,**/*.bsp,**/*.bin,**/*.dat,**/__pycache__/**}"
-    }
   }
 }
