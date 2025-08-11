@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 
 from backend.geolocation import parse_coordinates, get_timezone
 
@@ -75,6 +75,20 @@ def api_health():
         "ok": True,
         "astro": os.environ.get("ASTRO_API_BASE", ""),
     }
+
+# Serve legacy static path if templates reference /frontend/static/*
+@app.route("/frontend/static/<path:filename>")
+def legacy_static(filename: str):
+    return send_from_directory(os.path.join(BASE_DIR, "frontend", "static"), filename)
+
+# Serve favicon if present (avoid noisy 404s)
+@app.route("/favicon.ico")
+def favicon():
+    for name in ("favicon.ico", "favicon.png"):
+        path = os.path.join(BASE_DIR, "frontend", "static", name)
+        if os.path.exists(path):
+            return send_from_directory(os.path.join(BASE_DIR, "frontend", "static"), name)
+    return ("", 204)
 
 
 @app.route('/')
