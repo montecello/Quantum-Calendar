@@ -23,10 +23,13 @@ except Exception:
 
 GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY")
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Use absolute paths for templates/static (safer on serverless)
 app = Flask(
     __name__,
-    template_folder="frontend/templates",
-    static_folder="frontend/static"
+    template_folder=os.path.join(BASE_DIR, "frontend", "templates"),
+    static_folder=os.path.join(BASE_DIR, "frontend", "static"),
 )
 
 # Register API blueprint for /api/calendar and /api/multiyear-calendar endpoints
@@ -38,10 +41,21 @@ app.register_blueprint(api)
 # Move heavy data loads under __main__ to avoid cold-start costs on Vercel imports
 # load_all_data()
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 def data_path(*parts: str) -> str:
     return os.path.join(BASE_DIR, *parts)
+
+# Lazy-load CSV data on first request (Vercel won't run __main__ on cold start)
+_DATA_LOADED = False
+
+def ensure_data_loaded() -> None:
+    global _DATA_LOADED
+    if not _DATA_LOADED:
+        try:
+            load_all_data()
+            _DATA_LOADED = True
+            logging.info("Astronomical CSV data loaded")
+        except Exception:
+            logging.exception("Failed to load astronomical CSV data")
 
 
 # Print today's sun, moon, and yearly events for a default location (Greenwich, UTC)
@@ -65,11 +79,13 @@ def api_health():
 
 @app.route('/')
 def home():
+    ensure_data_loaded()
     print("Rendering index.html")
     return render_template('index.html')
 
 @app.route('/select-location', methods=['POST'])
 def select_location():
+    ensure_data_loaded()
     data = request.get_json()
     lat = float(data.get('lat'))
     lon = float(data.get('lon'))
