@@ -16,8 +16,9 @@ node_modules/
 astro-service/
 **/astro-service/**
 
-# Large binaries
+# Large binaries (keep CSVs INCLUDED)
 *.bsp
 *.bin
 *.dat
 *.ipynb
+# REMOVED: *.csv
