@@ -6,4 +6,3 @@ pytz
 astral
 cachetools
 python-dotenv
-pandas
