@@ -30,6 +30,7 @@ app = Flask(
     __name__,
     template_folder=os.path.join(BASE_DIR, "frontend", "templates"),
     static_folder=os.path.join(BASE_DIR, "frontend", "static"),
+    static_url_path="/static",
 )
 
 # Register API blueprint for /api/calendar and /api/multiyear-calendar endpoints
