@@ -47,6 +47,26 @@
     color: #e0e6ed;
 }
 
+/* Moon phase emoji background for day cells */
+.calendar-emoji-bg {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.2em;
+    opacity: 0.85;
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+}
+.day-cell {
+    position: relative;
+}
+.holiday-daynum {
+    position: relative;
+    z-index: 2;
+}
+
 /* Smooth hover/focus lighting effect for day cells without changing their background */
 .calendar-grid td.day-cell {
     transition: filter 150ms ease, box-shadow 150ms ease;

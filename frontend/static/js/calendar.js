@@ -167,7 +167,22 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
                 // Debug log for silver counter
                 console.log(`Silver Counter: Month ${monthNum}, Day ${day} => n=${silverCounter}`);
             }
-            html += `<td class="${getDayClass(isCurrent, day)}" data-day="${day}"><span class="holiday-daynum">${day}${counterHtml}${silverHtml}</span></td>`;
+            // Moon phase emoji logic
+            let emoji = '';
+            if (day === 1 || day === 29 || day === 30) {
+                emoji = '🌕';
+            } else if (day === 8) {
+                emoji = '🌗';
+            } else if (day === 15) {
+                emoji = '🌑';
+            } else if (day === 22) {
+                emoji = '🌓';
+            }
+            let emojiHtml = '';
+            if (emoji) {
+                emojiHtml = `<span class="calendar-emoji-bg">${emoji}</span>`;
+            }
+            html += `<td class="${getDayClass(isCurrent, day)}" data-day="${day}">${emojiHtml}<span class="holiday-daynum">${day}${counterHtml}${silverHtml}</span></td>`;
             day++;
         }
 
