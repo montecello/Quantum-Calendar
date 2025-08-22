@@ -1,3 +1,47 @@
+// Map Gregorian ISO date to Quantum month/day/year
+function isoToCustomMonthDay(iso) {
+    try {
+        const d = new Date(iso + 'T00:00:00');
+        d.setDate(d.getDate() + 1);
+        const ns = window.navState;
+        if (!ns || !ns.yearsData || !ns.yearsData.length) return null;
+        for (let y = 0; y < ns.yearsData.length; y++) {
+            const months = ns.yearsData[y].months || [];
+            for (let m = 0; m < months.length; m++) {
+                const start = months[m].start ? new Date(months[m].start) : null;
+                if (!start) continue;
+                const nextStart = (m + 1 < months.length)
+                    ? (months[m+1].start ? new Date(months[m+1].start) : null)
+                    : (ns.yearsData[y+1] && ns.yearsData[y+1].months[0].start ? new Date(ns.yearsData[y+1].months[0].start) : null);
+                if (start <= d && (!nextStart || d < nextStart)) {
+                    const dayNum = Math.floor((d - start) / (1000*60*60*24)) + 1;
+                    const monthsInYear = months.map(mm => ({ days: mm.days }));
+                    return { yearIdx: y, monthNum: m + 1, dayNum, monthsInYear };
+                }
+            }
+        }
+        console.warn('No quantum mapping found for Gregorian date:', iso);
+    } catch (e) {
+        console.error('isoToCustomMonthDay error:', e);
+    }
+    return null;
+}
+
+// Hook for Gregorian grid: get special day classes for a Gregorian ISO date
+window.getSpecialDayClassesForISO = function(iso) {
+    const mapped = isoToCustomMonthDay(iso);
+    if (!mapped) return [];
+    let classes;
+    if ('monthNum' in mapped && 'dayNum' in mapped && 'monthsInYear' in mapped) {
+        classes = computeCustomSpecialClasses(mapped.monthNum, mapped.dayNum, mapped.monthsInYear);
+    } else {
+        classes = computeCustomSpecialClasses(mapped.month, mapped.day, mapped.year);
+    }
+    if (classes && classes.length) {
+        console.log('Special classes for', iso, ':', classes);
+    }
+    return classes;
+};
 // --- Silver Counter (Independent) ---
     // Always starts at 3rd month, 9th day (n=1) each year, increments for 50 days
     function getSilverCounter(mNum, dayNum, monthsInYear) {
@@ -670,35 +714,10 @@ function updateModeButtons() {
 }
 
 // Expose hook for special day classes by ISO date (Gregorian)
-window.getSpecialDayClassesForISO = window.getSpecialDayClassesForISO || function(iso) {
-  // Placeholder: map from your custom calendar model if needed
-  return [];
-};
+// ...existing code...
 
 // Map ISO date to custom month/day using navState.yearsData
-function isoToCustomMonthDay(iso) {
-  try {
-    const d = new Date(iso + 'T12:00:00');
-    const ns = window.navState;
-    if (!ns || !ns.yearsData || !ns.yearsData.length) return null;
-    for (let y = 0; y < ns.yearsData.length; y++) {
-      const months = ns.yearsData[y].months || [];
-      for (let m = 0; m < months.length; m++) {
-        const start = months[m].start ? new Date(months[m].start) : null;
-        if (!start) continue;
-        const nextStart = (m + 1 < months.length)
-          ? (months[m+1].start ? new Date(months[m+1].start) : null)
-          : (ns.yearsData[y+1] && ns.yearsData[y+1].months[0].start ? new Date(ns.yearsData[y+1].months[0].start) : null);
-        if (start <= d && (!nextStart || d < nextStart)) {
-          const dayNum = Math.floor((d - start) / (1000*60*60*24)) + 1;
-          const monthsInYear = months.map(mm => ({ days: mm.days }));
-          return { yearIdx: y, monthNum: m + 1, dayNum, monthsInYear };
-        }
-      }
-    }
-  } catch {}
-  return null;
-}
+// ...existing code...
 
 // Compute special classes for custom calendar using same rules as grid
 function computeCustomSpecialClasses(monthNum, dayNum, monthsInYear) {
@@ -739,11 +758,7 @@ function computeCustomSpecialClasses(monthNum, dayNum, monthsInYear) {
 }
 
 // Override the placeholder to provide real mapping for Gregorian grid
-window.getSpecialDayClassesForISO = function(iso) {
-  const mapped = isoToCustomMonthDay(iso);
-  if (!mapped) return [];
-  return computeCustomSpecialClasses(mapped.monthNum, mapped.dayNum, mapped.monthsInYear);
-};
+// ...existing code...
 
 function ensureFrameAndGetGridTarget() {
   // Ensure nav + columns frame exists so we can swap only the grid
@@ -775,22 +790,44 @@ function clampGregorianYM(y, m) {
 }
 
 function renderCalendarForState() {
-  const isGreg = window.CalendarMode.mode === 'gregorian' && window.GregorianCalendar;
-  if (isGreg) {
-    const target = ensureFrameAndGetGridTarget();
-    if (!target) return;
-    target.innerHTML = '';
-    const ns = window.navState || (window.navState = {});
-    const today = new Date();
-    const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
-    ns.gYear = cl.y; ns.gMonth = cl.m;
-    window.GregorianCalendar.render(target, cl.y, cl.m);
-    rebindNavForGregorian();
-  } else {
-    if (typeof updateMultiYearCalendarUI === 'function') {
-      updateMultiYearCalendarUI();
+    const isGreg = window.CalendarMode.mode === 'gregorian' && window.GregorianCalendar;
+    if (isGreg) {
+        const target = ensureFrameAndGetGridTarget();
+        if (!target) return;
+        target.innerHTML = '';
+        const ns = window.navState || (window.navState = {});
+        // Ensure yearsData is loaded for mapping
+            if (!ns.yearsData || !ns.yearsData.length) {
+                // Use navState values or defaults for location and years
+                const lat = ns.lat || 51.48;
+                const lon = ns.lon || 0.0;
+                const tz = ns.tz || 'Europe/London';
+                const currentYear = ns.gYear || (new Date().getFullYear());
+                // Fetch a wider range: 10 years before and after current year
+                const startYear = 2000;
+                const endYear = 2048;
+                fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, function(data) {
+                    ns.yearsData = data;
+                    // After loading, render Gregorian grid
+                    const today = new Date();
+                    const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
+                    ns.gYear = cl.y; ns.gMonth = cl.m;
+                    window.GregorianCalendar.render(target, cl.y, cl.m);
+                    rebindNavForGregorian();
+                });
+                return;
+            }
+        // Already loaded, render as normal
+        const today = new Date();
+        const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
+        ns.gYear = cl.y; ns.gMonth = cl.m;
+        window.GregorianCalendar.render(target, cl.y, cl.m);
+        rebindNavForGregorian();
+    } else {
+        if (typeof updateMultiYearCalendarUI === 'function') {
+            updateMultiYearCalendarUI();
+        }
     }
-  }
 }
 
 function rebindNavForGregorian() {

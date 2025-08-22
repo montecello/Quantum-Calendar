@@ -39,9 +39,16 @@
     try {
       if (typeof window.getSpecialDayClassesForISO === 'function') {
         const cls = window.getSpecialDayClassesForISO(dateStr) || [];
+        if (cls && cls.length) {
+          console.log('Gregorian cell', dateStr, 'special classes:', cls);
+        }
         cls.forEach(c => td.classList.add(c));
+      } else {
+        console.warn('window.getSpecialDayClassesForISO is not a function');
       }
-    } catch {}
+    } catch (e) {
+      console.error('Error in applySpecialDayClasses for', dateStr, e);
+    }
   }
 
   function markCurrentDay(td, y, m, d) {
