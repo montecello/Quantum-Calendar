@@ -4,6 +4,7 @@ function isoToCustomMonthDay(iso) {
         const d = new Date(iso + 'T00:00:00');
         d.setDate(d.getDate() + 1);
         const ns = window.navState;
+    // (verbose debug removed)
         if (!ns || !ns.yearsData || !ns.yearsData.length) return null;
         for (let y = 0; y < ns.yearsData.length; y++) {
             const months = ns.yearsData[y].months || [];
@@ -16,6 +17,7 @@ function isoToCustomMonthDay(iso) {
                 if (start <= d && (!nextStart || d < nextStart)) {
                     const dayNum = Math.floor((d - start) / (1000*60*60*24)) + 1;
                     const monthsInYear = months.map(mm => ({ days: mm.days }));
+                    // (mapping debug removed)
                     return { yearIdx: y, monthNum: m + 1, dayNum, monthsInYear };
                 }
             }
@@ -36,9 +38,6 @@ window.getSpecialDayClassesForISO = function(iso) {
         classes = computeCustomSpecialClasses(mapped.monthNum, mapped.dayNum, mapped.monthsInYear);
     } else {
         classes = computeCustomSpecialClasses(mapped.month, mapped.day, mapped.year);
-    }
-    if (classes && classes.length) {
-        console.log('Special classes for', iso, ':', classes);
     }
     return classes;
 };
@@ -68,13 +67,7 @@ window.getSpecialDayClassesForISO = function(iso) {
         }
         silverStartAbsDay += (9 - 1); // 0-based
 
-        // Debug: log for days near the month 3/4 boundary
-        if ((mNum === 3 && dayNum >= 27) || (mNum === 4 && dayNum <= 3)) {
-            console.log(
-                `DEBUG: mNum=${mNum}, dayNum=${dayNum}, absDay=${absDay}, silverStartAbsDay=${silverStartAbsDay}, monthsInYear=`,
-                Array.isArray(monthsInYear) ? monthsInYear.map(m => m.days) : monthsInYear
-            );
-        }
+    // (debugging removed)
 
         let n = absDay - silverStartAbsDay + 1;
         if (n >= 1 && n <= 50) {
@@ -206,11 +199,9 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
             }
             let silverCounter = getSilverCounter(monthNum, day, monthsInYear);
             let silverHtml = '';
-            if (silverCounter !== null) {
-                silverHtml = ` <span class=\"silver-counter\">(${silverCounter})</span>`;
-                // Debug log for silver counter
-                console.log(`Silver Counter: Month ${monthNum}, Day ${day} => n=${silverCounter}`);
-            }
+                if (silverCounter !== null) {
+                    silverHtml = ` <span class="silver-counter">(${silverCounter})</span>`;
+                }
             // Moon phase emoji logic
             let emoji = '';
             if (day === 1 || day === 29 || day === 30) {
@@ -238,6 +229,8 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
 }
 
 function renderYearMonths(months, activeMonth, currentMonth, onMonthClick, yearRange, isCurrentYear) {
+    // Debug: log months being rendered and compare to canonical navState months
+    // renderYearMonths
     let html = '<div class="year-months-list">';
     html += `<h2 class="year-months-title">Schedule for ${yearRange || ''}</h2>`;
     html += '<h2 class="year-months-title">Days in the month may change if you change location. If average lunation is 29.53 days, then 53% of the world will have 30 days and 47% will have 29 days. That\'s what makes it "quantum"!</h2>';
@@ -295,7 +288,8 @@ function updateCalendar(monthNum, currentDay, daysInMonth, monthsInYear, current
 
 
 // --- Multi-year/month navigation state ---
-let navState = {
+// Use a single canonical navState on window so all handlers share the same reference
+window.navState = window.navState || {
     lat: 51.48,
     lon: 0.0,
     tz: 'Europe/London',
@@ -306,6 +300,8 @@ let navState = {
     currentYearIdx: 0, // index in yearsData
     currentMonthIdx: 0 // index in months array
 };
+let navState = window.navState;
+
 
 function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
     fetch(`/api/multiyear-calendar?lat=${lat}&lon=${lon}&tz=${encodeURIComponent(tz)}&start_year=${startYear}&end_year=${endYear}`)
@@ -315,6 +311,27 @@ function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
                 cb(data);
             }
         });
+}
+
+// Helper: find quantum year/month index and day number for a given JS Date
+function findQuantumIndexForDate(date, yearsData) {
+    if (!date || !Array.isArray(yearsData) || !yearsData.length) return null;
+    for (let y = 0; y < yearsData.length; y++) {
+        const months = yearsData[y].months || [];
+        for (let m = 0; m < months.length; m++) {
+            const mo = months[m];
+            if (!mo || !mo.start) continue;
+            const start = new Date(mo.start);
+            const nextStart = (m + 1 < months.length)
+                ? (months[m+1].start ? new Date(months[m+1].start) : null)
+                : (yearsData[y+1] && yearsData[y+1].months && yearsData[y+1].months[0] && yearsData[y+1].months[0].start ? new Date(yearsData[y+1].months[0].start) : null);
+            if (start <= date && (!nextStart || date < nextStart)) {
+                const dayNum = Math.floor((date - start) / (1000*60*60*24)) + 1;
+                return { yearIdx: y, monthIdx: m, dayNum };
+            }
+        }
+    }
+    return null;
 }
 
 function renderNavButtons() {
@@ -338,25 +355,11 @@ function updateMultiYearCalendarUI() {
     // Find real current month/day for highlight
     let realCurrentMonth = null, realCurrentDay = null, realCurrentYearIdx = null;
     const today = new Date();
-    for (let y = 0; y < navState.yearsData.length; ++y) {
-        for (let m = 0; m < navState.yearsData[y].months.length; ++m) {
-            const mo = navState.yearsData[y].months[m];
-            if (mo.start) {
-                const start = new Date(mo.start);
-                let end = (m+1 < navState.yearsData[y].months.length)
-                    ? new Date(navState.yearsData[y].months[m+1].start)
-                    : null;
-                if (!end && y+1 < navState.yearsData.length) {
-                    end = new Date(navState.yearsData[y+1].months[0].start);
-                }
-                if (start <= today && (!end || today < end)) {
-                    realCurrentYearIdx = y;
-                    realCurrentMonth = m+1;
-                    // Estimate current day in month
-                    realCurrentDay = Math.floor((today - start) / (1000*60*60*24)) + 1;
-                }
-            }
-        }
+    const found = findQuantumIndexForDate(today, navState.yearsData);
+    if (found) {
+        realCurrentYearIdx = found.yearIdx;
+        realCurrentMonth = found.monthIdx + 1;
+        realCurrentDay = found.dayNum;
     }
     // Build year label for heading
     let yearLabel = `${yearObj.year}-${String(yearObj.year+1).slice(-2)}`;
@@ -455,24 +458,13 @@ function updateMultiYearCalendarUI() {
         // Jump to real current month/year if found
         if (navState.yearsData && navState.yearsData.length) {
             const today = new Date();
-            let found = false;
-            for (let y = 0; y < navState.yearsData.length; ++y) {
-                for (let m = 0; m < navState.yearsData[y].months.length; ++m) {
-                    const mo = navState.yearsData[y].months[m];
-                    if (!mo.start) continue;
-                    const start = new Date(mo.start);
-                    let end = (m+1 < navState.yearsData[y].months.length) ? new Date(navState.yearsData[y].months[m+1].start) : null;
-                    if (!end && y+1 < navState.yearsData.length) end = new Date(navState.yearsData[y+1].months[0].start);
-                    if (start <= today && (!end || today < end)) {
-                        navState.currentYearIdx = y;
-                        navState.currentMonthIdx = m;
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) break;
+            const foundIdx = findQuantumIndexForDate(today, navState.yearsData);
+            if (foundIdx) {
+                navState.currentYearIdx = foundIdx.yearIdx;
+                navState.currentMonthIdx = foundIdx.monthIdx;
+            } else {
+                navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
             }
-            if (!found) { navState.currentYearIdx = 0; navState.currentMonthIdx = 0; }
             updateMultiYearCalendarUI();
             setTimeout(() => animateGrid(), 0);
         }
@@ -579,104 +571,9 @@ function formatSunEventsText(text) {
     return `<pre class="sun-events-pre">${highlighted}</pre>`;
 }
 
-// On page load, fetch Greenwich multi-year calendar and show current month
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    let thisYear = today.getFullYear();
-    navState.year = thisYear;
-    navState.month = null;
-    fetchMultiYearCalendar(navState.lat, navState.lon, navState.tz, 2000, 2048, function(data) {
-        navState.yearsData = data;
-        // Find the year and month index for today
-        let found = false;
-        for (let y = 0; y < data.length; ++y) {
-            for (let m = 0; m < data[y].months.length; ++m) {
-                const mo = data[y].months[m];
-                if (mo.start) {
-                    const start = new Date(mo.start);
-                    let end = (m+1 < data[y].months.length)
-                        ? new Date(data[y].months[m+1].start)
-                        : null;
-                    if (!end && y+1 < data.length) {
-                        end = new Date(data[y+1].months[0].start);
-                    }
-                    if (start <= today && (!end || today < end)) {
-                        navState.currentYearIdx = y;
-                        navState.currentMonthIdx = m;
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (found) break;
-        }
-        if (!found) {
-            navState.currentYearIdx = 0;
-            navState.currentMonthIdx = 0;
-        }
-        // Render based on current mode
-        renderCalendarForState();
-    });
-});
+// (initial DOMContentLoaded initializer removed; consolidated initializer will be added later)
 
-// Listen for location selection from backend or search box
-window.addEventListener('calendar:update', function(e) {
-    if (!e.detail) return;
-    const { lat, lon, tz, name } = e.detail;
-    // If tz is missing, fetch from backend
-    if (!tz) {
-        fetch(`/api/timezone?lat=${lat}&lon=${lon}`)
-            .then(r => r.json())
-            .then(data => {
-                const timezone = data.tz || 'UTC';
-                // Re-dispatch with tz included
-                window.dispatchEvent(new CustomEvent('calendar:update', {
-                    detail: { lat, lon, tz: timezone, name }
-                }));
-            });
-        return;
-    }
-    navState.lat = lat;
-    navState.lon = lon;
-    navState.tz = tz;
-    if (name) {
-        navState.locationName = name;
-    }
-    const today = new Date();
-    let thisYear = today.getFullYear();
-    fetchMultiYearCalendar(navState.lat, navState.lon, navState.tz, 2000, 2048, function(data) {
-        navState.yearsData = data;
-        // Find the year and month index for today
-        let found = false;
-        for (let y = 0; y < data.length; ++y) {
-            for (let m = 0; m < data[y].months.length; ++m) {
-                const mo = data[y].months[m];
-                if (mo.start) {
-                    const start = new Date(mo.start);
-                    let end = (m+1 < data[y].months.length)
-                        ? new Date(data[y].months[m+1].start)
-                        : null;
-                    if (!end && y+1 < data.length) {
-                        end = new Date(data[y+1].months[0].start);
-                    }
-                    if (start <= today && (!end || today < end)) {
-                        navState.currentYearIdx = y;
-                        navState.currentMonthIdx = m;
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (found) break;
-        }
-        if (!found) {
-            navState.currentYearIdx = 0;
-            navState.currentMonthIdx = 0;
-        }
-        // Render based on current mode
-        renderCalendarForState();
-    });
-});
+// (removed duplicate calendar:update handler; consolidated handler appended at end)
 
 // Delegate clicks as a fallback (in case bindings are lost after re-renders)
 document.addEventListener('click', (e) => {
@@ -796,6 +693,7 @@ function renderCalendarForState() {
         if (!target) return;
         target.innerHTML = '';
         const ns = window.navState || (window.navState = {});
+    // Gregorian render state
         // Ensure yearsData is loaded for mapping
             if (!ns.yearsData || !ns.yearsData.length) {
                 // Use navState values or defaults for location and years
@@ -821,7 +719,21 @@ function renderCalendarForState() {
         const today = new Date();
         const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
         ns.gYear = cl.y; ns.gMonth = cl.m;
-        window.GregorianCalendar.render(target, cl.y, cl.m);
+        // Find quantum calendar months for current Gregorian year
+        let monthsInYear = null;
+        if (ns.yearsData && ns.yearsData.length) {
+            // Find matching quantum year for Gregorian year
+            const quantumYearObj = ns.yearsData.find(yobj => yobj.year === cl.y);
+            if (quantumYearObj) {
+                monthsInYear = quantumYearObj.months.map(m => ({ days: m.days }));
+            }
+        }
+        // Pass monthsInYear to GregorianCalendar.render if possible
+        if (window.GregorianCalendar.render.length >= 4) {
+            window.GregorianCalendar.render(target, cl.y, cl.m, monthsInYear);
+        } else {
+            window.GregorianCalendar.render(target, cl.y, cl.m);
+        }
         rebindNavForGregorian();
     } else {
         if (typeof updateMultiYearCalendarUI === 'function') {
@@ -858,105 +770,7 @@ function rebindNavForGregorian() {
   setOnClick(homeBtn, () => { const cl = clampGregorianYM(new Date().getFullYear(), new Date().getMonth()); ns.gYear = cl.y; ns.gMonth = cl.m; renderCalendarForState(); });
 }
 
-// After data loads, render according to current mode instead of forcing custom
-// On page load, fetch Greenwich multi-year calendar and show current month
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    let thisYear = today.getFullYear();
-    navState.year = thisYear;
-    navState.month = null;
-    fetchMultiYearCalendar(navState.lat, navState.lon, navState.tz, 2000, 2048, function(data) {
-        navState.yearsData = data;
-        // Find the year and month index for today
-        let found = false;
-        for (let y = 0; y < data.length; ++y) {
-            for (let m = 0; m < data[y].months.length; ++m) {
-                const mo = data[y].months[m];
-                if (mo.start) {
-                    const start = new Date(mo.start);
-                    let end = (m+1 < data[y].months.length)
-                        ? new Date(data[y].months[m+1].start)
-                        : null;
-                    if (!end && y+1 < data.length) {
-                        end = new Date(data[y+1].months[0].start);
-                    }
-                    if (start <= today && (!end || today < end)) {
-                        navState.currentYearIdx = y;
-                        navState.currentMonthIdx = m;
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (found) break;
-        }
-        if (!found) {
-            navState.currentYearIdx = 0;
-            navState.currentMonthIdx = 0;
-        }
-        // Render based on current mode
-        renderCalendarForState();
-    });
-});
-
-// Listen for location selection from backend or search box
-window.addEventListener('calendar:update', function(e) {
-    if (!e.detail) return;
-    const { lat, lon, tz, name } = e.detail;
-    // If tz is missing, fetch from backend
-    if (!tz) {
-        fetch(`/api/timezone?lat=${lat}&lon=${lon}`)
-            .then(r => r.json())
-            .then(data => {
-                const timezone = data.tz || 'UTC';
-                // Re-dispatch with tz included
-                window.dispatchEvent(new CustomEvent('calendar:update', {
-                    detail: { lat, lon, tz: timezone, name }
-                }));
-            });
-        return;
-    }
-    navState.lat = lat;
-    navState.lon = lon;
-    navState.tz = tz;
-    if (name) {
-        navState.locationName = name;
-    }
-    const today = new Date();
-    let thisYear = today.getFullYear();
-    fetchMultiYearCalendar(navState.lat, navState.lon, navState.tz, 2000, 2048, function(data) {
-        navState.yearsData = data;
-        // Find the year and month index for today
-        let found = false;
-        for (let y = 0; y < data.length; ++y) {
-            for (let m = 0; m < data[y].months.length; ++m) {
-                const mo = data[y].months[m];
-                if (mo.start) {
-                    const start = new Date(mo.start);
-                    let end = (m+1 < data[y].months.length)
-                        ? new Date(data[y].months[m+1].start)
-                        : null;
-                    if (!end && y+1 < data.length) {
-                        end = new Date(data[y+1].months[0].start);
-                    }
-                    if (start <= today && (!end || today < end)) {
-                        navState.currentYearIdx = y;
-                        navState.currentMonthIdx = m;
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (found) break;
-        }
-        if (!found) {
-            navState.currentYearIdx = 0;
-            navState.currentMonthIdx = 0;
-        }
-        // Render based on current mode
-        renderCalendarForState();
-    });
-});
+// (removed duplicate initializer and listener; consolidated handler is at the file end)
 
 // Delegated click only for Gregorian mode
 if (!window.__gregorianClickBound) {
@@ -967,7 +781,7 @@ if (!window.__gregorianClickBound) {
     if (!cell || !cell.dataset) return;
     const iso = cell.dataset.iso;
     if (!iso) return;
-    const gregDate = new Date(iso + 'T12:00:00');
+    const gregDate = new Date(iso + 'T00:00:00');
     if (typeof window.openSidePanelForDate === 'function') {
       window.openSidePanelForDate(gregDate, { mode: 'gregorian' });
     } else {
@@ -1002,8 +816,56 @@ if (!window.__gregorianClickBound) {
 }
 
 // Re-render on content ready and data updates
-document.addEventListener('DOMContentLoaded', () => { renderCalendarForState(); updateModeButtons(); });
-window.addEventListener('calendar:update', function() { if (window.CalendarMode.mode === 'custom') renderCalendarForState(); });
+// (consolidated init + calendar:update handler appended below)
+
+// Consolidated initializer and calendar:update handler
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize navState
+    const today = new Date();
+    navState.year = today.getFullYear();
+    navState.month = null;
+    // Initial fetch
+    fetchMultiYearCalendar(navState.lat, navState.lon, navState.tz, 2000, 2048, function(data) {
+        navState.yearsData = data;
+        // Find today's month/year index using helper
+        const foundIdx = findQuantumIndexForDate(today, data);
+        if (foundIdx) {
+            navState.currentYearIdx = foundIdx.yearIdx;
+            navState.currentMonthIdx = foundIdx.monthIdx;
+        } else {
+            navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
+        }
+        // Clamp Gregorian pointers
+        let gYear = today.getFullYear(); let gMonth = today.getMonth();
+        if (navState.yearsData && navState.yearsData.length) {
+            const minYear = navState.yearsData[0].year; const maxYear = navState.yearsData[navState.yearsData.length-1].year;
+            if (gYear < minYear) gYear = minYear; if (gYear > maxYear) gYear = maxYear;
+        }
+        navState.gYear = gYear; navState.gMonth = gMonth;
+        renderCalendarForState(); updateModeButtons();
+    });
+
+    // Single calendar:update handler for location changes
+    window.addEventListener('calendar:update', function(e) {
+        if (!e.detail) return; const { lat, lon, tz, name } = e.detail;
+        if (!tz) { fetch(`/api/timezone?lat=${lat}&lon=${lon}`).then(r => r.json()).then(data => { const timezone = data.tz || 'UTC'; window.dispatchEvent(new CustomEvent('calendar:update', { detail: { lat, lon, tz: timezone, name } })); }); return; }
+        navState.lat = lat; navState.lon = lon; navState.tz = tz; if (name) navState.locationName = name;
+        navState.yearsData = [];
+        const today2 = new Date();
+        fetchMultiYearCalendar(navState.lat, navState.lon, navState.tz, 2000, 2048, function(data) {
+            navState.yearsData = data;
+            const foundIdx2 = findQuantumIndexForDate(today2, data);
+            if (foundIdx2) {
+                navState.currentYearIdx = foundIdx2.yearIdx;
+                navState.currentMonthIdx = foundIdx2.monthIdx;
+            } else {
+                navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
+            }
+            try { navState.gYear = navState.yearsData[navState.currentYearIdx].year; navState.gMonth = navState.currentMonthIdx; } catch (e) {}
+            renderCalendarForState(); if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') document.dispatchEvent(new Event('gregorian:rendered'));
+        });
+    });
+});
 
 document.addEventListener('gregorian:rendered', () => { if (window.CalendarMode.mode === 'gregorian') rebindNavForGregorian(); });
 // Also after custom renders, ensure nav works when switching

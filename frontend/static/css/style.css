@@ -352,6 +352,20 @@ body, .calendar-title, .search-bar, #suggestions {
   background: rgba(60,174,163,0.18);
 }
 
+/* Harmonize grid transition effect for Gregorian/Quantum grids.
+   The JS toggles the class "fade-in" on grid containers; ensure IDs
+   used by the Gregorian renderer also pick up the slide animation. */
+#calendar-grid-anim.fade-in,
+#calendar-grid-root.fade-in {
+  /* Use the same slideInGrid animation defined in calendar_grid.css */
+  animation: slideInGrid 0.45s cubic-bezier(.2,.8,.2,1);
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  #calendar-grid-anim.fade-in,
+  #calendar-grid-root.fade-in { animation: none !important; transform: none !important; }
+}
+
 /* On small phones, compact toggle */
 @media (max-width: 420px) {
   .calendar-mode-toggle { padding: 3px; }

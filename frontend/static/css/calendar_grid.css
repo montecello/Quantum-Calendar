@@ -113,28 +113,25 @@
 .side-panel .close-btn:hover {
     color: #20639b;
 }
-/* Fade-in animation for grid transitions */
-
+/* Grid animation and typography */
 body, .calendar-title, .search-bar, #suggestions {
-    font-family: 'Pictocrypto', sans-serif;
+        font-family: 'Pictocrypto', sans-serif;
 }
 
-/* Old: .fade-in (kept for compatibility, not used) */
-.fade-in { animation: fadeInGrid 0.5s ease-in-out; }
-@keyframes fadeInGrid {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Sliding animation for grid transitions
+     - JS currently toggles the "fade-in" class; keep that API but render a
+         subtle slide-in from the right so month/year changes feel directional.
+     - Respects prefers-reduced-motion. */
+.fade-in { animation: slideInGrid 0.45s cubic-bezier(.2,.8,.2,1); will-change: transform, opacity; }
+@keyframes slideInGrid {
+    0%   { transform: translateX(18px); opacity: 0; }
+    60%  { transform: translateX(-6px); opacity: 0.92; }
+    100% { transform: translateX(0); opacity: 1; }
 }
-
-/* New gentle grid pulse for month/year transitions */
-.grid-pulse { animation: gridPulse 0.9s ease-in-out; }
-@keyframes gridPulse {
-  0%   { opacity: 1; }
-  45%  { opacity: 0.7; }
-  100% { opacity: 1; }
-}
+/* Provide an alias for any code that used .grid-pulse */
+.grid-pulse { animation: slideInGrid 0.45s cubic-bezier(.2,.8,.2,1); }
 @media (prefers-reduced-motion: reduce) {
-  .grid-pulse { animation: none; }
+    .fade-in, .grid-pulse { animation: none !important; transform: none !important; }
 }
 
 /* Dark pink special day for the day after n=50 on the silver counter */
