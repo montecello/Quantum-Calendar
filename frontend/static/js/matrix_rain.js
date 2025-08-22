@@ -28,6 +28,14 @@
   const CN_STACK = "'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC','Source Han Sans SC','Heiti SC','SimHei','SimSun',sans-serif";
   const CHINESE_PROB = 0.10;
 
+  // Emoji/clock faces
+  const CLOCK_EMOJIS = ['🕛','🕧','🕐','🕜','🕑','🕝','🕒','🕞','🕓','🕟','🕔','🕠','🕕','🕡','🕖','🕢','🕗','🕣','🕘','🕤','🕙','🕥','🕚','🕦'];
+  const EMOJI_STACK = "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif";
+  const CLOCK_PROB = 0.10;
+  // Celestial emoji (moon phases, sun, stars)
+  const CELESTIAL_EMOJIS = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘','🌙','☀️','🌞','⭐','🌟','✨','🌠'];
+  const CELESTIAL_PROB = 0.10;
+
   const FONT_PRIMARY = 'HebrewMatrix';
   const FONT_FALLBACK = 'Pictocrypto, sans-serif';
   let currentFont = FONT_PRIMARY;
@@ -48,12 +56,12 @@
   const settings = {
   // Trails slightly longer and rain a bit slower
   // Increase trailAlpha for faster erasing to avoid colored imprints
-  trailAlpha: 0.52,
-  minSpeed: 0.03,
-  maxSpeed: 0.08,
-  replaceProb: 0.25,
+  trailAlpha: 0.99,
+  minSpeed: 0.08,
+  maxSpeed: 0.18,
+  replaceProb: 0.15,
   // Fraction of rows per column that can be occupied by drops (0..1)
-  densityFrac: 0.5
+  densityFrac: 0.99
   };
 
   // Helper to pick a character and the font family to render it with for a column
@@ -61,13 +69,17 @@
     const p = Math.random();
     if (p < AUREBESH_PROB && aurebeshAvailable) {
       return { char: AUREBESH_POOL[(Math.random() * AUREBESH_POOL.length) | 0], fontFamily: AUREBESH_FACE_NAME };
-    } else if (p < AUREBESH_PROB + JAPANESE_PROB) {
+    } else if (p < AUREBESH_PROB + CLOCK_PROB) {
+      return { char: CLOCK_EMOJIS[(Math.random() * CLOCK_EMOJIS.length) | 0], fontFamily: EMOJI_STACK };
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB) {
+      return { char: CELESTIAL_EMOJIS[(Math.random() * CELESTIAL_EMOJIS.length) | 0], fontFamily: EMOJI_STACK };
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB) {
       const pool = Math.random() < 0.5 ? HIRA : KATA;
       return { char: pool[(Math.random() * pool.length) | 0], fontFamily: JP_STACK };
-    } else if (p < AUREBESH_PROB + JAPANESE_PROB + KOREAN_PROB && p >= AUREBESH_PROB + JAPANESE_PROB) {
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB + KOREAN_PROB && p >= AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB) {
       const pool = Math.random() < 0.5 ? HANGUL_SYL : HANGUL_JAMO;
       return { char: pool[(Math.random() * pool.length) | 0], fontFamily: KO_STACK };
-    } else if (p < AUREBESH_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB && p >= AUREBESH_PROB + JAPANESE_PROB + KOREAN_PROB) {
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB && p >= AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB + KOREAN_PROB) {
       const pool = Math.random() < 0.6 ? CN_NUM : CN_OTHER;
       return { char: pool[(Math.random() * pool.length) | 0], fontFamily: CN_STACK };
     }
@@ -84,9 +96,9 @@
   }
 
   function resize() {
-    // Recompute DPR & viewport dims
-    DPR = Math.max(1, window.devicePixelRatio || 1);
-    const { w: cssW, h: cssH } = getViewportSize();
+  // Recompute DPR & viewport dims
+  DPR = Math.max(1, window.devicePixelRatio || 1);
+  const { w: cssW, h: cssH } = getViewportSize();
 
     // Size canvas backing store and CSS size
     canvas.width = Math.floor(cssW * DPR);
@@ -101,8 +113,14 @@
     width = cssW;
     height = cssH;
 
-    fontSize = Math.max(14, Math.min(28, Math.floor(width / 60)));
-    ctx.font = `${fontSize}px ${currentFont}`;
+  // remember previous sizing so we can preserve drop positions
+  const prevFontSize = fontSize;
+  const prevColPitch = colPitch;
+  const prevColCount = colCount;
+  const prevDrops = drops;
+
+  fontSize = Math.max(14, Math.min(28, Math.floor(width / 60)));
+  ctx.font = `${fontSize}px ${currentFont}`;
 
     // Determine column pitch avoiding overlap; measure JP/KO/CN widths too
     let maxW = 0;
@@ -118,39 +136,69 @@
     measureSamples(currentFont, ['מ','w','a','0']);
     measureSamples(JP_STACK, ['あ','カ','ー']);
     measureSamples(KO_STACK, ['과','한','칼','ㅂ']);
-    measureSamples(CN_STACK, ['一','中','国']);
+  measureSamples(CN_STACK, ['一','中','国']);
+  // Measure emoji width to avoid overlap when using emoji glyphs
+  measureSamples(EMOJI_STACK, ['🕛','🕐']);
 
     colPitch = Math.max(Math.ceil(maxW * 1.1), Math.ceil(fontSize * 0.7));
 
-    colCount = Math.max(1, Math.floor(width / colPitch));
+    const newColCount = Math.max(1, Math.floor(width / colPitch));
     const maxRows = Math.floor(height / fontSize) || 1;
-    // Initialize drops per column according to densityFrac (cap at at least 1 drop)
-    const maxDropsPerCol = Math.max(1, Math.floor(maxRows * Math.max(0, Math.min(1, settings.densityFrac))));
-    drops = new Array(colCount).fill(0).map(() => {
-      // vary initial count a bit for organic look
-      const count = 1 + Math.floor(Math.random() * maxDropsPerCol);
-      const arr = [];
-      const usedRows = new Set();
-      for (let j = 0; j < count; j++) {
-        // pick an initial negative position, but avoid duplicate integer rows per column
-        let attempts = 0;
-        let pos = -Math.random() * maxRows;
-        let iRow = Math.floor(pos);
-        while (usedRows.has(iRow) && attempts < 20) {
-          pos = -Math.random() * maxRows;
-          iRow = Math.floor(pos);
-          attempts++;
-        }
-        usedRows.add(iRow);
-        const picked = pickCharForColumn(0);
-        arr.push({ pos, speed: settings.minSpeed + Math.random() * (settings.maxSpeed - settings.minSpeed), intRow: iRow, char: picked.char, fontFamily: picked.fontFamily });
-      }
-      return arr;
-    });
-    hues = new Array(colCount).fill(0).map((_, i) => (i / Math.max(1, colCount)) * 360);
 
-  // Clear canvas (no persistent background) to avoid permanent imprints
-  ctx.clearRect(0,0,width,height);
+    // If we had drops before, remap them into the new column grid to preserve flow
+    if (prevDrops && prevDrops.length > 0) {
+      const newDrops = new Array(newColCount).fill(0).map(() => []);
+      for (let oldCol = 0; oldCol < prevDrops.length; oldCol++) {
+        const colArr = prevDrops[oldCol] || [];
+        for (const d of colArr) {
+          // compute old absolute x and y in CSS pixels, then map to new column and row
+          const oldX = oldCol * (prevColPitch || colPitch);
+          const absY = (d.pos || 0) * (prevFontSize || fontSize);
+          const newCol = Math.min(newColCount - 1, Math.max(0, Math.floor(oldX / colPitch)));
+          const newPos = absY / fontSize;
+          // update drop pos to maintain visual continuity
+          d.pos = newPos;
+          d.intRow = Math.floor(d.pos);
+          newDrops[newCol].push(d);
+        }
+      }
+      // Ensure every column has at least one drop to keep rain coverage
+      for (let c = 0; c < newDrops.length; c++) {
+        if (!newDrops[c] || newDrops[c].length === 0) {
+          const maxRowsLocal = Math.floor(height / fontSize) || 1;
+          const picked = pickCharForColumn(c);
+          newDrops[c] = [{ pos: -Math.random() * maxRowsLocal, speed: settings.minSpeed + Math.random() * (settings.maxSpeed - settings.minSpeed), intRow: -1, char: picked.char, fontFamily: picked.fontFamily }];
+        }
+      }
+      drops = newDrops;
+      colCount = newColCount;
+    } else {
+      // First-time initialization
+      colCount = newColCount;
+      const maxDropsPerCol = Math.max(1, Math.floor(maxRows * Math.max(0, Math.min(1, settings.densityFrac))));
+      drops = new Array(colCount).fill(0).map(() => {
+        const count = 1 + Math.floor(Math.random() * maxDropsPerCol);
+        const arr = [];
+        const usedRows = new Set();
+        for (let j = 0; j < count; j++) {
+          let attempts = 0;
+          let pos = -Math.random() * maxRows;
+          let iRow = Math.floor(pos);
+          while (usedRows.has(iRow) && attempts < 20) {
+            pos = -Math.random() * maxRows;
+            iRow = Math.floor(pos);
+            attempts++;
+          }
+          usedRows.add(iRow);
+          const picked = pickCharForColumn(0);
+          arr.push({ pos, speed: settings.minSpeed + Math.random() * (settings.maxSpeed - settings.minSpeed), intRow: iRow, char: picked.char, fontFamily: picked.fontFamily });
+        }
+        return arr;
+      });
+    }
+
+    // Recompute hues to match the new column count (preserve order)
+    hues = new Array(colCount).fill(0).map((_, i) => (i / Math.max(1, colCount)) * 360);
   }
 
   function drawFrameLoop() {
