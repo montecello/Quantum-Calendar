@@ -13,6 +13,10 @@
   const KATA = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンーヴ'.split('');
   const JP_STACK = "'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic','Meiryo','Noto Sans JP','MS PGothic',sans-serif";
   const JAPANESE_PROB = 0.10;
+  // Aurebesh (uppercase Latin rendered with Aurebesh.otf in fonts folder)
+  const AUREBESH_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const AUREBESH_PROB = 0.10;
+  const AUREBESH_FACE_NAME = 'Aurebesh';
   // Korean sets (subset): syllables and jamo
   const HANGUL_SYL = ['과','서','북','남','칼','문','한','길','별','산','물','불','사','랑','힘','빛','꿈'];
   const HANGUL_JAMO = ['ㅂ','ㅈ','ㄷ','ㄱ','ㅅ','ㅛ','ㅕ','ㅑ','ㅐ','ㅔ','ㅁ','ㄴ','ㅇ','ㄹ','ㅎ','ㅋ','ㅌ','ㅊ','ㅍ','ㅠ','ㅜ','ㅡ','ㅣ','ㅗ','ㅓ','ㅏ'];
@@ -27,6 +31,7 @@
   const FONT_PRIMARY = 'HebrewMatrix';
   const FONT_FALLBACK = 'Pictocrypto, sans-serif';
   let currentFont = FONT_PRIMARY;
+  let aurebeshAvailable = false;
 
   // DPR can change on orientation; recompute on resize
   let DPR = Math.max(1, window.devicePixelRatio || 1);
@@ -34,18 +39,40 @@
   let fontSize = 18;
   let colCount = 0;
   let colPitch = 0;
-  let rowPos = [];
-  let lastDrawnRow = [];
-  let speeds = [];
+  // Each column now holds multiple drops: [{ pos, speed }]
+  let drops = [];
   let hues = [];
   let running = false;
+  let rafId = null;
 
   const settings = {
-    trailAlpha: 0.08,
-    minSpeed: 0.121875, // slowed by 50%
-    maxSpeed: 0.365625, // slowed by 50%
-    replaceProb: 0.06
+  // Trails slightly longer and rain a bit slower
+  // Increase trailAlpha for faster erasing to avoid colored imprints
+  trailAlpha: 0.52,
+  minSpeed: 0.03,
+  maxSpeed: 0.08,
+  replaceProb: 0.25,
+  // Fraction of rows per column that can be occupied by drops (0..1)
+  densityFrac: 0.5
   };
+
+  // Helper to pick a character and the font family to render it with for a column
+  function pickCharForColumn(colIndex) {
+    const p = Math.random();
+    if (p < AUREBESH_PROB && aurebeshAvailable) {
+      return { char: AUREBESH_POOL[(Math.random() * AUREBESH_POOL.length) | 0], fontFamily: AUREBESH_FACE_NAME };
+    } else if (p < AUREBESH_PROB + JAPANESE_PROB) {
+      const pool = Math.random() < 0.5 ? HIRA : KATA;
+      return { char: pool[(Math.random() * pool.length) | 0], fontFamily: JP_STACK };
+    } else if (p < AUREBESH_PROB + JAPANESE_PROB + KOREAN_PROB && p >= AUREBESH_PROB + JAPANESE_PROB) {
+      const pool = Math.random() < 0.5 ? HANGUL_SYL : HANGUL_JAMO;
+      return { char: pool[(Math.random() * pool.length) | 0], fontFamily: KO_STACK };
+    } else if (p < AUREBESH_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB && p >= AUREBESH_PROB + JAPANESE_PROB + KOREAN_PROB) {
+      const pool = Math.random() < 0.6 ? CN_NUM : CN_OTHER;
+      return { char: pool[(Math.random() * pool.length) | 0], fontFamily: CN_STACK };
+    }
+    return { char: CHARSET[(Math.random() * CHARSET.length) | 0], fontFamily: currentFont };
+  }
 
   function getViewportSize() {
     const vv = window.visualViewport;
@@ -96,90 +123,122 @@
     colPitch = Math.max(Math.ceil(maxW * 1.1), Math.ceil(fontSize * 0.7));
 
     colCount = Math.max(1, Math.floor(width / colPitch));
-    const maxRows = height / fontSize;
-    rowPos = new Array(colCount).fill(0).map(() => Math.random() * -maxRows);
-    lastDrawnRow = new Array(colCount).fill(-9999);
-    speeds = new Array(colCount).fill(0).map(() =>
-      settings.minSpeed + Math.random() * (settings.maxSpeed - settings.minSpeed)
-    );
+    const maxRows = Math.floor(height / fontSize) || 1;
+    // Initialize drops per column according to densityFrac (cap at at least 1 drop)
+    const maxDropsPerCol = Math.max(1, Math.floor(maxRows * Math.max(0, Math.min(1, settings.densityFrac))));
+    drops = new Array(colCount).fill(0).map(() => {
+      // vary initial count a bit for organic look
+      const count = 1 + Math.floor(Math.random() * maxDropsPerCol);
+      const arr = [];
+      const usedRows = new Set();
+      for (let j = 0; j < count; j++) {
+        // pick an initial negative position, but avoid duplicate integer rows per column
+        let attempts = 0;
+        let pos = -Math.random() * maxRows;
+        let iRow = Math.floor(pos);
+        while (usedRows.has(iRow) && attempts < 20) {
+          pos = -Math.random() * maxRows;
+          iRow = Math.floor(pos);
+          attempts++;
+        }
+        usedRows.add(iRow);
+        const picked = pickCharForColumn(0);
+        arr.push({ pos, speed: settings.minSpeed + Math.random() * (settings.maxSpeed - settings.minSpeed), intRow: iRow, char: picked.char, fontFamily: picked.fontFamily });
+      }
+      return arr;
+    });
     hues = new Array(colCount).fill(0).map((_, i) => (i / Math.max(1, colCount)) * 360);
 
-    // White background clear
-    ctx.fillStyle = 'rgba(255,255,255,1)';
-    ctx.fillRect(0,0,width,height);
+  // Clear canvas (no persistent background) to avoid permanent imprints
+  ctx.clearRect(0,0,width,height);
   }
 
-  function drawFrame() {
-    if (!running) return;
+  function drawFrameLoop() {
+    if (!running) { rafId = null; return; }
 
-    ctx.fillStyle = `rgba(255,255,255,${settings.trailAlpha})`;
-    ctx.fillRect(0, 0, width, height);
+  // Fade existing pixels toward transparency to avoid permanent imprints
+  // Use destination-out so we erase a fraction of existing pixels each frame.
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillStyle = `rgba(0,0,0,${settings.trailAlpha})`;
+  ctx.fillRect(0, 0, width, height);
+  // Switch back to normal drawing for the characters
+  ctx.globalCompositeOperation = 'source-over';
 
     for (let i = 0; i < colCount; i++) {
       const x = i * colPitch;
-      const r = rowPos[i];
-      const intRow = Math.floor(r);
-      const y = intRow * fontSize;
+        const occupied = new Set();
+        const colDrops = drops[i];
+        for (let dIdx = 0; dIdx < colDrops.length; dIdx++) {
+          const d = colDrops[dIdx];
+          const intRow = Math.floor(d.pos);
+          const y = intRow * fontSize;
 
-      if (intRow > lastDrawnRow[i]) {
-        hues[i] = (hues[i] + 0.3) % 360;
-        const sat = 80;
-        const light = 40;
-        ctx.fillStyle = `hsl(${hues[i]}, ${sat}%, ${light}%)`;
-        if (Math.random() < settings.replaceProb) {
-          ctx.fillStyle = `hsl(${(hues[i] + 30) % 360}, ${sat}%, ${light}%)`;
+          // If we've moved to a new integer row, pick a new char/font and update intRow
+          if (d.intRow !== intRow) {
+            const picked = pickCharForColumn(i);
+            d.char = picked.char;
+            d.fontFamily = picked.fontFamily;
+            d.intRow = intRow;
+          }
+
+          // Draw only if within visible rows and the integer row isn't taken
+          if (intRow >= -1 && y <= height + fontSize * 2 && !occupied.has(intRow)) {
+            occupied.add(intRow);
+            hues[i] = (hues[i] + 0.15) % 360;
+            const sat = 80;
+            const light = 40;
+            ctx.fillStyle = `hsl(${hues[i]}, ${sat}%, ${light}%)`;
+            if (Math.random() < settings.replaceProb) {
+              ctx.fillStyle = `hsl(${(hues[i] + 30) % 360}, ${sat}%, ${light}%)`;
+            }
+
+            const prevFont = ctx.font;
+            ctx.font = `${fontSize}px ${d.fontFamily}`;
+            ctx.shadowColor = 'rgba(0,0,0,0.12)';
+            ctx.shadowBlur = 2;
+            ctx.fillText(d.char, x, y);
+            ctx.font = prevFont;
+          }
+
+          // Advance drop
+          d.pos += d.speed * 0.9;
+
+          // Reset if past bottom: choose a start row that doesn't conflict with other drops
+          if (d.pos * fontSize > height + fontSize * 2) {
+            const maxRow = Math.floor(height / fontSize) || 1;
+            let attempts = 0;
+            let startRow = -Math.floor(Math.random() * maxRow);
+            while (occupied.has(startRow) && attempts < 30) {
+              startRow = -Math.floor(Math.random() * maxRow);
+              attempts++;
+            }
+            d.pos = startRow;
+            d.speed = settings.minSpeed + Math.random() * (settings.maxSpeed - settings.minSpeed);
+            const picked = pickCharForColumn(i);
+            d.char = picked.char;
+            d.fontFamily = picked.fontFamily;
+            d.intRow = Math.floor(d.pos);
+          }
         }
-
-        // Choose script: ~10% JP, next ~10% KO, next ~10% CN, else primary set
-        const p = Math.random();
-        const prevFont = ctx.font;
-        let char;
-        if (p < JAPANESE_PROB) {
-          ctx.font = `${fontSize}px ${JP_STACK}`;
-          const pool = Math.random() < 0.5 ? HIRA : KATA;
-          char = pool[(Math.random() * pool.length) | 0];
-        } else if (p < JAPANESE_PROB + KOREAN_PROB) {
-          ctx.font = `${fontSize}px ${KO_STACK}`;
-          const pool = Math.random() < 0.5 ? HANGUL_SYL : HANGUL_JAMO;
-          char = pool[(Math.random() * pool.length) | 0];
-        } else if (p < JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB) {
-          ctx.font = `${fontSize}px ${CN_STACK}`;
-          const pool = Math.random() < 0.6 ? CN_NUM : CN_OTHER; // bias toward numerals
-          char = pool[(Math.random() * pool.length) | 0];
-        } else {
-          ctx.font = `${fontSize}px ${currentFont}`;
-          char = CHARSET[(Math.random() * CHARSET.length) | 0];
-        }
-
-        ctx.shadowColor = 'rgba(0,0,0,0.15)';
-        ctx.shadowBlur = 4;
-        ctx.fillText(char, x, y);
-        ctx.font = prevFont;
-
-        lastDrawnRow[i] = intRow;
-      }
-
-      rowPos[i] += speeds[i] * 0.9;
-
-      if (y > height + fontSize * 2) {
-        const maxRows = height / fontSize;
-        rowPos[i] = -Math.random() * maxRows;
-        speeds[i] = settings.minSpeed + Math.random() * (settings.maxSpeed - settings.minSpeed);
-        lastDrawnRow[i] = -9999;
-      }
     }
 
-    requestAnimationFrame(drawFrame);
+    rafId = requestAnimationFrame(drawFrameLoop);
+  }
+
+  function stop() {
+    running = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   }
 
   function start() {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      running = false;
+      stop();
       ctx.clearRect(0, 0, width, height);
       return;
     }
+    if (running) return; // already running
     running = true;
-    requestAnimationFrame(drawFrame);
+    if (!rafId) rafId = requestAnimationFrame(drawFrameLoop);
   }
 
   async function ensurePrimaryFont() {
@@ -187,6 +246,17 @@
       if (document.fonts && document.fonts.load) {
         await document.fonts.ready;
         await document.fonts.load(`normal 20px ${FONT_PRIMARY}`, 'אבגדabc012');
+        // Try to load Aurebesh font from the static fonts folder
+        try {
+          if (window.FontFace) {
+            const af = new FontFace(AUREBESH_FACE_NAME, "url('/static/fonts/Aurebesh.otf') format('opentype')", { style: 'normal', weight: '400' });
+            await af.load();
+            document.fonts.add(af);
+            aurebeshAvailable = document.fonts.check(`normal 20px ${AUREBESH_FACE_NAME}`, 'ABC');
+          }
+        } catch (e) {
+          // ignore font load failures; aurebeshAvailable remains false
+        }
         return document.fonts.check(`normal 20px ${FONT_PRIMARY}`, 'אבגדabc012');
       }
     } catch { /* ignore */ }
@@ -199,12 +269,11 @@
     if (resizeTimer) clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       resizeTimer = null;
-      const wasRunning = running;
-      // Temporarily pause trails to avoid smear during resize
-      running = false;
-      resize();
-      running = wasRunning;
-      if (running) requestAnimationFrame(drawFrame);
+  const wasRunning = running;
+  // Temporarily stop RAF to avoid buildup during rapid resizes
+  stop();
+  resize();
+  if (wasRunning) start();
     }, 120);
   }
 
