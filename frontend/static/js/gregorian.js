@@ -51,6 +51,96 @@
     }
   }
 
+  function addCustomCalendarInfo(td, dateStr, year, month, dayNum, monthsInYear) {
+    try {
+      // Map Gregorian date to custom calendar
+      if (typeof window.isoToCustomMonthDay === 'function') {
+        const customMapping = window.isoToCustomMonthDay(dateStr);
+        if (customMapping && customMapping.monthNum && customMapping.dayNum) {
+          // Create container for dual date display
+          const container = document.createElement('div');
+          container.className = 'dual-date-container';
+
+          // Add custom calendar info
+          const customInfo = document.createElement('div');
+          customInfo.className = 'custom-calendar-info';
+          customInfo.textContent = `${customMapping.monthNum}/${customMapping.dayNum}`;
+
+          // Add existing day number span
+          const daySpan = td.querySelector('.holiday-daynum');
+          if (daySpan) {
+            container.appendChild(daySpan);
+            container.appendChild(customInfo);
+            td.appendChild(container);
+          }
+
+          // Add custom calendar counters if available
+          if (customMapping.monthsInYear && typeof window.getSilverCounter === 'function') {
+            const silverCounter = window.getSilverCounter(customMapping.monthNum, customMapping.dayNum, customMapping.monthsInYear);
+            if (silverCounter !== null) {
+              const silverSpan = document.createElement('span');
+              silverSpan.className = 'silver-counter';
+              silverSpan.textContent = `${silverCounter}`;
+              td.appendChild(silverSpan);
+            }
+          }
+
+          // Add bronze counter for custom calendar
+          if (customMapping.monthsInYear && typeof window.GregorianCalendar !== 'undefined' && typeof window.GregorianCalendar.getBronzeCounter === 'function') {
+            const bronzeCounter = window.GregorianCalendar.getBronzeCounter(customMapping.monthNum, customMapping.dayNum);
+            if (bronzeCounter !== null) {
+              const bronzeSpan = document.createElement('span');
+              bronzeSpan.className = 'bronze-counter';
+              bronzeSpan.textContent = `${bronzeCounter}`;
+              td.appendChild(bronzeSpan);
+            }
+          }
+
+          // Add moon phase emoji for custom calendar
+          const emoji = getMoonPhaseEmoji(customMapping.dayNum);
+          if (emoji) {
+            const emojiSpan = document.createElement('span');
+            emojiSpan.className = 'calendar-emoji-bg';
+            emojiSpan.textContent = emoji;
+            // Insert emoji as background behind the day number
+            td.insertBefore(emojiSpan, td.firstChild);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error adding custom calendar info for', dateStr, e);
+    }
+  }
+
+  function getMoonPhaseEmoji(dayNum) {
+    if (dayNum === 1 || dayNum === 29 || dayNum === 30) return '🌕';
+    if (dayNum === 8) return '🌗';
+    if (dayNum === 15) return '🌑';
+    if (dayNum === 22) return '🌓';
+    return null;
+  }
+
+  function getBronzeCounter(monthNum, dayNum) {
+    // Bronze counter logic matching custom calendar
+    const showCounter = true; // Match custom calendar behavior
+    if (!showCounter) return null;
+
+    if (monthNum === 1) {
+      if (dayNum < 22) return null;
+      if (![22,29].includes(dayNum)) return null;
+      return dayNum === 22 ? 1 : (dayNum === 29 ? 2 : null);
+    } else {
+      let nStart = 3 + (monthNum-2)*4;
+      if ([8,15,22,29].includes(dayNum)) {
+        let idx = [8,15,22,29].indexOf(dayNum);
+        let n = nStart + idx;
+        if (n > 7) return null;
+        return n;
+      }
+      return null;
+    }
+  }
+
   function markCurrentDay(td, y, m, d) {
     const today = new Date();
     if (y === today.getFullYear() && m === today.getMonth() && d === today.getDate()) {
@@ -58,8 +148,17 @@
     }
   }
 
-  function render(rootEl, year, month) {
+  function render(rootEl, year, month, monthsInYear) {
     if (!rootEl) return;
+
+    // Check if data is currently loading
+    const loadingState = window.dataLoadingState;
+    if (loadingState && loadingState.isLoading) {
+      // Don't render while data is loading to prevent race conditions
+      console.log('Skipping Gregorian render - data loading in progress');
+      return;
+    }
+
     rootEl.innerHTML = '';
 
     // Build table matching existing CSS expectations
@@ -108,6 +207,7 @@
 
           applySpecialDayClasses(td, dateStr);
           markCurrentDay(td, year, month, dayNum);
+          addCustomCalendarInfo(td, dateStr, year, month, dayNum, monthsInYear);
         } else {
           td.classList.add('empty-cell');
         }
@@ -123,5 +223,5 @@
     document.dispatchEvent(new CustomEvent('gregorian:rendered', { detail: { year, month } }));
   }
 
-  window.GregorianCalendar = { render, isoDate, weekStart: WEEK_START };
+  window.GregorianCalendar = { render, isoDate, weekStart: WEEK_START, getBronzeCounter };
 })();

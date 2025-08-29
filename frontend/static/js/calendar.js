@@ -1,83 +1,196 @@
 // Map Gregorian ISO date to Quantum month/day/year
 function isoToCustomMonthDay(iso) {
     try {
+        // Validate input
+        if (!iso || typeof iso !== 'string') {
+            console.warn('isoToCustomMonthDay: invalid ISO date input');
+            return null;
+        }
+
+        // Check if astronomical data is available
+        if (!navState || !navState.yearsData || !navState.yearsData.length) {
+            console.warn('isoToCustomMonthDay: astronomical data not loaded');
+            return null;
+        }
+
         const d = new Date(iso + 'T00:00:00');
+
+        // Validate the date object
+        if (isNaN(d.getTime())) {
+            console.warn('isoToCustomMonthDay: invalid date created from ISO string');
+            return null;
+        }
+
+        // Note: The +1 adjustment accounts for the fact that custom calendar days
+        // may start at dawn while Gregorian days start at midnight
+        // This ensures proper alignment between calendar systems
         d.setDate(d.getDate() + 1);
+
         const ns = window.navState;
-    // (verbose debug removed)
-        if (!ns || !ns.yearsData || !ns.yearsData.length) return null;
+        if (!ns || !ns.yearsData || !ns.yearsData.length) {
+            console.warn('isoToCustomMonthDay: navState not properly initialized');
+            return null;
+        }
+
         for (let y = 0; y < ns.yearsData.length; y++) {
             const months = ns.yearsData[y].months || [];
             for (let m = 0; m < months.length; m++) {
                 const start = months[m].start ? new Date(months[m].start) : null;
-                if (!start) continue;
+                if (!start || isNaN(start.getTime())) continue;
+
                 const nextStart = (m + 1 < months.length)
                     ? (months[m+1].start ? new Date(months[m+1].start) : null)
-                    : (ns.yearsData[y+1] && ns.yearsData[y+1].months[0].start ? new Date(ns.yearsData[y+1].months[0].start) : null);
+                    : (ns.yearsData[y+1] && ns.yearsData[y+1].months && ns.yearsData[y+1].months[0] && ns.yearsData[y+1].months[0].start ? new Date(ns.yearsData[y+1].months[0].start) : null);
+
                 if (start <= d && (!nextStart || d < nextStart)) {
                     const dayNum = Math.floor((d - start) / (1000*60*60*24)) + 1;
-                    const monthsInYear = months.map(mm => ({ days: mm.days }));
-                    // (mapping debug removed)
-                    return { yearIdx: y, monthNum: m + 1, dayNum, monthsInYear };
+
+                    // Validate day number is reasonable
+                    if (dayNum < 1 || dayNum > 31) {
+                        console.warn('isoToCustomMonthDay: calculated day number out of range:', dayNum);
+                        continue;
+                    }
+
+                    const monthsInYear = months.map(mo => ({
+                        days: mo.days && (mo.days === 29 || mo.days === 30) ? mo.days : 29 // Fallback to 29 if invalid
+                    }));
+
+                    return {
+                        yearIdx: y,
+                        monthNum: m + 1,
+                        dayNum,
+                        monthsInYear
+                    };
                 }
             }
         }
-        console.warn('No quantum mapping found for Gregorian date:', iso);
+
+        console.warn('isoToCustomMonthDay: no quantum mapping found for Gregorian date:', iso);
+        return null;
     } catch (e) {
         console.error('isoToCustomMonthDay error:', e);
+        return null;
     }
-    return null;
 }
 
 // Hook for Gregorian grid: get special day classes for a Gregorian ISO date
 window.getSpecialDayClassesForISO = function(iso) {
-    const mapped = isoToCustomMonthDay(iso);
-    if (!mapped) return [];
-    let classes;
-    if ('monthNum' in mapped && 'dayNum' in mapped && 'monthsInYear' in mapped) {
-        classes = computeCustomSpecialClasses(mapped.monthNum, mapped.dayNum, mapped.monthsInYear);
-    } else {
-        classes = computeCustomSpecialClasses(mapped.month, mapped.day, mapped.year);
+    try {
+        // Check if data is loaded
+        if (!navState || !navState.yearsData || !navState.yearsData.length) {
+            console.warn('Special day mapping: astronomical data not loaded yet');
+            return []; // Return empty array instead of failing silently
+        }
+
+        const mapped = isoToCustomMonthDay(iso);
+        if (!mapped || !mapped.monthNum || !mapped.dayNum) {
+            console.warn('Special day mapping: failed to map Gregorian date', iso);
+            return []; // Return empty array for unmappable dates
+        }
+
+        let classes;
+        if ('monthNum' in mapped && 'dayNum' in mapped && 'monthsInYear' in mapped) {
+            classes = computeCustomSpecialClasses(mapped.monthNum, mapped.dayNum, mapped.monthsInYear);
+        } else {
+            classes = computeCustomSpecialClasses(mapped.month, mapped.day, mapped.year);
+        }
+
+        return classes || [];
+    } catch (e) {
+        console.error('getSpecialDayClassesForISO error:', e);
+        return []; // Always return empty array on error
     }
-    return classes;
 };
 // --- Silver Counter (Independent) ---
     // Always starts at 3rd month, 9th day (n=1) each year, increments for 50 days
     function getSilverCounter(mNum, dayNum, monthsInYear) {
         // Only months 3 and after can have the counter
         if (mNum < 3) return null;
-        // Calculate absolute day in year using monthsInYear array if available (0-based)
-        let absDay = 0;
-        if (Array.isArray(monthsInYear)) {
-            for (let i = 0; i < mNum - 1; i++) {
-                absDay += monthsInYear[i].days || 30;
-            }
-        } else {
-            absDay = (mNum - 1) * 30;
-        }
-        absDay += (dayNum - 1); // 0-based
-        // 3rd month, 9th day (0-based)
-        let silverStartAbsDay = 0;
-        if (Array.isArray(monthsInYear)) {
-            for (let i = 0; i < 2; i++) {
-                silverStartAbsDay += monthsInYear[i].days || 30;
-            }
-        } else {
-            silverStartAbsDay = 2 * 30;
-        }
-        silverStartAbsDay += (9 - 1); // 0-based
 
-    // (debugging removed)
+        try {
+            // Calculate absolute day in year using monthsInYear array if available (0-based)
+            let absDay = 0;
+            if (Array.isArray(monthsInYear) && monthsInYear.length > 0) {
+                for (let i = 0; i < mNum - 1; i++) {
+                    const monthDays = monthsInYear[i] && monthsInYear[i].days;
+                    // Validate month days - must be whole number 29 or 30
+                    if (monthDays && (monthDays === 29 || monthDays === 30)) {
+                        absDay += monthDays;
+                    } else {
+                        console.warn(`getSilverCounter: Invalid month ${i+1} days: ${monthDays}, skipping calculation`);
+                        return null; // Don't proceed with invalid data
+                    }
+                }
+            } else {
+                console.warn('getSilverCounter: monthsInYear not available');
+                return null;
+            }
+            absDay += (dayNum - 1); // 0-based
 
-        let n = absDay - silverStartAbsDay + 1;
-        if (n >= 1 && n <= 50) {
-            return n;
+            // 3rd month, 9th day (0-based)
+            let silverStartAbsDay = 0;
+            if (Array.isArray(monthsInYear) && monthsInYear.length >= 2) {
+                for (let i = 0; i < 2; i++) {
+                    const monthDays = monthsInYear[i] && monthsInYear[i].days;
+                    if (monthDays && (monthDays === 29 || monthDays === 30)) {
+                        silverStartAbsDay += monthDays;
+                    } else {
+                        console.warn(`getSilverCounter: Invalid month ${i+1} days for silver start: ${monthDays}`);
+                        return null;
+                    }
+                }
+            } else {
+                console.warn('getSilverCounter: Cannot calculate silver start day');
+                return null;
+            }
+            silverStartAbsDay += (9 - 1); // 0-based
+
+            let n = absDay - silverStartAbsDay + 1;
+            if (n >= 1 && n <= 50) {
+                return n;
+            }
+            return null;
+        } catch (e) {
+            console.error('getSilverCounter error:', e);
+            return null;
         }
-        return null;
     }
 // Precompute holiday map for months 1-13 of a year
 // Calendar JS logic
 // State for expanded view
+
+// Helper function to get Gregorian date for a custom calendar day
+function getGregorianDateForCustomDay(monthNum, dayNum, yearLabel) {
+    try {
+        if (!navState || !navState.yearsData || !navState.yearsData.length) {
+            return '';
+        }
+
+        // Find the current year object
+        const currentYear = navState.yearsData[navState.currentYearIdx];
+        if (!currentYear || !currentYear.months || !currentYear.months[monthNum - 1]) {
+            return '';
+        }
+
+        const monthObj = currentYear.months[monthNum - 1];
+        if (!monthObj.start) {
+            return '';
+        }
+
+        // Calculate Gregorian date by adding days to the month start
+        const startDate = new Date(monthObj.start);
+        const gregorianDate = new Date(startDate);
+        gregorianDate.setDate(gregorianDate.getDate() + (dayNum - 1));
+
+        const mm = String(gregorianDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(gregorianDate.getDate()).padStart(2, '0');
+
+        return `${mm}/${dd}`;
+    } catch (e) {
+        console.error('Error calculating Gregorian date for custom day:', e);
+        return '';
+    }
+}
 
 // Utility to create the calendar grid HTML
 function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highlight, monthsInYear) {
@@ -88,22 +201,37 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
         let isDarkPink = false;
         // Find the absolute day for this cell
         let absDay = 0;
-        if (Array.isArray(monthsInYear)) {
+        if (Array.isArray(monthsInYear) && monthsInYear.length > 0) {
             for (let i = 0; i < monthNum - 1; i++) {
-                absDay += monthsInYear[i].days || 30;
+                const monthDays = monthsInYear[i] && monthsInYear[i].days;
+                // Validate month days - must be whole number 29 or 30
+                if (monthDays && (monthDays === 29 || monthDays === 30)) {
+                    absDay += monthDays;
+                } else {
+                    console.warn(`renderCalendarGrid: Invalid month ${i+1} days: ${monthDays}, using fallback`);
+                    // For display purposes, use 29 as safe fallback but log the issue
+                    absDay += 29;
+                }
             }
         } else {
-            absDay = (monthNum - 1) * 30;
+            // Fallback calculation - use 29 as safe default for display
+            absDay = (monthNum - 1) * 29;
         }
         absDay += dayNum;
         // Find the absolute day for the special pink day (day after n=50)
         let pinkStartAbsDay = 0;
-        if (Array.isArray(monthsInYear)) {
+        if (Array.isArray(monthsInYear) && monthsInYear.length >= 2) {
             for (let i = 0; i < 2; i++) {
-                pinkStartAbsDay += monthsInYear[i].days || 30;
+                const monthDays = monthsInYear[i] && monthsInYear[i].days;
+                if (monthDays && (monthDays === 29 || monthDays === 30)) {
+                    pinkStartAbsDay += monthDays;
+                } else {
+                    console.warn(`renderCalendarGrid: Invalid month ${i+1} days for pink day: ${monthDays}`);
+                    pinkStartAbsDay += 29; // Safe fallback for display
+                }
             }
         } else {
-            pinkStartAbsDay = 2 * 30;
+            pinkStartAbsDay = 2 * 29; // Safe fallback
         }
         pinkStartAbsDay += 9 + 50; // day after n=50
         if (absDay === pinkStartAbsDay) {
@@ -195,12 +323,12 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
             let counter = getCounter(day);
             let counterHtml = '';
             if (counter !== null) {
-                counterHtml = ` <span class=\"bronze-counter\" style=\"color:#cd7f32;font-size:0.9em;\">(${counter})</span>`;
+                counterHtml = ` <span class=\"bronze-counter\"> ${counter}</span>`;
             }
             let silverCounter = getSilverCounter(monthNum, day, monthsInYear);
             let silverHtml = '';
                 if (silverCounter !== null) {
-                    silverHtml = ` <span class="silver-counter">(${silverCounter})</span>`;
+                    silverHtml = ` <span class="silver-counter">${silverCounter}</span>`;
                 }
             // Moon phase emoji logic
             let emoji = '';
@@ -217,7 +345,7 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
             if (emoji) {
                 emojiHtml = `<span class="calendar-emoji-bg">${emoji}</span>`;
             }
-            html += `<td class="${getDayClass(isCurrent, day)}" data-day="${day}">${emojiHtml}<span class="holiday-daynum">${day}${counterHtml}${silverHtml}</span></td>`;
+            html += `<td class="${getDayClass(isCurrent, day)}" data-day="${day}">${emojiHtml}<div class="dual-date-container"><span class="holiday-daynum">${day}</span><div class="gregorian-info">${getGregorianDateForCustomDay(monthNum, day, yearLabel)}</div></div>${counterHtml}${silverHtml}</td>`;
             day++;
         }
 
@@ -257,23 +385,78 @@ function renderYearMonths(months, activeMonth, currentMonth, onMonthClick, yearR
     return html;
 }
 
-let realCurrentMonth = null;
-let realCurrentDay = null;
+// Dynamic current day calculation that accounts for calendar mode and boundaries
+function getCurrentDayHighlight() {
+    const now = new Date();
+
+    if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+        // Gregorian mode: use Gregorian date
+        return {
+            month: now.getMonth() + 1, // 1-based
+            day: now.getDate(),
+            year: now.getFullYear(),
+            isCurrent: true
+        };
+    } else {
+        // Custom mode: use quantum calendar date (accounting for dawn boundary)
+        if (navState.yearsData && navState.yearsData.length) {
+            const found = findQuantumIndexForDate(now, navState.yearsData);
+            if (found) {
+                return {
+                    month: found.monthIdx + 1, // 1-based
+                    day: found.dayNum,
+                    yearIdx: found.yearIdx,
+                    isCurrent: true
+                };
+            }
+        }
+    }
+    return null;
+}
 
 function updateCalendar(monthNum, currentDay, daysInMonth, monthsInYear, currentMonth, yearRange) {
-    // Track the real current month and day
-    if (realCurrentMonth === null || realCurrentDay === null) {
-        realCurrentMonth = currentMonth;
-        realCurrentDay = currentDay;
+    // Get dynamic current day highlight based on actual current date and calendar mode
+    const currentHighlight = getCurrentDayHighlight();
+
+    // Determine if this month should highlight the current day
+    let dayToHighlight = null;
+    let shouldHighlight = false;
+
+    if (currentHighlight) {
+        if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+            // Gregorian mode: highlight if this is the current Gregorian month
+            shouldHighlight = (monthNum === currentHighlight.month && yearRange.includes(currentHighlight.year.toString()));
+        } else {
+            // Custom mode: highlight if this is the current custom month
+            shouldHighlight = (monthNum === currentHighlight.month);
+        }
+        if (shouldHighlight) {
+            dayToHighlight = currentHighlight.day;
+        }
     }
+
     const root = document.getElementById('calendar-grid-root');
-    let gridHtml = renderCalendarGrid(monthNum, currentDay, daysInMonth, yearRange, false, monthsInYear);
+    let gridHtml = renderCalendarGrid(monthNum, dayToHighlight, daysInMonth, yearRange, shouldHighlight, monthsInYear);
     let monthsHtml = monthsInYear ? renderYearMonths(monthsInYear, monthNum, currentMonth || monthNum, function(selectedMonth) {
         // When a month is clicked, update grid for that month
         const m = monthsInYear[selectedMonth-1];
-        // Only highlight the real current day for the real current month, otherwise no highlight
-        let dayToHighlight = (selectedMonth === realCurrentMonth) ? realCurrentDay : null;
-        updateCalendar(selectedMonth, dayToHighlight, m.days, monthsInYear, realCurrentMonth, yearRange);
+        // Recalculate highlight for the selected month
+        const newHighlight = getCurrentDayHighlight();
+        let newDayToHighlight = null;
+        let newShouldHighlight = false;
+
+        if (newHighlight) {
+            if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+                newShouldHighlight = (selectedMonth === newHighlight.month);
+            } else {
+                newShouldHighlight = (selectedMonth === newHighlight.month);
+            }
+            if (newShouldHighlight) {
+                newDayToHighlight = newHighlight.day;
+            }
+        }
+
+        updateCalendar(selectedMonth, newDayToHighlight, m.days, monthsInYear, currentMonth, yearRange);
     }, yearRange) : '';
     root.innerHTML = gridHtml + monthsHtml;
     // Re-trigger pulse animation for current-day
@@ -302,15 +485,395 @@ window.navState = window.navState || {
 };
 let navState = window.navState;
 
+// --- Data Loading Race Condition Prevention ---
+// Global state for managing concurrent data loading
+window.dataLoadingState = window.dataLoadingState || {
+    isLoading: false,
+    currentRequest: null,
+    abortController: null,
+    lastRequestParams: null,
+    loadingCallbacks: new Set()
+};
+
+function showLoadingIndicator() {
+    const gridRoot = document.getElementById('calendar-grid-root');
+    if (gridRoot && !gridRoot.querySelector('.loading-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'loading-overlay';
+        overlay.innerHTML = `
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Loading astronomical data... 0%</div>
+            </div>
+        `;
+        gridRoot.style.position = 'relative';
+        gridRoot.appendChild(overlay);
+
+        // Start progress simulation
+        startProgressSimulation();
+    }
+}
+
+function hideLoadingIndicator() {
+    const gridRoot = document.getElementById('calendar-grid-root');
+    if (gridRoot) {
+        const overlay = gridRoot.querySelector('.loading-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+    // Clear any running progress interval
+    if (window.progressInterval) {
+        clearInterval(window.progressInterval);
+        window.progressInterval = null;
+    }
+}
+
+function startProgressSimulation() {
+    let progress = 0;
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+
+    if (!progressFill || !progressText) return;
+
+    // Clear any existing interval
+    if (window.progressInterval) {
+        clearInterval(window.progressInterval);
+    }
+
+    window.progressInterval = setInterval(() => {
+        // Simulate realistic loading progress
+        if (progress < 30) {
+            progress += Math.random() * 5; // Slow start
+        } else if (progress < 70) {
+            progress += Math.random() * 3; // Medium pace
+        } else if (progress < 90) {
+            progress += Math.random() * 1; // Slow down near end
+        } else {
+            progress = Math.min(95, progress + Math.random() * 0.5); // Very slow near completion
+        }
+
+        // Update progress bar and text
+        const progressPercent = Math.min(95, Math.round(progress));
+        progressFill.style.width = `${progressPercent}%`;
+        progressText.textContent = `Loading astronomical data... ${progressPercent}%`;
+
+        // Stop if we've reached 95% (will be completed by actual load)
+        if (progress >= 95) {
+            clearInterval(window.progressInterval);
+            window.progressInterval = null;
+        }
+    }, 200); // Update every 200ms
+}
+
+function completeProgress() {
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+
+    if (progressFill && progressText) {
+        progressFill.style.width = '100%';
+        progressText.textContent = 'Loading astronomical data... 100%';
+
+        // Clear interval if still running
+        if (window.progressInterval) {
+            clearInterval(window.progressInterval);
+            window.progressInterval = null;
+        }
+    }
+}
+
+function cancelCurrentRequest() {
+    const loadingState = window.dataLoadingState;
+    if (loadingState.abortController) {
+        console.log('Cancelling previous data loading request');
+        loadingState.abortController.abort();
+        loadingState.abortController = null;
+        loadingState.currentRequest = null;
+    }
+    loadingState.isLoading = false;
+
+    // Clear progress interval to prevent memory leaks
+    if (window.progressInterval) {
+        clearInterval(window.progressInterval);
+        window.progressInterval = null;
+    }
+
+    hideLoadingIndicator();
+}
+
+function isDuplicateRequest(lat, lon, tz, startYear, endYear) {
+    const loadingState = window.dataLoadingState;
+    const currentParams = { lat, lon, tz, startYear, endYear };
+
+    if (!loadingState.lastRequestParams) return false;
+
+    return (
+        loadingState.lastRequestParams.lat === currentParams.lat &&
+        loadingState.lastRequestParams.lon === currentParams.lon &&
+        loadingState.lastRequestParams.tz === currentParams.tz &&
+        loadingState.lastRequestParams.startYear === currentParams.startYear &&
+        loadingState.lastRequestParams.endYear === currentParams.endYear
+    );
+}
 
 function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
-    fetch(`/api/multiyear-calendar?lat=${lat}&lon=${lon}&tz=${encodeURIComponent(tz)}&start_year=${startYear}&end_year=${endYear}`)
-        .then(r => r.json())
-        .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-                cb(data);
+    const loadingState = window.dataLoadingState;
+
+    // Check for duplicate request
+    if (isDuplicateRequest(lat, lon, tz, startYear, endYear)) {
+        console.log('Duplicate request detected, skipping');
+        if (cb && !loadingState.isLoading) {
+            // If not currently loading, call callback immediately with existing data
+            cb(navState.yearsData);
+        }
+        return;
+    }
+
+    // Cancel any existing request
+    cancelCurrentRequest();
+
+    // Create new abort controller
+    loadingState.abortController = new AbortController();
+    loadingState.isLoading = true;
+    loadingState.lastRequestParams = { lat, lon, tz, startYear, endYear };
+
+    // Show loading indicator
+    showLoadingIndicator();
+
+    console.log(`Fetching calendar data for ${lat}, ${lon}, ${tz} (${startYear}-${endYear})`);
+
+    const url = `/api/multiyear-calendar?lat=${lat}&lon=${lon}&tz=${encodeURIComponent(tz)}&start_year=${startYear}&end_year=${endYear}`;
+
+    loadingState.currentRequest = fetch(url, {
+        signal: loadingState.abortController.signal
+    })
+    .then(r => {
+        if (!r.ok) {
+            throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        }
+        return r.json();
+    })
+    .then(data => {
+        // Only process if this is still the current request
+        if (loadingState.currentRequest && !loadingState.abortController.signal.aborted) {
+            console.log(`Calendar data loaded successfully (${data.length} years)`);
+
+            // Atomic state update
+            const oldData = navState.yearsData;
+            navState.yearsData = Array.isArray(data) && data.length > 0 ? data : [];
+
+            // Update loading state
+            loadingState.isLoading = false;
+            loadingState.currentRequest = null;
+            loadingState.abortController = null;
+
+            // Complete progress bar
+            completeProgress();
+
+            // Hide loading indicator after a brief delay to show 100%
+            setTimeout(() => {
+                hideLoadingIndicator();
+            }, 300);
+
+            // Call original callback
+            if (cb) {
+                cb(navState.yearsData);
             }
-        });
+
+            // Notify any waiting callbacks
+            loadingState.loadingCallbacks.forEach(callback => {
+                try {
+                    callback(navState.yearsData);
+                } catch (e) {
+                    console.error('Error in loading callback:', e);
+                }
+            });
+            loadingState.loadingCallbacks.clear();
+
+            // Trigger calendar re-render if data changed
+            if (JSON.stringify(oldData) !== JSON.stringify(navState.yearsData)) {
+                console.log('Data changed, triggering calendar re-render');
+                if (window.CalendarMode && window.CalendarMode.mode === 'custom') {
+                    if (typeof updateMultiYearCalendarUI === 'function') {
+                        updateMultiYearCalendarUI();
+                    }
+                } else {
+                    renderCalendarForState();
+                }
+            }
+        }
+    })
+    .catch(error => {
+        // Only handle if this is still the current request
+        if (loadingState.currentRequest && !loadingState.abortController.signal.aborted) {
+            console.error('Error loading calendar data:', error);
+
+            // Update loading state
+            loadingState.isLoading = false;
+            loadingState.currentRequest = null;
+            loadingState.abortController = null;
+
+            // Clear progress interval
+            if (window.progressInterval) {
+                clearInterval(window.progressInterval);
+                window.progressInterval = null;
+            }
+
+            // Hide loading indicator
+            hideLoadingIndicator();
+
+            // Show error state
+            showErrorState(error);
+
+            // Call callback with empty data to prevent hanging
+            if (cb) {
+                cb([]);
+            }
+        } else if (error.name === 'AbortError') {
+            console.log('Request was cancelled');
+        }
+    });
+}
+
+function showErrorState(error) {
+    const gridRoot = document.getElementById('calendar-grid-root');
+    if (gridRoot) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-state';
+        errorDiv.innerHTML = `
+            <div class="error-content">
+                <div class="error-icon">⚠️</div>
+                <div class="error-message">Failed to load astronomical data</div>
+                <div class="error-details">${error.message}</div>
+                <button class="retry-btn" onclick="retryDataLoad()">Retry</button>
+            </div>
+        `;
+        errorDiv.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(214, 48, 49, 0.1);
+            border: 2px solid #d63031;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        `;
+        gridRoot.style.position = 'relative';
+        gridRoot.appendChild(errorDiv);
+    }
+}
+
+function retryDataLoad() {
+    // Remove error state
+    const gridRoot = document.getElementById('calendar-grid-root');
+    if (gridRoot) {
+        const errorDiv = gridRoot.querySelector('.error-state');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+
+    // Retry with current navState parameters
+    const loadingState = window.dataLoadingState;
+    if (loadingState.lastRequestParams) {
+        fetchMultiYearCalendar(
+            loadingState.lastRequestParams.lat,
+            loadingState.lastRequestParams.lon,
+            loadingState.lastRequestParams.tz,
+            loadingState.lastRequestParams.startYear,
+            loadingState.lastRequestParams.endYear,
+            (data) => {
+                // Re-render calendar with loaded data
+                if (window.CalendarMode && window.CalendarMode.mode === 'custom') {
+                    if (typeof updateMultiYearCalendarUI === 'function') {
+                        updateMultiYearCalendarUI();
+                    }
+                } else {
+                    renderCalendarForState();
+                }
+            }
+        );
+    }
+}
+
+// Enhanced renderCalendarForState with loading state awareness
+function renderCalendarForState() {
+    const isGreg = window.CalendarMode.mode === 'gregorian' && window.GregorianCalendar;
+    const loadingState = window.dataLoadingState;
+
+    if (isGreg) {
+        const target = ensureFrameAndGetGridTarget();
+        if (!target) return;
+
+        // If data is loading, show loading state
+        if (loadingState.isLoading) {
+            showLoadingIndicator();
+            return;
+        }
+
+        target.innerHTML = '';
+        const ns = window.navState || (window.navState = {});
+
+        // Ensure yearsData is loaded for mapping
+        if (!ns.yearsData || !ns.yearsData.length) {
+            // Use navState values or defaults for location and years
+            const lat = ns.lat || 51.48;
+            const lon = ns.lon || 0.0;
+            const tz = ns.tz || 'Europe/London';
+            const currentYear = ns.gYear || (new Date().getFullYear());
+            // Fetch a wider range: 10 years before and after current year
+            const startYear = 2000;
+            const endYear = 2048;
+            fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, function(data) {
+                // After loading, render Gregorian grid using synchronized position
+                const today = new Date();
+                const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
+                ns.gYear = cl.y; ns.gMonth = cl.m;
+                window.GregorianCalendar.render(target, cl.y, cl.m);
+                rebindNavForGregorian();
+            });
+            return;
+        }
+
+        // Already loaded, render using synchronized position
+        const today = new Date();
+        const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
+        ns.gYear = cl.y; ns.gMonth = cl.m;
+
+        // Find quantum calendar months for current Gregorian year
+        let monthsInYear = null;
+        if (ns.yearsData && ns.yearsData.length) {
+            // Find matching quantum year for Gregorian year
+            const quantumYearObj = ns.yearsData.find(yobj => yobj.year === cl.y);
+            if (quantumYearObj) {
+                monthsInYear = quantumYearObj.months.map(m => ({ days: m.days }));
+            }
+        }
+
+        // Pass monthsInYear to GregorianCalendar.render if possible
+        if (window.GregorianCalendar.render.length >= 4) {
+            window.GregorianCalendar.render(target, cl.y, cl.m, monthsInYear);
+        } else {
+            window.GregorianCalendar.render(target, cl.y, cl.m);
+        }
+        rebindNavForGregorian();
+    } else {
+        // Custom mode
+        if (loadingState.isLoading) {
+            showLoadingIndicator();
+            return;
+        }
+
+        if (typeof updateMultiYearCalendarUI === 'function') {
+            updateMultiYearCalendarUI();
+        }
+    }
 }
 
 // Helper: find quantum year/month index and day number for a given JS Date
@@ -334,6 +897,153 @@ function findQuantumIndexForDate(date, yearsData) {
     return null;
 }
 
+// Convert custom calendar position to Gregorian date
+function customToGregorianDate(yearIdx, monthIdx, dayNum, yearsData) {
+    try {
+        if (!yearsData || !yearsData[yearIdx] || !yearsData[yearIdx].months || !yearsData[yearIdx].months[monthIdx]) {
+            return null;
+        }
+
+        const monthObj = yearsData[yearIdx].months[monthIdx];
+        if (!monthObj.start) return null;
+
+        const startDate = new Date(monthObj.start);
+        // Calculate Gregorian date by adding days to the month start
+        const gregorianDate = new Date(startDate);
+        gregorianDate.setDate(gregorianDate.getDate() + (dayNum - 1));
+
+        return gregorianDate;
+    } catch (e) {
+        console.error('customToGregorianDate error:', e);
+        return null;
+    }
+}
+
+// Convert Gregorian date to custom calendar position
+function gregorianToCustomDate(gregorianDate, yearsData) {
+    if (!gregorianDate || !yearsData) return null;
+
+    // Use existing findQuantumIndexForDate function
+    const result = findQuantumIndexForDate(gregorianDate, yearsData);
+    if (result) {
+        return {
+            yearIdx: result.yearIdx,
+            monthIdx: result.monthIdx,
+            dayNum: result.dayNum
+        };
+    }
+    return null;
+}
+
+// Get Gregorian date string for a custom calendar day
+function getGregorianDateForCustomDay(monthNum, dayNum, yearLabel) {
+    try {
+        if (!navState.yearsData || !navState.yearsData.length) {
+            return '';
+        }
+
+        // Find the year object that matches the yearLabel
+        const yearObj = navState.yearsData.find(y => {
+            const yLabel = `${y.year}-${String(y.year+1).slice(-2)}`;
+            return yLabel === yearLabel;
+        });
+
+        if (!yearObj || !yearObj.months || !yearObj.months[monthNum - 1]) {
+            return '';
+        }
+
+        const monthObj = yearObj.months[monthNum - 1];
+        if (!monthObj.start) {
+            return '';
+        }
+
+        // Calculate Gregorian date by adding days to month start
+        const startDate = new Date(monthObj.start);
+        const gregorianDate = new Date(startDate);
+        gregorianDate.setDate(gregorianDate.getDate() + (dayNum - 1));
+
+        // Format as MM/DD
+        const month = String(gregorianDate.getMonth() + 1).padStart(2, '0');
+        const day = String(gregorianDate.getDate()).padStart(2, '0');
+
+        return `${month}/${day}`;
+    } catch (e) {
+        console.error('getGregorianDateForCustomDay error:', e);
+        return '';
+    }
+}
+
+// Synchronize navigation state between custom and Gregorian modes
+function syncNavigationState(fromMode, toMode) {
+    if (!navState || !navState.yearsData || !navState.yearsData.length) {
+        console.warn('Cannot sync navigation state: missing data');
+        return;
+    }
+
+    try {
+        if (fromMode === 'custom' && toMode === 'gregorian') {
+            // Convert custom position to Gregorian
+            const gregorianDate = customToGregorianDate(
+                navState.currentYearIdx,
+                navState.currentMonthIdx,
+                1, // Use 1st day of month for navigation
+                navState.yearsData
+            );
+
+            if (gregorianDate) {
+                navState.gYear = gregorianDate.getFullYear();
+                navState.gMonth = gregorianDate.getMonth();
+                console.log('Synced custom -> Gregorian:', {
+                    custom: { yearIdx: navState.currentYearIdx, monthIdx: navState.currentMonthIdx },
+                    gregorian: { year: navState.gYear, month: navState.gMonth }
+                });
+            }
+        } else if (fromMode === 'gregorian' && toMode === 'custom') {
+            // Convert Gregorian position to custom
+            const gregorianDate = new Date(navState.gYear, navState.gMonth, 1);
+            const customPos = gregorianToCustomDate(gregorianDate, navState.yearsData);
+
+            if (customPos) {
+                navState.currentYearIdx = customPos.yearIdx;
+                navState.currentMonthIdx = customPos.monthIdx;
+                console.log('Synced Gregorian -> custom:', {
+                    gregorian: { year: navState.gYear, month: navState.gMonth },
+                    custom: { yearIdx: navState.currentYearIdx, monthIdx: navState.currentMonthIdx }
+                });
+            }
+        }
+    } catch (e) {
+        console.error('Error syncing navigation state:', e);
+    }
+}
+
+// Recalculate all month-dependent calculations when location changes
+function recalculateMonthCalculations() {
+    if (!navState || !navState.yearsData || !navState.yearsData.length) {
+        console.warn('Cannot recalculate: missing astronomical data');
+        return;
+    }
+
+    try {
+        console.log('Recalculating month-dependent calculations for new location...');
+
+        // The calculations will be automatically updated when the calendar re-renders
+        // because all the functions (getSilverCounter, computeCustomSpecialClasses, etc.)
+        // use the current navState.yearsData which has been updated with new location data
+
+        // Force a re-render to update all calculations
+        if (window.CalendarMode && window.CalendarMode.mode === 'custom') {
+            updateMultiYearCalendarUI();
+        } else {
+            renderCalendarForState();
+        }
+
+        console.log('Month calculations recalculated for new location');
+    } catch (e) {
+        console.error('Error recalculating month calculations:', e);
+    }
+}
+
 function renderNavButtons() {
     return `
     <div class="calendar-nav-btns" role="group" aria-label="Calendar navigation">
@@ -352,30 +1062,60 @@ function updateMultiYearCalendarUI() {
     const yearObj = navState.yearsData[navState.currentYearIdx];
     const months = yearObj.months;
     const monthObj = months[navState.currentMonthIdx];
-    // Find real current month/day for highlight
-    let realCurrentMonth = null, realCurrentDay = null, realCurrentYearIdx = null;
-    const today = new Date();
-    const found = findQuantumIndexForDate(today, navState.yearsData);
-    if (found) {
-        realCurrentYearIdx = found.yearIdx;
-        realCurrentMonth = found.monthIdx + 1;
-        realCurrentDay = found.dayNum;
+
+    // Get dynamic current day highlight
+    const currentHighlight = getCurrentDayHighlight();
+
+    // Determine highlighting for current view
+    let dayToHighlight = null;
+    let shouldHighlight = false;
+
+    if (currentHighlight) {
+        if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+            // Gregorian mode: compare with Gregorian date
+            const today = new Date();
+            shouldHighlight = (navState.currentYearIdx === currentHighlight.yearIdx &&
+                             navState.currentMonthIdx + 1 === currentHighlight.month);
+            if (shouldHighlight) {
+                dayToHighlight = currentHighlight.day;
+            }
+        } else {
+            // Custom mode: compare with custom calendar position
+            shouldHighlight = (navState.currentYearIdx === currentHighlight.yearIdx &&
+                             navState.currentMonthIdx === currentHighlight.month - 1);
+            if (shouldHighlight) {
+                dayToHighlight = currentHighlight.day;
+            }
+        }
     }
+
     // Build year label for heading
     let yearLabel = `${yearObj.year}-${String(yearObj.year+1).slice(-2)}`;
-    // Only highlight if this is the real current year and month
-    let highlight = (navState.currentYearIdx === realCurrentYearIdx && navState.currentMonthIdx+1 === realCurrentMonth);
+
     // Render grid and months list
     let gridHtml = renderCalendarGrid(
         navState.currentMonthIdx+1,
-        realCurrentDay,
+        dayToHighlight,
         monthObj.days,
         yearLabel,
-        highlight,
+        shouldHighlight,
         months.map(m => ({days: m.days}))
     );
-    // Only highlight current month in months list if this is the real current year
-    let isCurrentYear = (navState.currentYearIdx === realCurrentYearIdx);
+
+    // Determine current month highlighting in months list
+    let isCurrentYear = false;
+    let realCurrentMonth = null;
+
+    if (currentHighlight) {
+        if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+            isCurrentYear = (navState.currentYearIdx === currentHighlight.yearIdx);
+            realCurrentMonth = currentHighlight.month;
+        } else {
+            isCurrentYear = (navState.currentYearIdx === currentHighlight.yearIdx);
+            realCurrentMonth = currentHighlight.month;
+        }
+    }
+
     let monthsHtml = renderYearMonths(
         months.map(m => ({days: m.days})),
         navState.currentMonthIdx+1,
@@ -580,20 +1320,20 @@ document.addEventListener('click', (e) => {
   const btn = e.target && e.target.closest && e.target.closest('#mode-custom, #mode-gregorian');
   if (!btn) return;
   e.preventDefault();
-  if (btn.id === 'mode-custom') {
-    window.CalendarMode.mode = 'custom';
-    updateModeButtons();
-    renderCalendarForState();
-  } else if (btn.id === 'mode-gregorian') {
-    window.CalendarMode.mode = 'gregorian';
-    const now = new Date();
-    const cl = clampGregorianYM(now.getFullYear(), now.getMonth());
-    window.navState = window.navState || {};
-    window.navState.gYear = cl.y;
-    window.navState.gMonth = cl.m;
-    updateModeButtons();
-    renderCalendarForState();
-  }
+
+  const currentMode = window.CalendarMode.mode;
+  const newMode = btn.id === 'mode-custom' ? 'custom' : 'gregorian';
+
+  // Only proceed if mode is actually changing
+  if (currentMode === newMode) return;
+
+  // Sync navigation state before switching modes
+  syncNavigationState(currentMode, newMode);
+
+  // Update mode
+  window.CalendarMode.mode = newMode;
+  updateModeButtons();
+  renderCalendarForState();
 }, true);
 
 // Global calendar mode
@@ -610,48 +1350,79 @@ function updateModeButtons() {
   gregBtn.classList.toggle('active', isGreg);
 }
 
-// Expose hook for special day classes by ISO date (Gregorian)
-// ...existing code...
-
-// Map ISO date to custom month/day using navState.yearsData
-// ...existing code...
+// Expose functions globally for Gregorian calendar access
+window.getSilverCounter = getSilverCounter;
+window.isoToCustomMonthDay = isoToCustomMonthDay;
 
 // Compute special classes for custom calendar using same rules as grid
 function computeCustomSpecialClasses(monthNum, dayNum, monthsInYear) {
-  const classes = [];
-  // Dark pink: day after n=50 on silver counter
-  let absDay = 0;
-  if (Array.isArray(monthsInYear)) {
-    for (let i = 0; i < monthNum - 1; i++) absDay += monthsInYear[i].days || 30;
-  } else {
-    absDay = (monthNum - 1) * 30;
-  }
-  absDay += dayNum; // 1-based like original check
-  let pinkStartAbsDay = 0;
-  if (Array.isArray(monthsInYear)) {
-    for (let i = 0; i < 2; i++) pinkStartAbsDay += monthsInYear[i].days || 30;
-  } else {
-    pinkStartAbsDay = 2 * 30;
-  }
-  pinkStartAbsDay += 9 + 50; // 3rd month 9th day + 50 days => next day
-  const isDarkPink = (absDay === pinkStartAbsDay);
-  if (isDarkPink) classes.push('dark-pink-day');
+    const classes = [];
 
-  // Month-based specials (copied from renderCalendarGrid logic)
-  if (!isDarkPink) {
-    if (monthNum === 1 && dayNum === 14) classes.push('ruby-red-day');
-    else if (monthNum === 1 && dayNum === 15) classes.push('emerald-green-day');
-    else if (monthNum === 1 && dayNum === 16) classes.push('orange-day');
-    else if (monthNum === 1 && dayNum >= 17 && dayNum <= 21) classes.push('indigo-purple-day');
-    else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) classes.push('emerald-green-day');
-    else if (monthNum === 7 && dayNum === 1) { classes.push('seventh-emerald-green-day','seventh-orange-day'); }
-    else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) { classes.push('seventh-ruby-red-day','seventh-orange-day'); }
-    else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) { classes.push('seventh-ruby-red-day','seventh-orange-day','seventh-pink-day'); }
-    else if (monthNum === 7 && dayNum >= 16 && dayNum <= 21) classes.push('seventh-indigo-purple-day');
-    else if (dayNum === 1) classes.push('gold-bronze-day');
-    else if ([8,15,22,29].includes(dayNum)) classes.push('royal-blue-day');
-  }
-  return classes;
+    // Validate inputs
+    if (!monthNum || !dayNum || monthNum < 1 || monthNum > 13 || dayNum < 1 || dayNum > 31) {
+        console.warn('computeCustomSpecialClasses: invalid month/day parameters', {monthNum, dayNum});
+        return classes;
+    }
+
+    try {
+        // Dark pink: day after n=50 on silver counter
+        let absDay = 0;
+        if (Array.isArray(monthsInYear) && monthsInYear.length > 0) {
+            for (let i = 0; i < monthNum - 1; i++) {
+                // Use actual month days with validation, fallback to 29 if invalid
+                const monthDays = monthsInYear[i] && monthsInYear[i].days;
+                if (monthDays && (monthDays === 29 || monthDays === 30)) {
+                    absDay += monthDays;
+                } else {
+                    console.warn(`computeCustomSpecialClasses: Invalid month ${i+1} days: ${monthDays}, using fallback`);
+                    absDay += 29; // Safe fallback for calculations
+                }
+            }
+        } else {
+            // Fallback: assume 29 days per month (safer than fractional)
+            absDay = (monthNum - 1) * 29;
+        }
+        absDay += dayNum; // 1-based to absolute day
+
+        let pinkStartAbsDay = 0;
+        if (Array.isArray(monthsInYear) && monthsInYear.length >= 2) {
+            for (let i = 0; i < 2; i++) {
+                const monthDays = monthsInYear[i] && monthsInYear[i].days;
+                if (monthDays && (monthDays === 29 || monthDays === 30)) {
+                    pinkStartAbsDay += monthDays;
+                } else {
+                    console.warn(`computeCustomSpecialClasses: Invalid month ${i+1} days for pink start: ${monthDays}`);
+                    pinkStartAbsDay += 29; // Safe fallback
+                }
+            }
+        } else {
+            pinkStartAbsDay = 2 * 29; // Safe fallback for first two months
+        }
+        pinkStartAbsDay += 9 + 50; // 3rd month 9th day + 50 days => next day
+
+        const isDarkPink = (absDay === pinkStartAbsDay); // Exact match, no fractional comparison
+        if (isDarkPink) classes.push('dark-pink-day');
+
+        // Month-based specials (copied from renderCalendarGrid logic)
+        if (!isDarkPink) {
+            if (monthNum === 1 && dayNum === 14) classes.push('ruby-red-day');
+            else if (monthNum === 1 && dayNum === 15) classes.push('emerald-green-day');
+            else if (monthNum === 1 && dayNum === 16) classes.push('orange-day');
+            else if (monthNum === 1 && dayNum >= 17 && dayNum <= 21) classes.push('indigo-purple-day');
+            else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) classes.push('emerald-green-day');
+            else if (monthNum === 7 && dayNum === 1) { classes.push('seventh-emerald-green-day','seventh-orange-day'); }
+            else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) { classes.push('seventh-ruby-red-day','seventh-orange-day'); }
+            else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) { classes.push('seventh-ruby-red-day','seventh-orange-day','seventh-pink-day'); }
+            else if (monthNum === 7 && dayNum >= 16 && dayNum <= 21) classes.push('seventh-indigo-purple-day');
+            else if (dayNum === 1) classes.push('gold-bronze-day');
+            else if ([8,15,22,29].includes(dayNum)) classes.push('royal-blue-day');
+        }
+
+        return classes;
+    } catch (e) {
+        console.error('computeCustomSpecialClasses error:', e);
+        return classes; // Return empty array on error
+    }
 }
 
 // Override the placeholder to provide real mapping for Gregorian grid
@@ -693,32 +1464,34 @@ function renderCalendarForState() {
         if (!target) return;
         target.innerHTML = '';
         const ns = window.navState || (window.navState = {});
-    // Gregorian render state
+
         // Ensure yearsData is loaded for mapping
-            if (!ns.yearsData || !ns.yearsData.length) {
-                // Use navState values or defaults for location and years
-                const lat = ns.lat || 51.48;
-                const lon = ns.lon || 0.0;
-                const tz = ns.tz || 'Europe/London';
-                const currentYear = ns.gYear || (new Date().getFullYear());
-                // Fetch a wider range: 10 years before and after current year
-                const startYear = 2000;
-                const endYear = 2048;
-                fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, function(data) {
-                    ns.yearsData = data;
-                    // After loading, render Gregorian grid
-                    const today = new Date();
-                    const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
-                    ns.gYear = cl.y; ns.gMonth = cl.m;
-                    window.GregorianCalendar.render(target, cl.y, cl.m);
-                    rebindNavForGregorian();
-                });
-                return;
-            }
-        // Already loaded, render as normal
+        if (!ns.yearsData || !ns.yearsData.length) {
+            // Use navState values or defaults for location and years
+            const lat = ns.lat || 51.48;
+            const lon = ns.lon || 0.0;
+            const tz = ns.tz || 'Europe/London';
+            const currentYear = ns.gYear || (new Date().getFullYear());
+            // Fetch a wider range: 10 years before and after current year
+            const startYear = 2000;
+            const endYear = 2048;
+            fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, function(data) {
+                ns.yearsData = data;
+                // After loading, render Gregorian grid using synchronized position
+                const today = new Date();
+                const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
+                ns.gYear = cl.y; ns.gMonth = cl.m;
+                window.GregorianCalendar.render(target, cl.y, cl.m);
+                rebindNavForGregorian();
+            });
+            return;
+        }
+
+        // Already loaded, render using synchronized position
         const today = new Date();
         const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
         ns.gYear = cl.y; ns.gMonth = cl.m;
+
         // Find quantum calendar months for current Gregorian year
         let monthsInYear = null;
         if (ns.yearsData && ns.yearsData.length) {
@@ -728,6 +1501,7 @@ function renderCalendarForState() {
                 monthsInYear = quantumYearObj.months.map(m => ({ days: m.days }));
             }
         }
+
         // Pass monthsInYear to GregorianCalendar.render if possible
         if (window.GregorianCalendar.render.length >= 4) {
             window.GregorianCalendar.render(target, cl.y, cl.m, monthsInYear);
@@ -757,6 +1531,7 @@ function rebindNavForGregorian() {
     ns.gYear = cl.y; ns.gMonth = cl.m;
     renderCalendarForState();
   }
+
   function bumpYear(delta) {
     const cl = clampGregorianYM((ns.gYear ?? new Date().getFullYear()) + delta, (ns.gMonth ?? new Date().getMonth()));
     ns.gYear = cl.y; ns.gMonth = cl.m;
@@ -767,7 +1542,11 @@ function rebindNavForGregorian() {
   setOnClick(nextYearBtn, () => bumpYear(+1));
   setOnClick(prevMonthBtn, () => bumpMonth(-1));
   setOnClick(nextMonthBtn, () => bumpMonth(+1));
-  setOnClick(homeBtn, () => { const cl = clampGregorianYM(new Date().getFullYear(), new Date().getMonth()); ns.gYear = cl.y; ns.gMonth = cl.m; renderCalendarForState(); });
+  setOnClick(homeBtn, () => {
+    const cl = clampGregorianYM(new Date().getFullYear(), new Date().getMonth());
+    ns.gYear = cl.y; ns.gMonth = cl.m;
+    renderCalendarForState();
+  });
 }
 
 // (removed duplicate initializer and listener; consolidated handler is at the file end)
@@ -796,11 +1575,23 @@ if (!window.__gregorianClickBound) {
       const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
       const weekdayStr = weekdays[gregDate.getDay()];
       const gregorianStr = `${yyyy}-${mm}-${dd} (${weekdayStr}) - Gregorian`;
-      const month = (window.navState?.currentMonthIdx ?? 0) + 1;
-      const year = window.navState?.yearsData?.[window.navState.currentYearIdx]?.year ?? yyyy;
+      // For Gregorian mode, map Gregorian date to custom calendar for header
+      const customMapping = isoToCustomMonthDay(iso);
+      let month, year, yearRange;
+      if (customMapping && customMapping.monthNum && customMapping.dayNum) {
+        month = customMapping.monthNum;
+        year = customMapping.yearIdx !== undefined && navState.yearsData ?
+               navState.yearsData[customMapping.yearIdx]?.year : yyyy;
+        yearRange = year ? `${year}-${String(year+1).slice(-2)}` : yyyy;
+      } else {
+        // Fallback to Gregorian if mapping fails
+        month = gregDate.getMonth() + 1;
+        year = gregDate.getFullYear();
+        yearRange = year;
+      }
       panel.innerHTML = `
         <button class="close-btn" aria-label="Close">&times;</button>
-        <h3 style="margin-top:0;color:#20639b;">Month ${month}, Day ${gregDate.getDate()}, ${year}-${String(year+1).slice(-2)}</h3>
+        <h3 style="margin-top:0;color:#20639b;">Month ${month}, Day ${customMapping?.dayNum || gregDate.getDate()}, ${yearRange}</h3>
         <h3 style="margin:0 0 12px 0;color:#20639b;font-weight:normal;">${gregorianStr}</h3>
         <div id="sun-events-content" style="color:#173f5f;">Loading sun events...</div>
       `;
@@ -824,9 +1615,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const today = new Date();
     navState.year = today.getFullYear();
     navState.month = null;
-    // Initial fetch
+
+    // Initial fetch with race condition prevention
+    const loadingState = window.dataLoadingState;
     fetchMultiYearCalendar(navState.lat, navState.lon, navState.tz, 2000, 2048, function(data) {
         navState.yearsData = data;
+
         // Find today's month/year index using helper
         const foundIdx = findQuantumIndexForDate(today, data);
         if (foundIdx) {
@@ -835,6 +1629,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
         }
+
         // Clamp Gregorian pointers
         let gYear = today.getFullYear(); let gMonth = today.getMonth();
         if (navState.yearsData && navState.yearsData.length) {
@@ -842,18 +1637,56 @@ document.addEventListener('DOMContentLoaded', function() {
             if (gYear < minYear) gYear = minYear; if (gYear > maxYear) gYear = maxYear;
         }
         navState.gYear = gYear; navState.gMonth = gMonth;
-        renderCalendarForState(); updateModeButtons();
+
+        // Only render if this callback is still relevant (not cancelled)
+        if (!loadingState.isLoading) {
+            renderCalendarForState();
+            updateModeButtons();
+        }
     });
 
-    // Single calendar:update handler for location changes
+    // Single calendar:update handler for location changes with race condition prevention
     window.addEventListener('calendar:update', function(e) {
-        if (!e.detail) return; const { lat, lon, tz, name } = e.detail;
-        if (!tz) { fetch(`/api/timezone?lat=${lat}&lon=${lon}`).then(r => r.json()).then(data => { const timezone = data.tz || 'UTC'; window.dispatchEvent(new CustomEvent('calendar:update', { detail: { lat, lon, tz: timezone, name } })); }); return; }
-        navState.lat = lat; navState.lon = lon; navState.tz = tz; if (name) navState.locationName = name;
-        navState.yearsData = [];
+        if (!e.detail) return;
+
+        const { lat, lon, tz, name } = e.detail;
+
+        // Handle timezone lookup if needed
+        if (!tz) {
+            fetch(`/api/timezone?lat=${lat}&lon=${lon}`)
+                .then(r => r.json())
+                .then(data => {
+                    const timezone = data.tz || 'UTC';
+                    window.dispatchEvent(new CustomEvent('calendar:update', {
+                        detail: { lat, lon, tz: timezone, name }
+                    }));
+                })
+                .catch(error => {
+                    console.error('Timezone lookup failed:', error);
+                    // Use UTC as fallback
+                    window.dispatchEvent(new CustomEvent('calendar:update', {
+                        detail: { lat, lon, tz: 'UTC', name }
+                    }));
+                });
+            return;
+        }
+
+        // Update navState
+        navState.lat = lat;
+        navState.lon = lon;
+        navState.tz = tz;
+        if (name) navState.locationName = name;
+
+        console.log(`Location changed to: ${name || `${lat}, ${lon}`}`);
+
+        // Cancel any existing data loading
+        cancelCurrentRequest();
+
+        // Fetch new data with race condition prevention
         const today2 = new Date();
         fetchMultiYearCalendar(navState.lat, navState.lon, navState.tz, 2000, 2048, function(data) {
             navState.yearsData = data;
+
             const foundIdx2 = findQuantumIndexForDate(today2, data);
             if (foundIdx2) {
                 navState.currentYearIdx = foundIdx2.yearIdx;
@@ -861,8 +1694,25 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
             }
-            try { navState.gYear = navState.yearsData[navState.currentYearIdx].year; navState.gMonth = navState.currentMonthIdx; } catch (e) {}
-            renderCalendarForState(); if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') document.dispatchEvent(new Event('gregorian:rendered'));
+
+            try {
+                navState.gYear = navState.yearsData[navState.currentYearIdx].year;
+                navState.gMonth = navState.currentMonthIdx;
+            } catch (e) {
+                console.warn('Could not set Gregorian pointers:', e);
+            }
+
+            // Only render if this callback is still relevant
+            const currentLoadingState = window.dataLoadingState;
+            if (!currentLoadingState.isLoading) {
+                renderCalendarForState();
+                if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+                    document.dispatchEvent(new Event('gregorian:rendered'));
+                }
+
+                // Recalculate all month-dependent calculations for new location
+                recalculateMonthCalculations();
+            }
         });
     });
 });
