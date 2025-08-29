@@ -36,6 +36,14 @@
   const CELESTIAL_EMOJIS = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘','🌙','☀️','🌞','⭐','🌟','✨','🌠'];
   const CELESTIAL_PROB = 0.10;
 
+  // Separate pools for Hebrew, Latin, and Numbers
+  const HEBREW_POOL = HEBREW;
+  const LATIN_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+  const NUMBERS_POOL = DIGITS;
+  const HEBREW_PROB = 0.10;
+  const LATIN_PROB = 0.10;
+  const NUMBERS_PROB = 0.20;
+
   const FONT_PRIMARY = 'HebrewMatrix';
   const FONT_FALLBACK = 'Pictocrypto, sans-serif';
   let currentFont = FONT_PRIMARY;
@@ -56,12 +64,12 @@
   const settings = {
   // Trails slightly longer and rain a bit slower
   // Increase trailAlpha for faster erasing to avoid colored imprints
-  trailAlpha: 0.99,
-  minSpeed: 0.08,
-  maxSpeed: 0.18,
-  replaceProb: 0.15,
+  trailAlpha: 0.97,
+  minSpeed: 0.15,
+  maxSpeed: 0.32,
+  replaceProb: 0.08,
   // Fraction of rows per column that can be occupied by drops (0..1)
-  densityFrac: 0.99
+  densityFrac: 0.495
   };
 
   // Helper to pick a character and the font family to render it with for a column
@@ -73,17 +81,24 @@
       return { char: CLOCK_EMOJIS[(Math.random() * CLOCK_EMOJIS.length) | 0], fontFamily: EMOJI_STACK };
     } else if (p < AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB) {
       return { char: CELESTIAL_EMOJIS[(Math.random() * CELESTIAL_EMOJIS.length) | 0], fontFamily: EMOJI_STACK };
-    } else if (p < AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB) {
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB && p >= AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB) {
       const pool = Math.random() < 0.5 ? HIRA : KATA;
       return { char: pool[(Math.random() * pool.length) | 0], fontFamily: JP_STACK };
-    } else if (p < AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB + KOREAN_PROB && p >= AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB) {
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB && p >= AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB) {
       const pool = Math.random() < 0.5 ? HANGUL_SYL : HANGUL_JAMO;
       return { char: pool[(Math.random() * pool.length) | 0], fontFamily: KO_STACK };
-    } else if (p < AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB && p >= AUREBESH_PROB + CLOCK_PROB + JAPANESE_PROB + KOREAN_PROB) {
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB && p >= AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB) {
       const pool = Math.random() < 0.6 ? CN_NUM : CN_OTHER;
       return { char: pool[(Math.random() * pool.length) | 0], fontFamily: CN_STACK };
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB + HEBREW_PROB && p >= AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB) {
+      return { char: HEBREW_POOL[(Math.random() * HEBREW_POOL.length) | 0], fontFamily: currentFont };
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB + HEBREW_PROB + LATIN_PROB && p >= AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB + HEBREW_PROB) {
+      return { char: LATIN_POOL[(Math.random() * LATIN_POOL.length) | 0], fontFamily: FONT_FALLBACK };
+    } else if (p < AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB + HEBREW_PROB + LATIN_PROB + NUMBERS_PROB && p >= AUREBESH_PROB + CLOCK_PROB + CELESTIAL_PROB + JAPANESE_PROB + KOREAN_PROB + CHINESE_PROB + HEBREW_PROB + LATIN_PROB) {
+      return { char: NUMBERS_POOL[(Math.random() * NUMBERS_POOL.length) | 0], fontFamily: FONT_FALLBACK };
     }
-    return { char: CHARSET[(Math.random() * CHARSET.length) | 0], fontFamily: currentFont };
+    // Fallback (should not reach here with probabilities summing to 1.0)
+    return { char: LATIN_POOL[(Math.random() * LATIN_POOL.length) | 0], fontFamily: FONT_FALLBACK };
   }
 
   function getViewportSize() {
@@ -105,6 +120,7 @@
     canvas.height = Math.floor(cssH * DPR);
     canvas.style.width = cssW + 'px';
     canvas.style.height = cssH + 'px';
+    canvas.style.backgroundColor = 'rgb(20,20,20)';
 
     // Scale so we can use CSS pixel coordinates
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -197,8 +213,8 @@
       });
     }
 
-    // Recompute hues to match the new column count (preserve order)
-    hues = new Array(colCount).fill(0).map((_, i) => (i / Math.max(1, colCount)) * 360);
+    // Recompute hues to match the new column count (bias toward turquoise/blue/green)
+    hues = new Array(colCount).fill(0).map((_, i) => 160 + (i / Math.max(1, colCount)) * 80);
   }
 
   function drawFrameLoop() {
@@ -233,8 +249,8 @@
           if (intRow >= -1 && y <= height + fontSize * 2 && !occupied.has(intRow)) {
             occupied.add(intRow);
             hues[i] = (hues[i] + 0.15) % 360;
-            const sat = 80;
-            const light = 40;
+            const sat = 90;
+            const light = 50;
             ctx.fillStyle = `hsl(${hues[i]}, ${sat}%, ${light}%)`;
             if (Math.random() < settings.replaceProb) {
               ctx.fillStyle = `hsl(${(hues[i] + 30) % 360}, ${sat}%, ${light}%)`;
@@ -249,7 +265,7 @@
           }
 
           // Advance drop
-          d.pos += d.speed * 0.9;
+          d.pos += d.speed;
 
           // Reset if past bottom: choose a start row that doesn't conflict with other drops
           if (d.pos * fontSize > height + fontSize * 2) {
@@ -330,8 +346,6 @@
     if (!ok) {
       // Use fallback consistently to avoid Times-like mix
       currentFont = FONT_FALLBACK;
-      // Keep only lowercase+digits to ensure glyphs exist on fallback
-      CHARSET = [...LATIN_LOWER, ...DIGITS];
     }
     resize();
     start();
