@@ -213,6 +213,15 @@
       });
     }
 
+    // Scale speeds to maintain consistent visual fall rate across font size changes (e.g., zooming)
+    if (prevDrops && prevDrops.length > 0) {
+      for (let c = 0; c < drops.length; c++) {
+        for (const d of drops[c]) {
+          d.speed *= prevFontSize / fontSize;
+        }
+      }
+    }
+
     // Recompute hues to match the new column count (bias toward turquoise/blue/green)
     hues = new Array(colCount).fill(0).map((_, i) => 160 + (i / Math.max(1, colCount)) * 80);
   }
@@ -329,16 +338,13 @@
 
   // Throttled resize handler for orientation/viewport changes
   let resizeTimer = null;
+  let resizePending = false;
   function scheduleResize() {
     if (resizeTimer) clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       resizeTimer = null;
-  const wasRunning = running;
-  // Temporarily stop RAF to avoid buildup during rapid resizes
-  stop();
-  resize();
-  if (wasRunning) start();
-    }, 120);
+      resizePending = true;
+    }, 50);  // Reduced from 120ms to 50ms for smoother zooming
   }
 
   (async function init(){
