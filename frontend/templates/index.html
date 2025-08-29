@@ -31,17 +31,14 @@
 
     <link rel="preload" href="/static/fonts/Pictocrypto-Regular.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/calendar_grid.css">
-    <link rel="stylesheet" href="/static/css/side_panel.css">
-
-
-
-    <link rel="preload" href="/static/fonts/Pictocrypto-Regular.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/navbar.css">
     <link rel="stylesheet" href="/static/css/calendar_grid.css">
     <link rel="stylesheet" href="/static/css/side_panel.css">
 </head>
 <body>
+    <!-- Navigation Bar -->
+    {% include 'navbar.html' %}
+
     <!-- Live background canvas -->
     <canvas id="bg-matrix" aria-hidden="true"></canvas>
 

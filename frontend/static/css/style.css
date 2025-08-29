@@ -121,6 +121,7 @@ body, .calendar-title, .search-bar, #suggestions {
   text-align: center; 
   color: #fff; 
   font-size: 1.2rem; 
+  font-family: 'Pictocrypto', sans-serif;
 }
 .accordion-item { 
   border: 1px solid #284b63; 
@@ -141,11 +142,12 @@ body, .calendar-title, .search-bar, #suggestions {
   display: flex; 
   align-items: center; 
   gap: 10px; 
+  font-family: 'Pictocrypto', sans-serif;
 }
 .accordion-header:hover { background: #173f5f; }
 .accordion-icon { width: 1em; display: inline-block; }
 .accordion-panel { padding: 0 14px 12px 36px; }
-.accordion-content { color: #cfe0f2; }
+.accordion-content { color: #cfe0f2; font-family: 'Pictocrypto', sans-serif; }
 
 /* Month Begins: 3x3 grid styles */
 .month-new-grid-block {
@@ -157,6 +159,7 @@ body, .calendar-title, .search-bar, #suggestions {
   color: #ffe066;
   margin-bottom: 10px;
   letter-spacing: 1px;
+  font-family: 'Pictocrypto', sans-serif;
 }
 .month-new-grid {
   display: grid;
@@ -185,6 +188,7 @@ body, .calendar-title, .search-bar, #suggestions {
   font-size: 1.08rem;
   margin-bottom: 4px;
   letter-spacing: 1px;
+  font-family: 'Pictocrypto', sans-serif;
 }
 .month-col img {
   width: 256px;
@@ -200,6 +204,7 @@ body, .calendar-title, .search-bar, #suggestions {
   font-size: 1.1rem;
   letter-spacing: 1px;
   text-align: center;
+  font-family: 'Pictocrypto', sans-serif;
 }
 
 @media (max-width: 700px) {
@@ -244,6 +249,7 @@ body, .calendar-title, .search-bar, #suggestions {
   opacity: 0.82;
   font-weight: 800;
   letter-spacing: 1px;
+  font-family: 'Pictocrypto', sans-serif;
 }
 .day-card {
   position: relative;
@@ -337,6 +343,7 @@ body, .calendar-title, .search-bar, #suggestions {
   background: transparent;
   color: #e0e6ed;
   padding: 8px 14px;
+  font-family: 'Pictocrypto', sans-serif;
   font-weight: 700;
   border-radius: 999px;
   cursor: pointer;

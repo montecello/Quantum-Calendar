@@ -1,0 +1,144 @@
+/* Navbar Styles for Quantum Clock */
+/* Inherits fonts from main style.css */
+
+/* Navigation Bar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(60, 174, 163, 0.3);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-family: 'Pictocrypto', sans-serif;
+}
+
+.navbar-brand {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: gold;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navbar-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(60, 174, 163, 0.1);
+  color: #3caea3;
+}
+
+.effects-label {
+  font-size: 0.9rem;
+  color: #ffffff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.effects-toggle {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #3caea3;
+}
+
+.effects-btn {
+  background: none;
+  border: 1px solid rgba(60, 174, 163, 0.5);
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s, border-color 0.2s;
+  margin: 0 2px;
+}
+
+.effects-btn:hover {
+  background: rgba(60, 174, 163, 0.1);
+  border-color: #3caea3;
+}
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.hamburger:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+
+  .navbar-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(20, 20, 20, 0.98);
+    flex-direction: column;
+    padding: 16px 20px;
+    gap: 12px;
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(60, 174, 163, 0.3);
+  }
+
+  .navbar-menu.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .navbar-item {
+    justify-content: center;
+  }
+}
+
+/* Adjust body content to account for fixed navbar */
+.app-root {
+  padding-top: 70px; /* Space for navbar */
+}
+
+@media (max-width: 768px) {
+  .app-root {
+    padding-top: 60px;
+  }
+}

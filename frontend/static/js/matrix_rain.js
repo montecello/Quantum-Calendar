@@ -304,11 +304,6 @@
   }
 
   function start() {
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      stop();
-      ctx.clearRect(0, 0, width, height);
-      return;
-    }
     if (running) return; // already running
     running = true;
     if (!rafId) rafId = requestAnimationFrame(drawFrameLoop);
@@ -354,7 +349,28 @@
       currentFont = FONT_FALLBACK;
     }
     resize();
-    start();
+
+    // Effects toggle integration
+    const effectsPlayPause = document.getElementById('effects-play-pause');
+    const effectsStop = document.getElementById('effects-stop');
+    if (effectsPlayPause && effectsStop) {
+      effectsPlayPause.addEventListener('click', function() {
+        if (!running) {
+          start();
+          this.textContent = '⏸️';
+        } else {
+          stop();
+          this.textContent = '▶️';
+        }
+      });
+      effectsStop.addEventListener('click', function() {
+        stop();
+        ctx.clearRect(0, 0, width, height);
+        effectsPlayPause.textContent = '▶️';
+      });
+      // Initial state: play icon
+      effectsPlayPause.textContent = '▶️';
+    }
 
     // Listen for viewport changes (mobile rotation, address bar show/hide)
     window.addEventListener('resize', scheduleResize, { passive: true });

@@ -1,0 +1,30 @@
+<!-- Navigation Bar Component -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <a href="/" style="color: inherit; text-decoration: none;">ה HEY YOU! ה</a>
+    </div>
+    <div class="navbar-menu" id="navbar-menu">
+        <div class="navbar-item">
+            <a href="/more" class="nav-link">More</a>
+            <a href="/to" class="nav-link">To</a>
+            <a href="/come" class="nav-link">Come</a>
+            <button id="effects-play-pause" class="effects-btn" title="Play/Pause Effects">▶️</button>
+            <button id="effects-stop" class="effects-btn" title="Stop and Clear Effects">⏹️</button>
+        </div>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">☰</button>
+</nav>
+
+<!-- Navigation Script -->
+<script>
+    // Hamburger toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const hamburger = document.getElementById('hamburger');
+        const navbarMenu = document.getElementById('navbar-menu');
+        if (hamburger && navbarMenu) {
+            hamburger.addEventListener('click', function() {
+                navbarMenu.classList.toggle('active');
+            });
+        }
+    });
+</script>

@@ -361,7 +361,8 @@ function renderYearMonths(months, activeMonth, currentMonth, onMonthClick, yearR
     // renderYearMonths
     let html = '<div class="year-months-list">';
     html += `<h2 class="year-months-title">Schedule for ${yearRange || ''}</h2>`;
-    html += '<h2 class="year-months-title">Days in the month may change if you change location. If average lunation is 29.53 days, then 53% of the world will have 30 days and 47% will have 29 days. That\'s what makes it "quantum"!</h2>';
+    html += `<h2 class="year-months-title">${navState.locationName || 'Unknown Location'}</h2>`;
+    html += '<h2 class="year-months-title">Days in the month may change by location because current lunation is not exactly 30 days.</h2>';
     html += '<ul class="year-months-ul">';
      // Fix: add missing class
     months.forEach((m, i) => {
@@ -1155,7 +1156,6 @@ function updateMultiYearCalendarUI() {
             navState.currentYearIdx--;
             navState.currentMonthIdx = 0;
             updateMultiYearCalendarUI();
-            setTimeout(() => animateGrid(), 0);
         }
     };
 
@@ -1164,7 +1164,6 @@ function updateMultiYearCalendarUI() {
             navState.currentYearIdx++;
             navState.currentMonthIdx = 0;
             updateMultiYearCalendarUI();
-            setTimeout(() => animateGrid(), 0);
         }
     };
 
@@ -1172,12 +1171,10 @@ function updateMultiYearCalendarUI() {
         if (navState.currentMonthIdx > 0) {
             navState.currentMonthIdx--;
             updateMultiYearCalendarUI();
-            setTimeout(() => animateGrid(), 0);
         } else if (navState.currentYearIdx > 0) {
             navState.currentYearIdx--;
             navState.currentMonthIdx = navState.yearsData[navState.currentYearIdx].months.length - 1;
             updateMultiYearCalendarUI();
-            setTimeout(() => animateGrid(), 0);
         }
     };
 
@@ -1185,12 +1182,10 @@ function updateMultiYearCalendarUI() {
         if (navState.currentMonthIdx < months.length - 1) {
             navState.currentMonthIdx++;
             updateMultiYearCalendarUI();
-            setTimeout(() => animateGrid(), 0);
         } else if (navState.currentYearIdx < navState.yearsData.length - 1) {
             navState.currentYearIdx++;
             navState.currentMonthIdx = 0;
             updateMultiYearCalendarUI();
-            setTimeout(() => animateGrid(), 0);
         }
     };
 
@@ -1206,7 +1201,6 @@ function updateMultiYearCalendarUI() {
                 navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
             }
             updateMultiYearCalendarUI();
-            setTimeout(() => animateGrid(), 0);
         }
     };
 
