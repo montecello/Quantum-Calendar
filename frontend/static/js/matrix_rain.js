@@ -72,6 +72,15 @@
   densityFrac: 0.495
   };
 
+  // Helper function to create the dark gradient background
+  function createBackgroundGradient() {
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, '#0a0a0a');    // Very dark at top
+    gradient.addColorStop(0.5, '#1a1a2e');  // Dark blue in middle
+    gradient.addColorStop(1, '#16213e');    // Navy blue at bottom
+    return gradient;
+  }
+
   // Helper to pick a character and the font family to render it with for a column
   function pickCharForColumn(colIndex) {
     const p = Math.random();
@@ -115,12 +124,24 @@
   DPR = Math.max(1, window.devicePixelRatio || 1);
   const { w: cssW, h: cssH } = getViewportSize();
 
+    // Store current context state
+    const wasRunning = running;
+    if (wasRunning) {
+      running = false; // Temporarily pause during resize
+    }
+
     // Size canvas backing store and CSS size
+    const oldWidth = canvas.width;
+    const oldHeight = canvas.height;
     canvas.width = Math.floor(cssW * DPR);
     canvas.height = Math.floor(cssH * DPR);
     canvas.style.width = cssW + 'px';
     canvas.style.height = cssH + 'px';
-    canvas.style.backgroundColor = 'rgb(20,20,20)';
+    canvas.style.backgroundColor = 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)';
+
+    // IMMEDIATELY fill canvas with background color to prevent white flash
+    ctx.fillStyle = createBackgroundGradient();
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Scale so we can use CSS pixel coordinates
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -224,18 +245,29 @@
 
     // Recompute hues to match the new column count (bias toward turquoise/blue/green)
     hues = new Array(colCount).fill(0).map((_, i) => 160 + (i / Math.max(1, colCount)) * 80);
+
+    // Restore running state if it was running before
+    if (wasRunning) {
+      running = true;
+      if (!rafId) rafId = requestAnimationFrame(drawFrameLoop);
+    }
   }
 
   function drawFrameLoop() {
-    if (!running) { rafId = null; return; }
+    if (!running || isResizing) {
+      rafId = requestAnimationFrame(drawFrameLoop);
+      return;
+    }
 
-  // Fade existing pixels toward transparency to avoid permanent imprints
-  // Use destination-out so we erase a fraction of existing pixels each frame.
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillStyle = `rgba(0,0,0,${settings.trailAlpha})`;
-  ctx.fillRect(0, 0, width, height);
-  // Switch back to normal drawing for the characters
-  ctx.globalCompositeOperation = 'source-over';
+    // Fill background with gradient every frame to maintain it
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = createBackgroundGradient();
+    ctx.fillRect(0, 0, width, height);
+
+    // Apply a very subtle darkening overlay to create trails
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = `rgba(0, 0, 0, 0.05)`;
+    ctx.fillRect(0, 0, width, height);
 
     for (let i = 0; i < colCount; i++) {
       const x = i * colPitch;
@@ -334,12 +366,70 @@
   // Throttled resize handler for orientation/viewport changes
   let resizeTimer = null;
   let resizePending = false;
+  let isResizing = false; // Flag to prevent drawing during resize
+  
   function scheduleResize() {
     if (resizeTimer) clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       resizeTimer = null;
-      resizePending = true;
-    }, 50);  // Reduced from 120ms to 50ms for smoother zooming
+      if (resizePending) {
+        isResizing = true;
+        // Pre-fill background to prevent white flash
+        ctx.fillStyle = createBackgroundGradient();
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        resize();
+        resizePending = false;
+        // Allow drawing again after a brief delay
+        setTimeout(() => { isResizing = false; }, 50);
+      }
+    }, 1);  // Ultra-responsive - immediate execution
+  }
+
+  // Check if canvas needs resize (for zoom changes that might not trigger resize events)
+  function checkResizeNeeded() {
+    const { w: cssW, h: cssH } = getViewportSize();
+    const currentDPR = Math.max(1, window.devicePixelRatio || 1);
+    
+    // Check if dimensions or DPR changed significantly
+    if (Math.abs(canvas.width - cssW * currentDPR) > 1 || 
+        Math.abs(canvas.height - cssH * currentDPR) > 1 || 
+        Math.abs(DPR - currentDPR) > 0.1) {
+      isResizing = true;
+      // Immediately fill background before resize to prevent white flash
+      ctx.fillStyle = createBackgroundGradient();
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      resize();
+      setTimeout(() => { isResizing = false; }, 50);
+    }
+  }
+
+  // More frequent periodic check for resize (fallback for zoom changes)
+  setInterval(checkResizeNeeded, 200); // Increased frequency from 1000ms to 200ms
+
+  // Additional safeguard: ensure background is always filled
+  setInterval(() => {
+    if (ctx && canvas.width > 0 && canvas.height > 0 && !isResizing) {
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.fillStyle = createBackgroundGradient();
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }, 1000); // Every second as a fallback
+
+  // Immediate resize for critical changes
+  function handleResize() {
+    resizePending = true;
+    scheduleResize();
+  }
+
+  // Aggressive resize check for zoom and focus events
+  function handleAggressiveResize() {
+    // Immediate background fill to prevent any white flash
+    if (ctx && canvas.width > 0 && canvas.height > 0) {
+      ctx.fillStyle = createBackgroundGradient();
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    checkResizeNeeded();
   }
 
   (async function init(){
@@ -365,7 +455,9 @@
       });
       effectsStop.addEventListener('click', function() {
         stop();
-        ctx.clearRect(0, 0, width, height);
+        // Fill with background color instead of clearing
+        ctx.fillStyle = createBackgroundGradient();
+        ctx.fillRect(0, 0, width, height);
         effectsPlayPause.textContent = '▶️';
       });
       // Initial state: play icon
@@ -373,12 +465,24 @@
     }
 
     // Listen for viewport changes (mobile rotation, address bar show/hide)
-    window.addEventListener('resize', scheduleResize, { passive: true });
-    window.addEventListener('orientationchange', scheduleResize, { passive: true });
+    window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('orientationchange', handleResize, { passive: true });
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', scheduleResize, { passive: true });
-      window.visualViewport.addEventListener('scroll', scheduleResize, { passive: true });
+      window.visualViewport.addEventListener('resize', handleResize, { passive: true });
+      window.visualViewport.addEventListener('scroll', handleResize, { passive: true });
     }
-    window.addEventListener('pageshow', scheduleResize, { passive: true });
+    window.addEventListener('pageshow', handleResize, { passive: true });
+    
+    // Handle visibility changes (tab switching) that might require resize
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        setTimeout(checkResizeNeeded, 100);
+      }
+    });
+    
+    // Additional aggressive resize checks for zoom/focus events
+    window.addEventListener('focus', handleAggressiveResize, { passive: true });
+    window.addEventListener('blur', handleAggressiveResize, { passive: true });
+    document.addEventListener('focus', handleAggressiveResize, { passive: true });
   })();
 })();

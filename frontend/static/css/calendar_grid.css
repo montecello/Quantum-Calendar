@@ -21,7 +21,12 @@
 }
 
 @media (min-width: 1024px) {
-    .calendar-columns.two-col { grid-template-columns: 520px 1fr; }
+    .two-col { grid-template-columns: 520px 1fr; }
+}
+
+/* Mobile adjustments so it still fits one row */
+@media (max-width: 420px) {
+  .calendar-nav-btns { padding: 6px; }
 }
 
 /* Keep a reasonable max width but allow responsive behavior */
@@ -34,6 +39,7 @@
     overflow: hidden;
     width: 100%;
     max-width: 480px;
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 .calendar-grid th,
@@ -41,8 +47,9 @@
     border: 1px solid #284b63;
     text-align: center;
     font-size: 1.2rem;
-    padding: 16px 0;
-    min-width: 60px; /* preserve backgrounds, do not alter colors */
+    padding: 0;
+    min-width: 60px;
+    height: 60px; /* make cells square */
     background: #173f5f;
     color: #e0e6ed;
 }
@@ -52,7 +59,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1px;
     position: relative;
     z-index: 2;
     height: 100%;
@@ -65,21 +71,24 @@
     z-index: 2;
     font-weight: bold;
     text-align: center;
-    margin-bottom: 1px;
+    font-size: 1.8rem;
 }
 
 /* Gregorian date info for custom calendar cells */
 .gregorian-info {
-    font-size: 0.65rem;
-    color: #3caea3;
+    font-size: 0.85rem;
+    color: #ffd700;
     font-weight: bold;
     background: rgba(60, 174, 163, 0.1);
-    padding: 1px 3px;
-    border-radius: 2px;
-    border: 1px solid rgba(60, 174, 163, 0.3);
+    padding: 0;
+    border: none;
     white-space: nowrap;
     text-shadow: 0 0 2px rgba(60, 174, 163, 0.5);
     text-align: center;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* Counter info for bronze and silver counters - small and top right */
@@ -101,29 +110,30 @@
 }
 
 .custom-calendar-info {
-    font-size: 0.75rem;
-    color: #3caea3;
+    font-size: 0.85rem;
+    color: #ffd700;
     font-weight: bold;
     background: rgba(23, 63, 95, 0.8);
-    padding: 1px 4px;
-    border-radius: 3px;
-    border: 1px solid #3caea3;
+    padding: 0;
+    border: none;
     white-space: nowrap;
     text-shadow: 0 0 3px #3caea3;
 }
 
 /* Gregorian date info for custom calendar cells */
 .gregorian-info {
-    font-size: 0.65rem;
-    color: #3caea3;
+    font-size: 0.85rem;
+    color: #ffd700;
     font-weight: bold;
     background: rgba(60, 174, 163, 0.1);
-    padding: 1px 3px;
-    border-radius: 2px;
-    border: 1px solid rgba(60, 174, 163, 0.3);
+    padding: 0;
+    border: none;
     white-space: nowrap;
     text-shadow: 0 0 2px rgba(60, 174, 163, 0.5);
-    margin-top: 1px;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* Moon phase emoji background for day cells */
@@ -214,6 +224,7 @@ body, .calendar-title, .search-bar, #suggestions {
          subtle slide-in from the right so month/year changes feel directional.
      - Respects prefers-reduced-motion. */
 .fade-in { animation: slideInGrid 0.45s cubic-bezier(.2,.8,.2,1); will-change: transform, opacity; }
+.fade-out { opacity: 0; transform: translateX(-10px); transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
 @keyframes slideInGrid {
     0%   { transform: translateX(18px); opacity: 0; }
     60%  { transform: translateX(-6px); opacity: 0.92; }
@@ -223,6 +234,7 @@ body, .calendar-title, .search-bar, #suggestions {
 .grid-pulse { animation: slideInGrid 0.45s cubic-bezier(.2,.8,.2,1); }
 @media (prefers-reduced-motion: reduce) {
     .fade-in, .grid-pulse { animation: none !important; transform: none !important; }
+    .fade-out { transition: none !important; }
 }
 
 /* Dark pink special day for the day after n=50 on the silver counter */
@@ -266,17 +278,23 @@ body, .calendar-title, .search-bar, #suggestions {
 }
 /* Emerald green special day for 7th month, 1st day */
 .calendar-grid td.seventh-emerald-green-day {
-    background: linear-gradient(135deg, #50c878 70%, #228b22 100%) !important;
+    background: linear-gradient(135deg, #228b22 90%, #006400 100%) !important;
     color: #fff !important;
     font-weight: bold;
-    box-shadow: 0 0 10px 2px #50c87855;
+    box-shadow: 0 0 15px 4px rgba(34, 139, 34, 0.8);
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
 }
 /* Orange special day for 7th month, 1st day, 9th-10th, 15th, 22nd days */
 .calendar-grid td.seventh-orange-day {
-    background: linear-gradient(135deg, #ff9800 70%, #ffb347 100%) !important;
+    background: linear-gradient(135deg, #ff8c00 90%, #cc5500 100%) !important;
     color: #fff !important;
     font-weight: bold;
-    box-shadow: 0 0 10px 2px #ff980055;
+    box-shadow: 0 0 15px 4px rgba(255, 140, 0, 0.8);
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
 }
 /* Ruby red special day for 7th month, 9th-10th, 15th, 22nd days */
 .calendar-grid td.seventh-ruby-red-day {
@@ -323,10 +341,13 @@ body, .calendar-title, .search-bar, #suggestions {
 /* Special day backgrounds for calendar grid */
 
 .calendar-grid td.gold-bronze-day {
-    background: linear-gradient(135deg, #ffd700 60%, #b08d57 100%) !important;
-    color: #4b3200 !important;
+    background: linear-gradient(135deg, #8b6914 90%, #654321 100%) !important;
+    color: #fff !important;
     font-weight: bold;
-    box-shadow: 0 0 10px 2px #ffd70055;
+    box-shadow: 0 0 15px 4px rgba(139, 105, 20, 0.8);
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
 }
 
 
@@ -341,22 +362,39 @@ body, .calendar-title, .search-bar, #suggestions {
     margin-bottom: 16px;
     text-align: center;
     font-family: 'Pictocrypto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    background: #0a2342;
+    border: 2px solid #3caea3;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px #0001;
+    padding: 12px;
+    position: relative;
+    z-index: 10;
 }
 .calendar-nav-btns button {
-    background: #20639b;
+    background: #3caea3;
     color: #fff;
     border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
+    border-radius: 50%;
+    padding: 8px 12px;
     margin: 0 4px;
     font-size: 1rem;
     cursor: pointer;
     transition: background 0.2s;
     font-family: 'Pictocrypto', sans-serif;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .calendar-nav-btns button:hover {
     font-family: 'Pictocrypto', sans-serif;
-    background: #3caea3;
+    background: #2a8a7e;
 }
 .year-months-link.current {
     background: linear-gradient(90deg, #ffd700 0%, #fffbe6 100%);
@@ -453,12 +491,138 @@ body, .calendar-title, .search-bar, #suggestions {
 /* Ensure side panel boxes size includes padding/border */
 .side-panel { box-sizing: border-box; }
 
+/* Search bar container with toggle, input, and button */
+.search-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    justify-content: center;
+    position: static;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.search-bar {
+    width: 400px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+
+#search-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: #3caea3;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    transition: background 0.2s;
+    display: none; /* Hidden by default */
+}
+
+#search-btn:hover {
+    background: #2a8a7e;
+}
+
+/* Mode toggle for search bar */
+.mode-toggle {
+    display: flex;
+    gap: 0;
+    margin-left: 10px;
+}
+
+.mode-toggle button {
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.mode-toggle button[aria-pressed="true"] {
+    background: #555;
+    color: #fff;
+}
+
+#suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    transform: none;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: 100%; /* Match input width exactly */
+    max-width: 400px;
+    display: none;
+    color: black;
+    box-sizing: border-box;
+}
+
+#suggestions.active {
+    display: block;
+}
+
+/* Suggestion styles */
+.suggestion-item {
+    padding: 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.suggestion-item:hover {
+    background: #f0f0f0;
+}
+
+.suggestion-success {
+    padding: 8px;
+    color: #3caea3;
+    font-weight: bold;
+}
+
+.suggestion-error {
+    padding: 8px;
+    color: #d63031;
+    font-weight: bold;
+}
+
+.suggestion-empty {
+    padding: 8px;
+    color: #888a8a;
+}
+
 /* Responsive tweaks */
 @media (max-width: 768px) {
     .calendar-grid th,
     .calendar-grid td {
         font-size: 1rem;
-        padding: 12px 0;
+        padding: 0;
+        height: 50px; /* maintain square cells */
+    }
+    .holiday-daynum {
+        font-size: 1.5rem;
+    }
+    .gregorian-info {
+        font-size: 0.9rem;
     }
 }
 
@@ -471,18 +635,27 @@ body, .calendar-title, .search-bar, #suggestions {
     .calendar-grid th,
     .calendar-grid td {
         font-size: 0.95rem;
-        padding: 10px 0;
+        padding: 0;
+        height: 45px; /* maintain square cells */
         min-width: 48px; /* tighter but keeps colors */
+    }
+    .holiday-daynum {
+        font-size: 1.425rem;
+    }
+    .gregorian-info {
+        font-size: 0.85rem;
     }
     .side-panel { margin-top: 16px; padding: 18px 16px 12px 16px; max-width: 100%; width: calc(100% - 16px); }
     .side-panel .close-btn { top: 8px; right: 10px; font-size: 1.4em; }
     /* Mobile sizing for nav buttons */
-    .calendar-nav-btns { padding: 0 6px; }
+    .calendar-nav-btns { padding: 8px; }
     .calendar-nav-btns button {
       font-size: 0.8rem;
-      padding: 6px 8px;
+      padding: 6px;
       margin: 0 2px;
-      border-radius: 5px;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
     }
 }
 
@@ -507,8 +680,8 @@ body, .calendar-title, .search-bar, #suggestions {
 
 /* On very small screens, hide labels to fit one row */
 @media (max-width: 420px) {
-  .calendar-nav-btns { padding: 0 4px; }
-  .calendar-nav-btns button { font-size: 0.9rem; padding: 6px 8px; margin: 0 2px; }
+  .calendar-nav-btns { padding: 6px; }
+  .calendar-nav-btns button { font-size: 0.9rem; padding: 6px; margin: 0 2px; width: 34px; height: 34px; display: inline-flex; }
   .calendar-nav-btns button .label { display: none; }
 }
 
@@ -582,9 +755,9 @@ body, .calendar-title, .search-bar, #suggestions {
 
 /* Home button styling to match nav button height */
 .calendar-nav-btns .home-btn {
-  background: #ffffff;
-  color: #20639b;
-  border: 2px solid #20639b;
+  background: #3caea3;
+  color: #fff;
+  border: none;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -595,18 +768,23 @@ body, .calendar-title, .search-bar, #suggestions {
   vertical-align: middle;
   cursor: pointer;
   margin: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.calendar-nav-btns .home-btn:hover { background: #3caea3; color: #fff; border-color: #3caea3; }
+.calendar-nav-btns .home-btn:hover { background: #2a8a7e; }
 
 /* Align icon baseline with neighbor buttons */
 .calendar-nav-btns .home-btn .icon { font-weight: normal; }
 
 /* Mobile adjustments so it still fits one row */
 @media (max-width: 420px) {
-  .calendar-nav-btns .home-btn { width: 36px; height: 36px; line-height: 34px; margin: 0 4px; }
+  .calendar-nav-btns { padding: 6px; }
+  .calendar-nav-btns button { font-size: 0.9rem; padding: 6px; margin: 0 2px; width: 34px; height: 34px; display: inline-flex; }
+  .calendar-nav-btns .home-btn { width: 34px; height: 34px; line-height: 32px; margin: 0 3px; }
 }
 @media (max-width: 360px) {
-  .calendar-nav-btns .home-btn { width: 34px; height: 34px; line-height: 32px; margin: 0 3px; }
+  .calendar-nav-btns .home-btn { width: 32px; height: 32px; line-height: 30px; margin: 0 2px; }
 }
 
 /* Loading overlay container for calendar grid - positioned to cover only the calendar area */

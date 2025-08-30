@@ -47,12 +47,21 @@
             <h1 class="calendar-title">⏰ Quantum Clock v1.0 ⏰</h1>
         </div>
         <div class="search-bar-container">
-            <input type="text" class="search-bar" id="location-input" placeholder="Enter location...('Greenwich, England')">
-            <div id="suggestions"></div>
+            <div class="input-wrapper">
+                <input type="text" class="search-bar" id="location-input" placeholder="Enter location...('Greenwich, England')" autocomplete="off">
+                <div id="suggestions"></div>
+            </div>
+        </div>
+
+        <!-- Location mode toggle -->
+        <div class="calendar-mode-toggle" style="margin:8px 0 0 0;">
+            <button id="mode-place" class="mode-btn" aria-pressed="true">Place</button>
+            <button id="mode-coordinates" class="mode-btn" aria-pressed="false">Coordinates</button>
+            <button id="search-btn" type="button" style="display: none;">🔍</button>
         </div>
 
         <!-- Calendar mode toggle -->
-        <div class="calendar-mode-toggle" style="display:flex;gap:8px;justify-content:center;margin:8px 0 0 0;">
+        <div class="calendar-mode-toggle" style="margin:8px 0 0 0;">
             <button id="mode-custom" class="mode-btn" aria-pressed="true">Quantum</button>
             <button id="mode-gregorian" class="mode-btn" aria-pressed="false">Gregorian</button>
         </div>
@@ -60,6 +69,9 @@
         <div class="calendar-container">
             <div id="calendar-grid-root"></div>
         </div>
+
+        <!-- Side Panel -->
+        <div class="side-panel" id="side-panel"></div>
         <!-- Accordion: below calendar and schedule list -->
         <div class="accordion" id="extra-accordion" aria-label="Additional sections">
             <h2 class="accordion-title">Notes</h2>
@@ -261,9 +273,9 @@
     </div>
 
     <script src="/static/js/geoapify.js"></script>
-    <script src="/static/js/side_panel.js"></script>
     <script src="/static/js/gregorian.js"></script>
     <script src="/static/js/calendar.js"></script>
+    <script src="/static/js/side_panel.js"></script>
     <script src="/static/js/accordion.js"></script>
     <script src="/static/js/matrix_rain.js"></script>
 </body>

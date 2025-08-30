@@ -433,11 +433,16 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
 function renderYearMonths(months, activeMonth, currentMonth, onMonthClick, yearRange, isCurrentYear) {
     // Debug: log months being rendered and compare to canonical navState months
     // renderYearMonths
-    let html = '<div class="year-months-list">';
-    html += `<h2 class="year-months-title">Schedule for ${yearRange || ''}</h2>`;
-    html += `<h2 class="year-months-title">${navState.locationName || 'Unknown Location'}</h2>`;
-    html += '<h2 class="year-months-title">Days in the month may change by location because current lunation is not exactly 30 days.</h2>';
-    html += '<ul class="year-months-ul">';
+    let html = '<div class="year-months-list accordion">';
+    html += '<div class="accordion-item">';
+    html += `<button class="accordion-header year-months-title" type="button" aria-expanded="true">`;
+    html += `<span class="accordion-icon">▼</span>`;
+    html += `<span>Schedule for ${yearRange || ''}</span>`;
+    html += `</button>`;
+    html += '<div class="accordion-panel" style="display: block;">';
+    html += `<h3 class="year-months-title">${navState.locationName || 'Unknown Location'}</h3>`;
+    html += '<h4 class="year-months-title">Days in the month may change by location because current lunation is not exactly 30 days.</h4>';
+    html += '<ul class="year-months-ul accordion-content">';
      // Fix: add missing class
     months.forEach((m, i) => {
         const isActive = (i+1) === activeMonth;
@@ -447,8 +452,22 @@ function renderYearMonths(months, activeMonth, currentMonth, onMonthClick, yearR
         html += `<a href="#" class="year-months-link${isActive ? ' active' : ''}${isCurrent ? ' current' : ''}" data-month="${i+1}">${i+1}th Month</a> <span class="year-months-days">${m.days} days</span>`;
         html += `</li>`;
     });
-    html += '</ul></div>';
+    html += '</ul></div></div></div>';
     setTimeout(() => {
+        // Add accordion toggle functionality
+        const header = document.querySelector('.year-months-title.accordion-header');
+        const panel = document.querySelector('.accordion-panel');
+        const icon = document.querySelector('.accordion-icon');
+
+        if (header && panel && icon) {
+            header.addEventListener('click', function() {
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                this.setAttribute('aria-expanded', !isExpanded);
+                panel.style.display = isExpanded ? 'none' : 'block';
+                icon.textContent = isExpanded ? '▶' : '▼';
+            });
+        }
+
         document.querySelectorAll('.year-months-link').forEach(link => {
             link.onclick = function(e) {
                 e.preventDefault();
@@ -1454,9 +1473,8 @@ function syncNavigationState(fromMode, toMode) {
                     custom: { yearIdx: navState.currentYearIdx, monthIdx: navState.currentMonthIdx }
                 });
             } else {
-                // Fallback: find closest custom month
-                const today = new Date();
-                const foundIdx = findQuantumIndexForDate(today, navState.yearsData);
+                // Enhanced fallback: Find closest custom month using the Gregorian date
+                const foundIdx = findQuantumIndexForDate(gregorianDate, navState.yearsData);
                 if (foundIdx) {
                     navState.currentYearIdx = foundIdx.yearIdx;
                     navState.currentMonthIdx = foundIdx.monthIdx;
@@ -1506,7 +1524,7 @@ function renderNavButtons() {
     <div class="calendar-nav-btns" role="group" aria-label="Calendar navigation">
         <button id="prev-year-btn" aria-label="Previous year"><span class="icon"><<</span> </button>
         <button id="prev-month-btn" aria-label="Previous month"><span class="icon"><</span> </button>
-        <button id="home-month-btn" class="home-btn" aria-label="Current month"><span class="icon">🏠</span></button>
+        <button id="home-month-btn" class="home-btn" aria-label="Current month"><span class="icon">NOW</span></button>
         <button id="next-month-btn" aria-label="Next month"><span class="icon">></span> </button>
         <button id="next-year-btn" aria-label="Next year"><span class="icon">>></span> </button>
     </div>
@@ -1602,63 +1620,76 @@ function updateMultiYearCalendarUI() {
 
         if (prevYearBtn) prevYearBtn.onclick = function() {
             if (navState.currentYearIdx > 0) {
+                showLoadingIndicator();
                 navState.currentYearIdx--;
                 navState.currentMonthIdx = 0;
                 // Sync Gregorian state
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
+                setTimeout(() => hideLoadingIndicator(), 300);
             }
         };
 
         if (nextYearBtn) nextYearBtn.onclick = function() {
             if (navState.currentYearIdx < navState.yearsData.length - 1) {
+                showLoadingIndicator();
                 navState.currentYearIdx++;
                 navState.currentMonthIdx = 0;
                 // Sync Gregorian state
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
+                setTimeout(() => hideLoadingIndicator(), 300);
             }
         };
 
         if (prevMonthBtn) prevMonthBtn.onclick = function() {
             if (navState.currentMonthIdx > 0) {
+                showLoadingIndicator();
                 navState.currentMonthIdx--;
                 // Sync Gregorian state
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
+                setTimeout(() => hideLoadingIndicator(), 300);
             } else if (navState.currentYearIdx > 0) {
+                showLoadingIndicator();
                 navState.currentYearIdx--;
                 navState.currentMonthIdx = navState.yearsData[navState.currentYearIdx].months.length - 1;
                 // Sync Gregorian state
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
+                setTimeout(() => hideLoadingIndicator(), 300);
             }
         };
 
         if (nextMonthBtn) nextMonthBtn.onclick = function() {
             if (navState.currentMonthIdx < months.length - 1) {
+                showLoadingIndicator();
                 navState.currentMonthIdx++;
                 // Sync Gregorian state
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
+                setTimeout(() => hideLoadingIndicator(), 300);
             } else if (navState.currentYearIdx < navState.yearsData.length - 1) {
+                showLoadingIndicator();
                 navState.currentYearIdx++;
                 navState.currentMonthIdx = 0;
                 // Sync Gregorian state
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
+                setTimeout(() => hideLoadingIndicator(), 300);
             }
         };
 
         if (homeBtn) homeBtn.onclick = function() {
             // Jump to real current month/year if found
             if (navState.yearsData && navState.yearsData.length) {
+                showLoadingIndicator();
                 const today = new Date();
                 fetchCurrentDawnInfo().then(dawnInfo => {
                     const foundIdx = findQuantumIndexForDate(today, navState.yearsData, dawnInfo);
@@ -1669,12 +1700,14 @@ function updateMultiYearCalendarUI() {
                         syncNavigationState('custom', 'gregorian');
                         animateGridTransition();
                         updateMultiYearCalendarUI();
+                        setTimeout(() => hideLoadingIndicator(), 300);
                     } else {
                         navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
                         // Sync Gregorian state
                         syncNavigationState('custom', 'gregorian');
                         animateGridTransition();
                         updateMultiYearCalendarUI();
+                        setTimeout(() => hideLoadingIndicator(), 300);
                     }
                 }).catch(() => {
                     // Fallback without dawn info
@@ -1686,12 +1719,14 @@ function updateMultiYearCalendarUI() {
                         syncNavigationState('custom', 'gregorian');
                         animateGridTransition();
                         updateMultiYearCalendarUI();
+                        setTimeout(() => hideLoadingIndicator(), 300);
                     } else {
                         navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
                         // Sync Gregorian state
                         syncNavigationState('custom', 'gregorian');
                         animateGridTransition();
                         updateMultiYearCalendarUI();
+                        setTimeout(() => hideLoadingIndicator(), 300);
                     }
                 });
             }
@@ -1787,10 +1822,13 @@ function hideLoadingIndicator() {
 function animateGridTransition() {
     const grid = document.getElementById('calendar-grid-anim');
     if (grid) {
-        grid.style.opacity = '0';
+        grid.classList.add('fade-out');
         setTimeout(() => {
-            grid.style.transition = 'opacity 0.3s ease-in-out';
-            grid.style.opacity = '1';
+            grid.classList.remove('fade-out');
+            grid.classList.add('fade-in');
+            setTimeout(() => {
+                grid.classList.remove('fade-in');
+            }, 450);
         }, 50);
     }
 }
@@ -2015,21 +2053,25 @@ function rebindNavForGregorian() {
   function setOnClick(el, fn) { if (el) el.onclick = (e) => { e.preventDefault(); fn(); }; }
 
   function bumpMonth(delta) {
+    showLoadingIndicator();
     const cl = clampGregorianYM((ns.gYear ?? new Date().getFullYear()), (ns.gMonth ?? new Date().getMonth()) + delta);
     ns.gYear = cl.y; ns.gMonth = cl.m;
     // Sync custom state
     syncNavigationState('gregorian', 'custom');
     animateGridTransition();
     renderCalendarForState();
+    setTimeout(() => hideLoadingIndicator(), 300);
   }
 
   function bumpYear(delta) {
+    showLoadingIndicator();
     const cl = clampGregorianYM((ns.gYear ?? new Date().getFullYear()) + delta, (ns.gMonth ?? new Date().getMonth()));
     ns.gYear = cl.y; ns.gMonth = cl.m;
     // Sync custom state
     syncNavigationState('gregorian', 'custom');
     animateGridTransition();
     renderCalendarForState();
+    setTimeout(() => hideLoadingIndicator(), 300);
   }
 
   setOnClick(prevYearBtn, () => bumpYear(-1));
@@ -2037,12 +2079,14 @@ function rebindNavForGregorian() {
   setOnClick(prevMonthBtn, () => bumpMonth(-1));
   setOnClick(nextMonthBtn, () => bumpMonth(+1));
   setOnClick(homeBtn, () => {
+    showLoadingIndicator();
     const cl = clampGregorianYM(new Date().getFullYear(), new Date().getMonth());
     ns.gYear = cl.y; ns.gMonth = cl.m;
     // Sync custom state
     syncNavigationState('gregorian', 'custom');
     animateGridTransition();
     renderCalendarForState();
+    setTimeout(() => hideLoadingIndicator(), 300);
   });
 }
 
@@ -2155,7 +2199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         navState.tz = tz;
         if (name) navState.locationName = name;
 
-        console.log(`Location changed to: ${name || `${lat}, ${lon}`}`);
+        console.log(`Location changed to: ${name || `${lat.toFixed(4)}, ${lon.toFixed(4)}`}`);
 
         // Cancel any existing data loading
         cancelCurrentRequest();

@@ -14,12 +14,14 @@ body, .calendar-title, .search-bar, #suggestions {
 .title-placemat {
   width: min(640px, 92vw);
   margin: 24px auto 12px auto;
-  background: #ffffff;
+  background: #0a2342;
   border: 2px solid #3caea3; /* similar to search bar */
   border-radius: 12px;        /* curved edges */
   box-shadow: 0 2px 12px #0001;
   padding: 12px 16px;
   box-sizing: border-box; /* ensure width includes padding/border */
+  position: relative;
+  z-index: 10;
 }
 
 /* Alias font-face for canvas Hebrew rendering. Apply to all glyphs so Latin/digits use it too. */
@@ -34,10 +36,11 @@ body, .calendar-title, .search-bar, #suggestions {
     text-align: center;
     font-size: clamp(1.8rem, 6vw, 2.2rem);
     font-weight: bold;
-    color: #20639b;
+    color: #ffd700;
     margin: 0; /* reset margins inside placemat */
     letter-spacing: 2px;
-    text-shadow: 0 2px 8px #3caea344;
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+    background: transparent;
 }
 
 .search-bar-container {
@@ -96,10 +99,36 @@ body, .calendar-title, .search-bar, #suggestions {
   width: 100vw;
   height: 100vh;
   z-index: 0;              /* behind content */
+  pointer-events: none;    /* don't block clicks */
+  background-color: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%); /* Match loading page dark gradient */
+}
+/* Ensure content stays above canvas */
+.app-root { 
+  position: relative; 
+  z-index: 1; 
+  text-align: center;
+}
+
+/* Respect reduced motion: hide background */
+@media (prefers-reduced-motion: reduce) {
+  #bg-matrix { display: none; }
+}
+
+/* Live background canvas */
+#bg-matrix {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;              /* behind content */
   pointer-events: none;    /* don’t block clicks */
 }
 /* Ensure content stays above canvas */
-.app-root { position: relative; z-index: 1; }
+.app-root { 
+  position: relative; 
+  z-index: 1; 
+  text-align: center;
+}
 
 /* Respect reduced motion: hide background */
 @media (prefers-reduced-motion: reduce) {
@@ -325,17 +354,133 @@ body, .calendar-title, .search-bar, #suggestions {
   }
 }
 
-/* Segmented toggle for calendar mode */
-.calendar-mode-toggle {
-  display: inline-flex;
+/* Year months list (schedule section) */
+.year-months-list {
+  max-width: 1080px;
+  margin: 24px auto;
+  background: #173f5f;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #0004;
+  padding: 0;
+  color: #e0e6ed;
+  overflow: hidden;
+}
+
+.year-months-title {
+  margin: 0;
+  text-align: center;
+  color: #fff;
+  font-size: 1.2rem;
+  font-family: 'Pictocrypto', sans-serif;
+  letter-spacing: 1px;
+}
+
+.year-months-title.accordion-header {
+  width: 100%;
+  text-align: center;
+  background: #0a2342;
+  color: #e0e6ed;
+  border: none;
+  padding: 16px 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  font-family: 'Pictocrypto', sans-serif;
+  font-size: 1.2rem;
+  border-radius: 12px 12px 0 0;
+  transition: background 0.2s;
+}
+
+.year-months-title.accordion-header:hover {
+  background: #173f5f;
+}
+
+.year-months-title.accordion-header .accordion-icon {
+  font-size: 1.1rem;
+  transition: transform 0.2s;
+}
+
+.year-months-title.accordion-header[aria-expanded="false"] .accordion-icon {
+  transform: rotate(-90deg);
+}
+
+.accordion-panel {
+  padding: 0;
   background: #0a2342;
-  border: 2px solid #3caea3;
-  border-radius: 999px;
-  padding: 4px;
-  gap: 0;
-  box-shadow: 0 2px 8px #0003;
+}
+
+.year-months-ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  padding: 16px;
+}
+
+.year-months-li {
+  background: #284b63;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.2s;
+}
+
+.year-months-li:hover {
+  background: #3d5a6c;
+}
+
+.year-months-link {
+  color: #e0e6ed;
+  text-decoration: none;
+  font-weight: bold;
+  font-family: 'Pictocrypto', sans-serif;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.year-months-link:hover {
+  color: #ffd700;
+}
+
+.year-months-link.active {
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+.year-months-link.current {
+  color: #3caea3;
+  text-shadow: 0 0 8px rgba(60, 174, 163, 0.5);
+}
+
+.year-months-days {
+  color: #cfe0f2;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Mobile responsive for year months */
+@media (max-width: 768px) {
+  .year-months-ul {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .year-months-li {
+    padding: 10px 12px;
+  }
+
+  .year-months-title.accordion-header {
+    padding: 12px 14px;
+    font-size: 1.1rem;
+  }
 }
 .calendar-mode-toggle .mode-btn {
   appearance: none;
@@ -357,6 +502,20 @@ body, .calendar-title, .search-bar, #suggestions {
 }
 .calendar-mode-toggle .mode-btn:not(.active):hover {
   background: rgba(60,174,163,0.18);
+}
+
+/* Toggle button containers need backgrounds to prevent matrix rain from obscuring text */
+.calendar-mode-toggle {
+  display: inline-flex;
+  gap: 8px;
+  background: #0a2342;
+  border: 2px solid #3caea3;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #0001;
+  padding: 8px 12px;
+  margin: 8px 0;
+  position: relative;
+  z-index: 10;
 }
 
 /* Harmonize grid transition effect for Gregorian/Quantum grids.
@@ -412,56 +571,4 @@ body, .calendar-title, .search-bar, #suggestions {
     0% { box-shadow: 0 0 0 0 rgba(60, 174, 163, 0.7); }
     70% { box-shadow: 0 0 0 10px rgba(60, 174, 163, 0); }
     100% { box-shadow: 0 0 0 0 rgba(60, 174, 163, 0); }
-}
-
-/* Loading overlay styles */
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.95);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    border-radius: 12px;
-    backdrop-filter: blur(2px);
-}
-
-.progress-container {
-    text-align: center;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    min-width: 250px;
-}
-
-.progress-bar {
-    width: 200px;
-    height: 8px;
-    background: #e0e0e0;
-    border-radius: 4px;
-    margin: 0 auto 12px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #3caea3, #20639b);
-    border-radius: 4px;
-    width: 0%;
-    transition: width 0.3s ease;
-    box-shadow: 0 0 10px rgba(60, 174, 163, 0.3);
-}
-
-.progress-text {
-    color: #20639b;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: 'Pictocrypto', sans-serif;
-    margin-top: 8px;
 }
