@@ -153,15 +153,52 @@ def api_geocode():
         return jsonify({'error': str(e)}), 500
 
 
-# Optional pass-through to astro-service (keeps browser same-origin)
-@api.route('/api/astro/illumination/moon')
-def api_astro_moon():
+# Current dawn information endpoint for frontend day calculations
+@api.route('/api/current-dawn')
+def api_current_dawn():
     try:
-        iso = request.args.get('iso')
-        if not iso:
-            return jsonify({'error': 'iso required'}), 400
-        r = requests.get(f"{ASTRO_API_BASE}/illumination/moon", params={'iso': iso}, timeout=8)
-        return (r.text, r.status_code, {'Content-Type': r.headers.get('Content-Type', 'application/json')})
+        lat = request.args.get('lat', type=float)
+        lon = request.args.get('lon', type=float)
+        tzname = request.args.get('tz', type=str)
+        
+        if lat is None or lon is None or not tzname:
+            return jsonify({'error': 'Missing or invalid parameters'}), 400
+            
+        from datetime import datetime, date, timedelta
+        from backend.astronomy.sun import get_event_with_fallback
+        import pytz
+        
+        # Get current time in the specified timezone
+        local_tz = pytz.timezone(tzname)
+        now_local = datetime.now(local_tz)
+        today = now_local.date()
+        
+        # Get dawn for today
+        dawn_time, dawn_tag = get_event_with_fallback('dawn', lat, lon, tzname, today)
+        
+        # Get dawn for tomorrow (for day boundary calculations)
+        tomorrow = today + timedelta(days=1)
+        dawn_time2, dawn_tag2 = get_event_with_fallback('dawn', lat, lon, tzname, tomorrow)
+        
+        # Determine if we're currently after today's dawn
+        is_after_today_dawn = False
+        if dawn_time:
+            is_after_today_dawn = now_local >= dawn_time
+        
+        # Format times as ISO strings
+        dawn_iso = dawn_time.isoformat() if dawn_time else None
+        dawn2_iso = dawn_time2.isoformat() if dawn_time2 else None
+        current_iso = now_local.isoformat()
+        
+        return jsonify({
+            'today_dawn': dawn_iso,
+            'today_tag': dawn_tag,
+            'tomorrow_dawn': dawn2_iso,
+            'tomorrow_tag': dawn_tag2,
+            'current_time': current_iso,
+            'is_after_today_dawn': is_after_today_dawn
+        })
+        
     except Exception as e:
-        logging.exception('Error proxying to astro-service')
-        return jsonify({'error': str(e)}), 502
+        logging.exception("Exception in /api/current-dawn")
+        return jsonify({"error": str(e)}), 500

@@ -35,10 +35,10 @@
     return { weeks, daysInMonth };
   }
 
-  function applySpecialDayClasses(td, dateStr) {
+  async function applySpecialDayClasses(td, dateStr) {
     try {
       if (typeof window.getSpecialDayClassesForISO === 'function') {
-        const cls = window.getSpecialDayClassesForISO(dateStr) || [];
+        const cls = await window.getSpecialDayClassesForISO(dateStr) || [];
         if (cls && cls.length) {
           console.log('Gregorian cell', dateStr, 'special classes:', cls);
         }
@@ -51,11 +51,11 @@
     }
   }
 
-  function addCustomCalendarInfo(td, dateStr, year, month, dayNum, monthsInYear) {
+  async function addCustomCalendarInfo(td, dateStr, year, month, dayNum, monthsInYear) {
     try {
       // Map Gregorian date to custom calendar
       if (typeof window.isoToCustomMonthDay === 'function') {
-        const customMapping = window.isoToCustomMonthDay(dateStr);
+        const customMapping = await window.isoToCustomMonthDay(dateStr);
         if (customMapping && customMapping.monthNum && customMapping.dayNum) {
           // Create container for dual date display
           const container = document.createElement('div');
@@ -205,9 +205,9 @@
           span.textContent = String(dayNum);
           td.appendChild(span);
 
-          applySpecialDayClasses(td, dateStr);
+          applySpecialDayClasses(td, dateStr).catch(e => console.error('Error applying special day classes:', e));
           markCurrentDay(td, year, month, dayNum);
-          addCustomCalendarInfo(td, dateStr, year, month, dayNum, monthsInYear);
+          addCustomCalendarInfo(td, dateStr, year, month, dayNum, monthsInYear).catch(e => console.error('Error adding custom calendar info:', e));
         } else {
           td.classList.add('empty-cell');
         }

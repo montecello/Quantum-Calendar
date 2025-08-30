@@ -373,8 +373,43 @@ body, .calendar-title, .search-bar, #suggestions {
   #calendar-grid-root.fade-in { animation: none !important; transform: none !important; }
 }
 
-/* On small phones, compact toggle */
-@media (max-width: 420px) {
-  .calendar-mode-toggle { padding: 3px; }
-  .calendar-mode-toggle .mode-btn { padding: 6px 10px; font-weight: 600; }
+/* Loading spinner for smooth transitions */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3caea3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Smooth grid transitions */
+.calendar-grid {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.calendar-grid.fade-out {
+    opacity: 0;
+}
+
+.calendar-grid.fade-in {
+    opacity: 1;
+}
+
+/* Current day pulse animation */
+.current-day {
+    animation: current-pulse 1s ease-in-out infinite;
+}
+
+@keyframes current-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(60, 174, 163, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(60, 174, 163, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(60, 174, 163, 0); }
 }

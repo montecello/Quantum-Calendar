@@ -1,5 +1,24 @@
 // Location autocomplete using backend proxy (/api/geocode)
 
+// Add this function to detect and parse coordinates
+function isCoordinates(input) {
+    // Simple heuristic: contains numbers and potential coordinate indicators
+    return /\d/.test(input) && (/[°'"\s,;-]/.test(input) || /[nsew]/i.test(input));
+}
+
+function parseCoordinatesFrontend(input) {
+    // Basic client-side validation (full parsing is on backend)
+    const parts = input.split(/[,\s;|]+/).filter(p => p.trim());
+    if (parts.length >= 2) {
+        const lat = parseFloat(parts[0]);
+        const lon = parseFloat(parts[1]);
+        if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+            return { lat, lon };
+        }
+    }
+    return null;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('location-input');
     let suggestions = document.getElementById('suggestions');
@@ -10,10 +29,49 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Geoapify: Elements found, attaching input event listener.');
     input.addEventListener('input', async () => {
         console.log('Input event:', input.value);
-        if (input.value.length >= 4) {
+        const query = input.value.trim();
+        
+        if (query.length >= 2) {
+            // Check if input looks like coordinates
+            if (isCoordinates(query)) {
+                console.log('Detected coordinates, attempting to parse...');
+                const coords = parseCoordinatesFrontend(query);
+                if (coords) {
+                    // Use coordinates directly
+                    console.log('Parsed coordinates:', coords);
+                    fetch(`/api/timezone?lat=${coords.lat}&lon=${coords.lon}`)
+                        .then(r => r.json())
+                        .then(tzdata => {
+                            const tz = tzdata.tz || 'UTC';
+                            const name = `${coords.lat.toFixed(4)}, ${coords.lon.toFixed(4)}`;
+                            window.dispatchEvent(new CustomEvent('calendar:update', {
+                                detail: { lat: coords.lat, lon: coords.lon, tz, name }
+                            }));
+                            suggestions.innerHTML = `<div class="suggestion-success">Using coordinates: ${name}</div>`;
+                            suggestions.classList.add('active');
+                            setTimeout(() => {
+                                suggestions.innerHTML = '';
+                                suggestions.classList.remove('active');
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('Error with coordinates:', err);
+                            suggestions.innerHTML = '<div class="suggestion-error">Invalid coordinates or timezone error</div>';
+                            suggestions.classList.add('active');
+                        });
+                    return;
+                } else {
+                    // Parsing failed, show error
+                    suggestions.innerHTML = '<div class="suggestion-error">Invalid coordinate format. Try: "40.7128, -74.0060" or "40 42 46 N, 74 0 21 W"</div>';
+                    suggestions.classList.add('active');
+                    return;
+                }
+            }
+            
+            // Not coordinates, proceed with geocoding
             try {
                 console.log('Fetching suggestions via /api/geocode ...');
-                const response = await fetch(`/api/geocode?q=${encodeURIComponent(input.value)}`);
+                const response = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
                 if (!response.ok) {
                     console.error('Geocode API error:', response.status, response.statusText);
                     suggestions.innerHTML = '<div class="suggestion-error">API error</div>';
