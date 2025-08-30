@@ -1,4 +1,34 @@
-// Map Gregorian ISO date to Quantum month/day/year
+// Helper function for fallback day number calculation
+function calculateFallbackDayNumber(gregorianDate, monthStart, monthDays) {
+    try {
+        if (!gregorianDate || !monthStart) {
+            console.warn('calculateFallbackDayNumber: missing date parameters');
+            return 1;
+        }
+
+        const msSinceMonthStart = gregorianDate - monthStart;
+        const daysSinceMonthStart = Math.floor(msSinceMonthStart / (1000 * 60 * 60 * 24));
+
+        // Ensure we don't go below 1 or above the maximum days in month
+        const maxDays = monthDays || 30; // Default to 30 if not specified
+        const dayNum = Math.min(Math.max(1, daysSinceMonthStart + 1), maxDays);
+
+    // calculation complete
+
+        // Additional validation
+        if (dayNum < 1 || dayNum > 31) {
+            console.warn('calculateFallbackDayNumber: calculated day number out of valid range:', dayNum);
+            return 1; // Safe fallback
+        }
+
+        return dayNum;
+    } catch (e) {
+        console.warn('calculateFallbackDayNumber: error in calculation:', e);
+        return 1; // Safe fallback
+    }
+}
+
+// Convert Gregorian ISO date to custom calendar position
 async function isoToCustomMonthDay(iso) {
     try {
         // Validate input
@@ -13,13 +43,30 @@ async function isoToCustomMonthDay(iso) {
             return null;
         }
 
-        const d = new Date(iso + 'T00:00:00');
-
-        // Validate the date object
-        if (isNaN(d.getTime())) {
-            console.warn('isoToCustomMonthDay: invalid date created from ISO string');
+        // Parse ISO 'YYYY-MM-DD' timezone-agnostically by constructing a UTC date at noon.
+        // Noon avoids accidental day-rollover when converting between zones.
+        const parts = iso.split('-');
+        if (parts.length < 3) {
+            console.warn('isoToCustomMonthDay: invalid ISO format');
             return null;
         }
+    const isoY = parseInt(parts[0], 10);
+    const isoM = parseInt(parts[1], 10);
+    const isoD = parseInt(parts[2], 10);
+        if (isNaN(isoY) || isNaN(isoM) || isNaN(isoD)) {
+            console.warn('isoToCustomMonthDay: invalid ISO numeric parts');
+            return null;
+        }
+        // Use UTC noon to make the date stable across client timezones
+    const locationAdjustedDate = new Date(Date.UTC(isoY, isoM - 1, isoD, 12, 0, 0));
+
+        // Validate the adjusted date object
+        if (isNaN(locationAdjustedDate.getTime())) {
+            console.warn('isoToCustomMonthDay: invalid date created from adjusted ISO string');
+            return null;
+        }
+
+        const d = locationAdjustedDate;
 
         // REMOVED: The +1 adjustment was incorrect and caused wrong day mappings
         // Custom calendar days should be calculated based on actual astronomical events,
@@ -44,126 +91,27 @@ async function isoToCustomMonthDay(iso) {
                 if (start <= d && (!nextStart || d < nextStart)) {
                     // Use dawn-aware calculation if possible
                     let dayNum;
-                    if (ns.lat && ns.lon && ns.tz) {
-                        // Try to get dawn info for more accurate calculation
-                        try {
-                            const dawnInfo = await fetchCurrentDawnInfo();
-                            if (dawnInfo) {
-                                dayNum = calculateDawnBasedDayNumber(d, start, nextStart, dawnInfo);
-                            } else {
-                                // Improved fallback: use month length data instead of assuming 24-hour days
-                                const msSinceMonthStart = d - start;
-                                const daysSinceMonthStart = Math.floor(msSinceMonthStart / (1000*60*60*24));
-
-                                // Get the month length from yearsData if available
-                                let monthLength = 29; // Default fallback
-                                if (navState && navState.yearsData && navState.yearsData.length > 0) {
-                                    // Find the current month in yearsData
-                                    for (const yearObj of navState.yearsData) {
-                                        if (yearObj.months) {
-                                            for (const monthObj of yearObj.months) {
-                                                if (monthObj.start) {
-                                                    const monthStartDate = new Date(monthObj.start);
-                                                    // Check if this is the current month
-                                                    if (monthStartDate.getTime() === start.getTime()) {
-                                                        if (monthObj.days && (monthObj.days === 29 || monthObj.days === 30)) {
-                                                            monthLength = monthObj.days;
-                                                            console.log('isoToCustomMonthDay: using month length', monthLength, 'from yearsData');
-                                                        }
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Calculate day number based on month length instead of 24-hour assumption
-                                dayNum = Math.min(Math.max(1, daysSinceMonthStart + 1), monthLength);
-                                console.log('isoToCustomMonthDay: improved fallback dayNum =', dayNum, '(month length:', monthLength + ')');
-                            }
-                        } catch (error) {
-                            console.warn('isoToCustomMonthDay: failed to fetch dawn info:', error);
-                            // Improved fallback: use month length data instead of assuming 24-hour days
-                            const msSinceMonthStart = d - start;
-                            const daysSinceMonthStart = Math.floor(msSinceMonthStart / (1000*60*60*24));
-
-                            // Get the month length from yearsData if available
-                            let monthLength = 29; // Default fallback
-                            if (navState && navState.yearsData && navState.yearsData.length > 0) {
-                                // Find the current month in yearsData
-                                for (const yearObj of navState.yearsData) {
-                                    if (yearObj.months) {
-                                        for (const monthObj of yearObj.months) {
-                                            if (monthObj.start) {
-                                                const monthStartDate = new Date(monthObj.start);
-                                                // Check if this is the current month
-                                                if (monthStartDate.getTime() === start.getTime()) {
-                                                    if (monthObj.days && (monthObj.days === 29 || monthObj.days === 30)) {
-                                                        monthLength = monthObj.days;
-                                                        console.log('isoToCustomMonthDay: using month length', monthLength, 'from yearsData');
-                                                    }
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Calculate day number based on month length instead of 24-hour assumption
-                            dayNum = Math.min(Math.max(1, daysSinceMonthStart + 1), monthLength);
-                            console.log('isoToCustomMonthDay: improved fallback dayNum =', dayNum, '(month length:', monthLength + ')');
+                    // Prefer dawn-aware calculation when dawn info is available; otherwise fallback
+                    let dawnInfo = null;
+                    try {
+                        if (typeof fetchCurrentDawnInfo === 'function') {
+                            dawnInfo = await fetchCurrentDawnInfo().catch(() => null);
                         }
+                    } catch (e) { dawnInfo = null; }
+
+                    if (dawnInfo) {
+                        dayNum = calculateDawnBasedDayNumber(d, start, nextStart, dawnInfo);
                     } else {
-                        // Improved fallback: use month length data instead of assuming 24-hour days
-                        const msSinceMonthStart = d - start;
-                        const daysSinceMonthStart = Math.floor(msSinceMonthStart / (1000*60*60*24));
-
-                        // Get the month length from yearsData if available
-                        let monthLength = 29; // Default fallback
-                        if (navState && navState.yearsData && navState.yearsData.length > 0) {
-                            // Find the current month in yearsData
-                            for (const yearObj of navState.yearsData) {
-                                if (yearObj.months) {
-                                    for (const monthObj of yearObj.months) {
-                                                if (monthObj.start) {
-                                                    const monthStartDate = new Date(monthObj.start);
-                                                    // Check if this is the current month
-                                                    if (monthStartDate.getTime() === start.getTime()) {
-                                                        if (monthObj.days && (monthObj.days === 29 || monthObj.days === 30)) {
-                                                            monthLength = monthObj.days;
-                                                            console.log('isoToCustomMonthDay: using month length', monthLength, 'from yearsData');
-                                                        }
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                        // Calculate day number based on month length instead of 24-hour assumption
-                        dayNum = Math.min(Math.max(1, daysSinceMonthStart + 1), monthLength);
-                        console.log('isoToCustomMonthDay: improved fallback dayNum =', dayNum, '(month length:', monthLength + ')');
+                        dayNum = calculateFallbackDayNumber(d, start, months[m].days);
                     }
-
                     // Validate day number is reasonable
                     if (dayNum < 1 || dayNum > 31) {
                         console.warn('isoToCustomMonthDay: calculated day number out of range:', dayNum);
                         continue;
                     }
 
-                    const monthsInYear = months.map(mo => ({
-                        days: mo.days && (mo.days === 29 || mo.days === 30) ? mo.days : 29 // Fallback to 29 if invalid
-                    }));
-
-                    return {
-                        yearIdx: y,
-                        monthNum: m + 1,
-                        dayNum,
-                        monthsInYear
-                    };
+                    const monthsInYear = months.map(mo => ({ days: (mo && mo.days && (mo.days === 29 || mo.days === 30)) ? mo.days : 29 }));
+                    return { yearIdx: y, monthNum: m + 1, dayNum, monthsInYear };
                 }
             }
         }
@@ -185,10 +133,17 @@ window.getSpecialDayClassesForISO = async function(iso) {
             return []; // Return empty array instead of failing silently
         }
 
+        // Validate location data is current
+        if (!navState.lat || !navState.lon || !navState.tz) {
+            console.warn('Special day mapping: location data incomplete, using defaults');
+        }
+
         const mapped = await isoToCustomMonthDay(iso);
         if (!mapped || !mapped.monthNum || !mapped.dayNum) {
-            console.warn('Special day mapping: failed to map Gregorian date', iso);
-            return []; // Return empty array for unmappable dates
+            // Mapping unavailable for this ISO; return empty classes silently.
+            // This commonly happens when navState.yearsData hasn't been loaded
+            // or the date is outside the available range.
+            return [];
         }
 
         let classes;
@@ -201,6 +156,9 @@ window.getSpecialDayClassesForISO = async function(iso) {
             const monthsInYear = mapped.monthsInYear || (Array.isArray(window.navState?.yearsData) ? (window.navState.yearsData.find(y => y.year === mapped.year)?.months?.map(m => m.days) || null) : null);
             classes = computeCustomSpecialClasses(mapped.month, mapped.day, monthsInYear);
         }
+
+        // Log successful mapping for debugging
+    // return computed classes (silent success)
 
         return classes || [];
     } catch (e) {
@@ -612,6 +570,14 @@ function fetchCurrentDawnInfo() {
             return;
         }
 
+        // Create a cache key for dawn info to prevent unnecessary requests
+        const dawnCacheKey = `dawn_${lat}_${lon}_${tz}_${new Date().toDateString()}`;
+        if (window.dawnInfoCache && window.dawnInfoCache.has(dawnCacheKey)) {
+            console.log('Using cached dawn info for:', dawnCacheKey);
+            resolve(window.dawnInfoCache.get(dawnCacheKey));
+            return;
+        }
+
         const url = `/api/current-dawn?lat=${lat}&lon=${lon}&tz=${encodeURIComponent(tz)}`;
         console.log('fetchCurrentDawnInfo: Fetching dawn info from:', url);
 
@@ -650,7 +616,27 @@ function fetchCurrentDawnInfo() {
                         dawnInfo.current_time = null;
                     }
 
+                    // Validate timezone consistency
+                    if (dawnInfo.current_time && tz) {
+                        const expectedOffset = getTimezoneOffset(tz);
+                        const actualOffset = dawnInfo.current_time.getTimezoneOffset();
+                        if (Math.abs(expectedOffset - actualOffset) > 60) {
+                            console.warn('fetchCurrentDawnInfo: Timezone mismatch detected', {
+                                expected: expectedOffset,
+                                actual: actualOffset,
+                                timezone: tz
+                            });
+                        }
+                    }
+
                     console.log('fetchCurrentDawnInfo: Final parsed dawn info:', dawnInfo);
+
+                    // Cache the result
+                    if (!window.dawnInfoCache) {
+                        window.dawnInfoCache = new Map();
+                    }
+                    window.dawnInfoCache.set(dawnCacheKey, dawnInfo);
+
                     resolve(dawnInfo);
                 }
             })
@@ -976,6 +962,19 @@ function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
         if (loadingState.currentRequest && !loadingState.abortController.signal.aborted) {
             console.log(`Calendar data loaded successfully (${data.length} years)`);
 
+            // Clear cache for different locations to prevent stale data
+            const currentLocationKey = `${navState.lat}_${navState.lon}_${navState.tz}`;
+            const newLocationKey = `${lat}_${lon}_${tz}`;
+            if (currentLocationKey !== newLocationKey) {
+                console.log('Location changed, clearing location-specific cache entries');
+                // Clear all cache entries that don't match the new location
+                for (const [key, value] of window.dataCache.entries()) {
+                    if (!key.startsWith(`${lat}_${lon}_${tz}_`)) {
+                        window.dataCache.delete(key);
+                    }
+                }
+            }
+
             // Atomic state update
             const oldData = navState.yearsData;
             navState.yearsData = Array.isArray(data) && data.length > 0 ? data : [];
@@ -984,6 +983,9 @@ function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
             loadingState.isLoading = false;
             loadingState.currentRequest = null;
             loadingState.abortController = null;
+
+            // Cache the new data
+            window.dataCache.set(cacheKey, navState.yearsData);
 
             // Hide loading indicator after a brief delay
             setTimeout(() => {
@@ -1206,7 +1208,7 @@ function findQuantumIndexForDate(date, yearsData, dawnInfo = null) {
         return null;
     }
 
-    console.log('findQuantumIndexForDate: searching for date:', date.toISOString(), 'with dawnInfo:', !!dawnInfo);
+    // searching for date
 
     for (let y = 0; y < yearsData.length; y++) {
         const months = yearsData[y].months || [];
@@ -1221,60 +1223,49 @@ function findQuantumIndexForDate(date, yearsData, dawnInfo = null) {
                 ? (months[m+1].start ? new Date(months[m+1].start) : null)
                 : (yearsData[y+1] && yearsData[y+1].months && yearsData[y+1].months[0] && yearsData[y+1].months[0].start ? new Date(yearsData[y+1].months[0].start) : null);
 
-            console.log('findQuantumIndexForDate: checking month', y, m, 'start:', start.toISOString(), 'end:', nextStart ? nextStart.toISOString() : 'null');
+            // checking month boundaries
 
             if (start <= date && (!nextStart || date < nextStart)) {
-                console.log('findQuantumIndexForDate: date falls in month', y, m);
 
-                // Use dawn-aware day calculation if dawn info is available
+                // Use dawn-aware day calculation if dawn info is available and valid
                 let dayNum;
-                if (dawnInfo && dawnInfo.today_dawn && dawnInfo.current_time) {
-                    console.log('findQuantumIndexForDate: using dawn-aware calculation');
-                    dayNum = calculateDawnBasedDayNumber(date, start, nextStart, dawnInfo);
-                } else {
-                    console.log('findQuantumIndexForDate: using improved fallback calculation');
-                    // Improved fallback: use month length data instead of assuming 24-hour days
-                    const msSinceMonthStart = date - start;
-                    const daysSinceMonthStart = Math.floor(msSinceMonthStart / (1000*60*60*24));
-
-                    // Get the month length from yearsData if available
-                    let monthLength = 29; // Default fallback
-                    if (navState && navState.yearsData && navState.yearsData.length > 0) {
-                        // Find the current month in yearsData
-                        for (const yearObj of navState.yearsData) {
-                            if (yearObj.months) {
-                                for (const monthObj of yearObj.months) {
-                                    if (monthObj.start) {
-                                        const monthStartDate = new Date(monthObj.start);
-                                        // Check if this is the current month
-                                        if (monthStartDate.getTime() === start.getTime()) {
-                                            if (monthObj.days && (monthObj.days === 29 || monthObj.days === 30)) {
-                                                monthLength = monthObj.days;
-                                                console.log('findQuantumIndexForDate: using month length', monthLength, 'from yearsData');
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
+                    if (dawnInfo && dawnInfo.today_dawn && dawnInfo.current_time) {
+                    // Validate dawn info is for the correct location
+                    if (navState && navState.tz) {
+                        const expectedOffset = getTimezoneOffset(navState.tz);
+                        const dawnOffset = new Date(dawnInfo.today_dawn).getTimezoneOffset();
+                        if (Math.abs(expectedOffset - dawnOffset) <= 60) {
+                            // using dawn-aware calculation
+                            dayNum = calculateDawnBasedDayNumber(date, start, nextStart, dawnInfo);
+                        } else {
+                            // dawn info timezone mismatch
+                            dayNum = calculateFallbackDayNumber(date, start, mo.days);
                         }
+                    } else {
+                        // using dawn-aware calculation without timezone validation
+                        dayNum = calculateDawnBasedDayNumber(date, start, nextStart, dawnInfo);
                     }
-
-                    // Calculate day number based on month length instead of 24-hour assumption
-                    dayNum = Math.min(Math.max(1, daysSinceMonthStart + 1), monthLength);
-                    console.log('findQuantumIndexForDate: improved fallback dayNum =', dayNum, '(month length:', monthLength + ')');
+                } else {
+                    // using improved fallback calculation
+                    dayNum = calculateFallbackDayNumber(date, start, mo.days);
                 }
 
-                console.log('findQuantumIndexForDate: calculated dayNum =', dayNum);
+                // calculated dayNum
+
+                // Validate the result
+                if (dayNum < 1 || dayNum > 31) {
+                    console.warn('findQuantumIndexForDate: invalid day number calculated:', dayNum);
+                    continue;
+                }
 
                 const result = { yearIdx: y, monthIdx: m, dayNum };
-                console.log('findQuantumIndexForDate: returning', result);
+                // returning result
                 return result;
             }
         }
     }
 
-    console.log('findQuantumIndexForDate: no matching month found');
+    // no matching month found
     return null;
 }
 
@@ -1282,50 +1273,32 @@ function findQuantumIndexForDate(date, yearsData, dawnInfo = null) {
 function calculateDawnBasedDayNumber(currentDate, monthStart, monthEnd, dawnInfo) {
     try {
         if (!dawnInfo || !dawnInfo.today_dawn || !dawnInfo.current_time) {
-            console.log('calculateDawnBasedDayNumber: missing dawn info, using improved fallback');
-            // Improved fallback: use month length data instead of assuming 24-hour days
-            const msSinceMonthStart = currentDate - monthStart;
-            const daysSinceMonthStart = Math.floor(msSinceMonthStart / (1000*60*60*24));
-
-            // Get the month length from yearsData if available
-            let monthLength = 29; // Default fallback
-            if (navState && navState.yearsData && navState.yearsData.length > 0) {
-                // Find the current month in yearsData
-                for (const yearObj of navState.yearsData) {
-                    if (yearObj.months) {
-                        for (const monthObj of yearObj.months) {
-                            if (monthObj.start) {
-                                const monthStartDate = new Date(monthObj.start);
-                                // Check if this is the current month
-                                if (monthStartDate.getTime() === monthStart.getTime()) {
-                                    if (monthObj.days && (monthObj.days === 29 || monthObj.days === 30)) {
-                                        monthLength = monthObj.days;
-                                        console.log('calculateDawnBasedDayNumber: using month length', monthLength, 'from yearsData');
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Calculate day number based on month length instead of 24-hour assumption
-            const result = Math.min(Math.max(1, daysSinceMonthStart + 1), monthLength);
-            console.log('calculateDawnBasedDayNumber: improved fallback result =', result, '(month length:', monthLength + ')');
-            return result;
+        // missing dawn info, using improved fallback
+            // Use helper function for consistent fallback calculation
+            return calculateFallbackDayNumber(currentDate, monthStart, null);
         }
 
         const todayDawn = new Date(dawnInfo.today_dawn);
         const currentTime = new Date(dawnInfo.current_time);
 
-        console.log('calculateDawnBasedDayNumber:', {
-            currentDate: currentDate.toISOString(),
-            monthStart: monthStart.toISOString(),
-            todayDawn: todayDawn.toISOString(),
-            currentTime: currentTime.toISOString(),
-            isAfterDawn: currentTime >= todayDawn
-        });
+        // Ensure dawn info is for the correct location by checking timezone consistency
+        if (navState && navState.tz) {
+            const expectedOffset = getTimezoneOffset(navState.tz);
+            const dawnOffset = todayDawn.getTimezoneOffset();
+            const timeOffset = currentTime.getTimezoneOffset();
+
+            // If offsets don't match, dawn info might be stale or from wrong location
+            if (Math.abs(expectedOffset - dawnOffset) > 60 || Math.abs(expectedOffset - timeOffset) > 60) {
+                console.warn('calculateDawnBasedDayNumber: timezone mismatch detected, using fallback', {
+                    expected: expectedOffset,
+                    dawn: dawnOffset,
+                    current: timeOffset
+                });
+                return calculateFallbackDayNumber(currentDate, monthStart, null);
+            }
+        }
+
+    // dawn-based calculation inputs validated
 
         // Calculate which day of the month we're on based on the month start
         const msSinceMonthStart = currentDate - monthStart;
@@ -1334,18 +1307,50 @@ function calculateDawnBasedDayNumber(currentDate, monthStart, monthEnd, dawnInfo
         // If we're before today's dawn, we're still on the previous day
         if (currentTime < todayDawn) {
             const result = Math.max(1, daysSinceMonthStart + 1);
-            console.log('calculateDawnBasedDayNumber: before dawn, day =', result);
+            // before dawn: computed day
             return result;
         } else {
             // We're after today's dawn, so we're on the current day
             const result = Math.max(1, daysSinceMonthStart + 1);
-            console.log('calculateDawnBasedDayNumber: after dawn, day =', result);
+            // after dawn: computed day
             return result;
         }
     } catch (e) {
         console.warn('Error in dawn-based day calculation:', e);
         // Fallback to simple calculation
         return Math.floor((currentDate - monthStart) / (1000*60*60*24)) + 1;
+    }
+}
+
+// Helper function to get timezone offset in minutes for a given timezone
+function getTimezoneOffset(timezone) {
+    try {
+        // Create a date and use Intl.DateTimeFormat to get the offset
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            timeZoneName: 'short'
+        });
+        const parts = formatter.formatToParts(now);
+        const timeZoneName = parts.find(part => part.type === 'timeZoneName');
+
+        if (timeZoneName) {
+            const tzString = timeZoneName.value;
+            // Parse timezone string like "GMT-5" or "EST"
+            const match = tzString.match(/GMT([+-])(\d+)(?::(\d+))?/);
+            if (match) {
+                const sign = match[1] === '+' ? 1 : -1;
+                const hours = parseInt(match[2], 10);
+                const minutes = match[3] ? parseInt(match[3], 10) : 0;
+                return sign * (hours * 60 + minutes);
+            }
+        }
+
+        // Fallback: assume standard timezone offset
+        return now.getTimezoneOffset();
+    } catch (e) {
+        console.warn('Error getting timezone offset:', e);
+        return new Date().getTimezoneOffset();
     }
 }
 
@@ -1502,6 +1507,22 @@ function recalculateMonthCalculations() {
     try {
         console.log('Recalculating month-dependent calculations for new location...');
 
+        // Clear any cached special day mappings to ensure fresh calculations
+        if (window.dataCache) {
+            console.log('Clearing special day cache for location change');
+            // Clear cache entries that might contain stale special day mappings
+            for (const [key, value] of window.dataCache.entries()) {
+                if (key.includes('special') || key.includes('mapping')) {
+                    window.dataCache.delete(key);
+                }
+            }
+        }
+
+        // Force refresh of dawn info cache
+        if (window.dawnInfoCache) {
+            window.dawnInfoCache.clear();
+        }
+
         // The calculations will be automatically updated when the calendar re-renders
         // because all the functions (getSilverCounter, computeCustomSpecialClasses, etc.)
         // use the current navState.yearsData which has been updated with new location data
@@ -1511,6 +1532,33 @@ function recalculateMonthCalculations() {
             updateMultiYearCalendarUI();
         } else {
             renderCalendarForState();
+        }
+
+        // If in Gregorian mode, force refresh of special day mappings for all visible cells
+        if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+            setTimeout(() => {
+                const gregorianCells = document.querySelectorAll('td.day-cell[data-iso]');
+                gregorianCells.forEach(cell => {
+                    const iso = cell.dataset.iso;
+                    if (iso) {
+                        // Re-apply special day classes with fresh data
+                        getSpecialDayClassesForISO(iso).then(classes => {
+                            if (classes && classes.length > 0) {
+                                // Remove existing special classes
+                                cell.classList.forEach(cls => {
+                                    if (cls.includes('-day')) {
+                                        cell.classList.remove(cls);
+                                    }
+                                });
+                                // Add new classes
+                                classes.forEach(cls => cell.classList.add(cls));
+                            }
+                        }).catch(error => {
+                            console.warn('Failed to refresh special day classes for cell:', iso, error);
+                        });
+                    }
+                });
+            }, 500); // Delay to ensure render is complete
         }
 
         console.log('Month calculations recalculated for new location');
@@ -1877,7 +1925,12 @@ if (!window.__calendarGlobalClickBound) {
         if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
             const iso = cell.dataset.iso;
             if (!iso) return;
-            const gregDate = new Date(iso + 'T00:00:00');
+            // Parse ISO in a timezone-agnostic way (UTC at noon)
+            const parts = iso.split('-');
+            const _y = parseInt(parts[0], 10);
+            const _m = parseInt(parts[1], 10);
+            const _d = parseInt(parts[2], 10);
+            const gregDate = new Date(Date.UTC(_y, _m - 1, _d, 12, 0, 0));
 
             // Inline fallback behavior (kept consistent with previous implementation)
             const cols = document.getElementById('calendar-columns');
