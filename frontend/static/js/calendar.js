@@ -748,24 +748,117 @@ window.dataCache = window.dataCache || new Map();
 // Track last render state to prevent redundant renders
 window.lastRenderState = window.lastRenderState || {};
 
-function showLoadingIndicator() {
-    const gridRoot = document.getElementById('calendar-grid-root');
-    if (gridRoot && !gridRoot.querySelector('.loading-overlay')) {
-        const overlay = document.createElement('div');
-        overlay.className = 'loading-overlay';
-        overlay.innerHTML = `
-            <div class="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-                <div class="progress-text" id="progress-text">Loading astronomical data... 0%</div>
-            </div>
-        `;
-        gridRoot.style.position = 'relative';
-        gridRoot.appendChild(overlay);
+function showStartupLoadingBar() {
+    const appRoot = document.querySelector('.app-root');
+    if (!appRoot) return;
 
-        // Start progress simulation
-        startProgressSimulation();
+    // Create startup loading overlay
+    const startupLoader = document.createElement('div');
+    startupLoader.id = 'startup-loader';
+    startupLoader.innerHTML = `
+        <div class="startup-loading-container">
+            <div class="startup-loading-content">
+                <div class="startup-loading-icon">⏰</div>
+                <h2 class="startup-loading-title">Quantum Clock</h2>
+                <p class="startup-loading-subtitle">Loading astronomical data...</p>
+                <div class="startup-loading-bar">
+                    <div class="startup-loading-progress"></div>
+                </div>
+                <div class="startup-loading-text">Initializing calendar systems</div>
+            </div>
+        </div>
+    `;
+    startupLoader.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Pictocrypto-Regular', monospace;
+    `;
+
+    // Add styles for the loading components
+    const style = document.createElement('style');
+    style.textContent = `
+        .startup-loading-container {
+            text-align: center;
+            color: #ffffff;
+            max-width: 400px;
+            padding: 2rem;
+        }
+        .startup-loading-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .startup-loading-title {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            background: linear-gradient(45deg, #ffd700, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .startup-loading-subtitle {
+            font-size: 1.2rem;
+            margin: 0 0 2rem 0;
+            opacity: 0.8;
+        }
+        .startup-loading-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .startup-loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ff6b35);
+            border-radius: 4px;
+            width: 0%;
+            animation: loading-progress 3s ease-out forwards;
+        }
+        .startup-loading-text {
+            font-size: 1rem;
+            opacity: 0.7;
+            animation: fade-in-out 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes loading-progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+        @keyframes fade-in-out {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(startupLoader);
+
+    return startupLoader;
+}
+
+function hideStartupLoadingBar() {
+    const startupLoader = document.getElementById('startup-loader');
+    if (startupLoader) {
+        startupLoader.style.transition = 'opacity 0.5s ease-out';
+        startupLoader.style.opacity = '0';
+        setTimeout(() => {
+            if (startupLoader.parentNode) {
+                startupLoader.parentNode.removeChild(startupLoader);
+            }
+        }, 500);
     }
 }
 
@@ -777,65 +870,11 @@ function hideLoadingIndicator() {
             overlay.remove();
         }
     }
-    // Clear any running progress interval
-    if (window.progressInterval) {
-        clearInterval(window.progressInterval);
-        window.progressInterval = null;
-    }
 }
 
-function startProgressSimulation() {
-    let progress = 0;
-    const progressFill = document.getElementById('progress-fill');
-    const progressText = document.getElementById('progress-text');
 
-    if (!progressFill || !progressText) return;
 
-    // Clear any existing interval
-    if (window.progressInterval) {
-        clearInterval(window.progressInterval);
-    }
 
-    window.progressInterval = setInterval(() => {
-        // Simulate realistic loading progress
-        if (progress < 30) {
-            progress += Math.random() * 5; // Slow start
-        } else if (progress < 70) {
-            progress += Math.random() * 3; // Medium pace
-        } else if (progress < 90) {
-            progress += Math.random() * 1; // Slow down near end
-        } else {
-            progress = Math.min(95, progress + Math.random() * 0.5); // Very slow near completion
-        }
-
-        // Update progress bar and text
-        const progressPercent = Math.min(95, Math.round(progress));
-        progressFill.style.width = `${progressPercent}%`;
-        progressText.textContent = `Loading astronomical data... ${progressPercent}%`;
-
-        // Stop if we've reached 95% (will be completed by actual load)
-        if (progress >= 95) {
-            clearInterval(window.progressInterval);
-            window.progressInterval = null;
-        }
-    }, 200); // Update every 200ms
-}
-
-function completeProgress() {
-    const progressFill = document.getElementById('progress-fill');
-    const progressText = document.getElementById('progress-text');
-
-    if (progressFill && progressText) {
-        progressFill.style.width = '100%';
-        progressText.textContent = 'Loading astronomical data... 100%';
-
-        // Clear interval if still running
-        if (window.progressInterval) {
-            clearInterval(window.progressInterval);
-            window.progressInterval = null;
-        }
-    }
-}
 
 function cancelCurrentRequest() {
     const loadingState = window.dataLoadingState;
@@ -846,12 +885,6 @@ function cancelCurrentRequest() {
         loadingState.currentRequest = null;
     }
     loadingState.isLoading = false;
-
-    // Clear progress interval to prevent memory leaks
-    if (window.progressInterval) {
-        clearInterval(window.progressInterval);
-        window.progressInterval = null;
-    }
 
     hideLoadingIndicator();
 }
@@ -933,10 +966,7 @@ function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
             loadingState.currentRequest = null;
             loadingState.abortController = null;
 
-            // Complete progress bar
-            completeProgress();
-
-            // Hide loading indicator after a brief delay to show 100%
+            // Hide loading indicator after a brief delay
             setTimeout(() => {
                 hideLoadingIndicator();
             }, 300);
@@ -978,12 +1008,6 @@ function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
             loadingState.isLoading = false;
             loadingState.currentRequest = null;
             loadingState.abortController = null;
-
-            // Clear progress interval
-            if (window.progressInterval) {
-                clearInterval(window.progressInterval);
-                window.progressInterval = null;
-            }
 
             // Hide loading indicator
             hideLoadingIndicator();
@@ -2024,6 +2048,9 @@ function rebindNavForGregorian() {
 
 // Re-render on content ready and data updates
 document.addEventListener('DOMContentLoaded', function() {
+    // Show startup loading bar immediately
+    const startupLoader = showStartupLoadingBar();
+
     // Initialize navState
     const today = new Date();
     navState.year = today.getFullYear();
@@ -2054,6 +2081,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Only render if this callback is still relevant (not cancelled)
             if (!loadingState.isLoading) {
+                // Hide startup loading bar with a slight delay for smooth transition
+                setTimeout(() => {
+                    hideStartupLoadingBar();
+                }, 500);
+
                 renderCalendarForState();
                 updateModeButtons();
             }
@@ -2077,6 +2109,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Only render if this callback is still relevant (not cancelled)
             if (!loadingState.isLoading) {
+                // Hide startup loading bar with a slight delay for smooth transition
+                setTimeout(() => {
+                    hideStartupLoadingBar();
+                }, 500);
+
                 renderCalendarForState();
                 updateModeButtons();
             }
@@ -2108,6 +2145,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             return;
         }
+
+        // Show loading bar for location change
+        showStartupLoadingBar();
 
         // Update navState
         navState.lat = lat;
@@ -2145,6 +2185,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Only render if this callback is still relevant
                 const currentLoadingState = window.dataLoadingState;
                 if (!currentLoadingState.isLoading) {
+                    // Hide loading bar with delay for smooth transition
+                    setTimeout(() => {
+                        hideStartupLoadingBar();
+                    }, 500);
+
                     renderCalendarForState();
                     if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
                         document.dispatchEvent(new Event('gregorian:rendered'));
@@ -2173,6 +2218,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Only render if this callback is still relevant
                 const currentLoadingState = window.dataLoadingState;
                 if (!currentLoadingState.isLoading) {
+                    // Hide loading bar with delay for smooth transition
+                    setTimeout(() => {
+                        hideStartupLoadingBar();
+                    }, 500);
+
                     renderCalendarForState();
                     if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
                         document.dispatchEvent(new Event('gregorian:rendered'));
