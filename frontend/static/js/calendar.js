@@ -740,6 +740,14 @@ window.dataLoadingState = window.dataLoadingState || {
     loadingCallbacks: new Set()
 };
 
+// --- Data Caching ---
+// Cache for fetched calendar data to prevent unnecessary API calls
+window.dataCache = window.dataCache || new Map();
+
+// --- Render State Tracking ---
+// Track last render state to prevent redundant renders
+window.lastRenderState = window.lastRenderState || {};
+
 function showLoadingIndicator() {
     const gridRoot = document.getElementById('calendar-grid-root');
     if (gridRoot && !gridRoot.querySelector('.loading-overlay')) {
@@ -865,6 +873,17 @@ function isDuplicateRequest(lat, lon, tz, startYear, endYear) {
 
 function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
     const loadingState = window.dataLoadingState;
+    const cacheKey = `${lat}_${lon}_${tz}_${startYear}_${endYear}`;
+
+    // Check cache first
+    if (window.dataCache.has(cacheKey)) {
+        console.log('Using cached data for:', cacheKey);
+        if (cb && !loadingState.isLoading) {
+            // If not currently loading, call callback immediately with existing data
+            cb(window.dataCache.get(cacheKey));
+        }
+        return;
+    }
 
     // Check for duplicate request
     if (isDuplicateRequest(lat, lon, tz, startYear, endYear)) {
