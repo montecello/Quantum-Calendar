@@ -1369,7 +1369,9 @@ function customToGregorianDate(yearIdx, monthIdx, dayNum, yearsData) {
         const gregorianDate = new Date(startDate);
         gregorianDate.setUTCDate(gregorianDate.getUTCDate() + (dayNum - 1));
 
-        return gregorianDate;
+        // NEW: Convert to local timezone
+        const tz = navState.tz || 'UTC';
+        return new Date(gregorianDate.toLocaleString('en-US', { timeZone: tz }));
     } catch (e) {
         console.error('customToGregorianDate error:', e);
         return null;
@@ -1420,9 +1422,13 @@ function getGregorianDateForCustomDay(monthNum, dayNum, yearLabel) {
         const gregorianDate = new Date(startDate);
         gregorianDate.setUTCDate(gregorianDate.getUTCDate() + (dayNum - 1));
 
-        // Format as MM/DD using UTC date
-        const month = String(gregorianDate.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(gregorianDate.getUTCDate()).padStart(2, '0');
+        // NEW: Convert UTC date to local timezone for display
+        const tz = navState.tz || 'UTC';
+        const localDate = new Date(gregorianDate.toLocaleString('en-US', { timeZone: tz }));
+
+        // Format as MM/DD using local date
+        const month = String(localDate.getMonth() + 1).padStart(2, '0');
+        const day = String(localDate.getDate()).padStart(2, '0');
 
         return `${month}/${day}`;
     } catch (e) {
@@ -1794,6 +1800,7 @@ function updateMultiYearCalendarUI() {
                         // Try to get the start date of the current month
                         let gregorianStr = '';
                         let gregDate = null;
+                        let localGregDate = null;
                         try {
                             const monthObj = navState.yearsData[navState.currentYearIdx].months[navState.currentMonthIdx];
                             if (monthObj && monthObj.start) {
@@ -1802,18 +1809,23 @@ function updateMultiYearCalendarUI() {
                                 // Calculate the Gregorian date for the selected day
                                 gregDate = new Date(startDate);
                                 gregDate.setUTCDate(gregDate.getUTCDate() + (parseInt(day, 10) - 1));
-                                const yyyy = gregDate.getUTCFullYear();
-                                const mm = String(gregDate.getUTCMonth() + 1).padStart(2, '0');
-                                const dd = String(gregDate.getUTCDate()).padStart(2, '0');
-                                const weekdayStr = WEEKDAYS[gregDate.getUTCDay()];
+
+                                // NEW: Convert to local time
+                                const tz = navState.tz || 'UTC';
+                                localGregDate = new Date(gregDate.toLocaleString('en-US', { timeZone: tz }));
+
+                                const yyyy = localGregDate.getFullYear();
+                                const mm = String(localGregDate.getMonth() + 1).padStart(2, '0');
+                                const dd = String(localGregDate.getDate()).padStart(2, '0');
+                                const weekdayStr = WEEKDAYS[localGregDate.getDay()];
                                 gregorianStr = `${yyyy}-${mm}-${dd} (${weekdayStr}) - Gregorian`;
                             }
                         } catch (e) {
                             gregorianStr = '';
                         }
-                        const yyyy = gregDate ? gregDate.getUTCFullYear() : null;
-                        const mm = gregDate ? String(gregDate.getUTCMonth() + 1).padStart(2, '0') : null;
-                        const dd = gregDate ? String(gregDate.getUTCDate()).padStart(2, '0') : null;
+                        const yyyy = gregDate && localGregDate ? localGregDate.getFullYear() : null;
+                        const mm = gregDate && localGregDate ? String(localGregDate.getMonth() + 1).padStart(2, '0') : null;
+                        const dd = gregDate && localGregDate ? String(localGregDate.getDate()).padStart(2, '0') : null;
                         const dateStr = (yyyy && mm && dd) ? `${yyyy}-${mm}-${dd}` : null;
                         window.openSidePanel(panel, cols, { month, day, yearRange: `${year}-${String(year+1).slice(-2)}`, gregorianStr, dateStr });
                     }

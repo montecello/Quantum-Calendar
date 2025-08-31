@@ -4,7 +4,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from pydantic import BaseModel
-from skyfield.api import Loader
+from skyfield.api import Loader, wgs84
 from skyfield import almanac
 from datetime import datetime, timezone
 
@@ -40,6 +40,12 @@ class IlluminationResp(BaseModel):
     iso: str
     percent: float
 
+
+class SubpointResp(BaseModel):
+    iso: str
+    lat: float
+    lon: float
+
 @app.on_event('startup')
 def preload_ephemeris():
     try:
@@ -69,5 +75,29 @@ def moon_illumination_batch(iso: List[str] = Query(...)):
         percent = float(almanac.fraction_illuminated(e, 'moon', t) * 100.0)
         out.append({'iso': s, 'percent': percent})
     return out
+
+
+@app.get('/position/sun', response_model=SubpointResp)
+def sun_position(iso: str = Query(..., description='UTC ISO8601, e.g., 2025-08-10T12:00:00Z')):
+    dt = datetime.fromisoformat(iso.replace('Z', '+00:00')).astimezone(timezone.utc)
+    t = ts.from_datetime(dt)
+    e = eph()
+    earth = e['earth']
+    sun = e['sun']
+    pos = earth.at(t).observe(sun).apparent()
+    gp = wgs84.subpoint(pos)
+    return SubpointResp(iso=iso, lat=gp.latitude.degrees, lon=gp.longitude.degrees)
+
+
+@app.get('/position/moon', response_model=SubpointResp)
+def moon_position(iso: str = Query(..., description='UTC ISO8601, e.g., 2025-08-10T12:00:00Z')):
+    dt = datetime.fromisoformat(iso.replace('Z', '+00:00')).astimezone(timezone.utc)
+    t = ts.from_datetime(dt)
+    e = eph()
+    earth = e['earth']
+    moon = e['moon']
+    pos = earth.at(t).observe(moon).apparent()
+    gp = wgs84.subpoint(pos)
+    return SubpointResp(iso=iso, lat=gp.latitude.degrees, lon=gp.longitude.degrees)
 
 
