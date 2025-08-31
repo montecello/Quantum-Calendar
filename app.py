@@ -204,6 +204,11 @@ def select_location():
         'yearRange': year_range
     })
 
+@app.route('/how_it_works')
+def how_it_works():
+    ensure_data_loaded()
+    return render_template('how_it_works.html')
+
 if __name__ == "__main__":
     # Load data only for local dev to keep Vercel cold starts fast
     load_all_data()
