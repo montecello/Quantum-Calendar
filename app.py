@@ -209,6 +209,37 @@ def how_it_works():
     ensure_data_loaded()
     return render_template('how_it_works.html')
 
+@app.route('/api/generate-heatmaps', methods=['POST'])
+def generate_heatmaps():
+    """Generate lunar month heatmap for current month"""
+    try:
+        ensure_data_loaded()
+
+        # Import the heatmap generation function
+        import subprocess
+        import sys
+        import os
+
+        # Path to the heatmap generation script
+        script_path = os.path.join(BASE_DIR, 'backend', 'astronomy', 'map', 'generate_lunar_heatmaps.py')
+
+        # Run the script in background
+        process = subprocess.Popen([
+            sys.executable, script_path
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=BASE_DIR)
+
+        return jsonify({
+            'status': 'generating',
+            'message': 'Heatmap generation started'
+        })
+
+    except Exception as e:
+        logging.error(f"Error starting heatmap generation: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 if __name__ == "__main__":
     # Load data only for local dev to keep Vercel cold starts fast
     load_all_data()

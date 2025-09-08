@@ -399,7 +399,6 @@ function renderYearMonths(months, activeMonth, currentMonth, onMonthClick, yearR
     html += `</button>`;
     html += '<div class="accordion-panel" style="display: block;">';
     html += `<h3 class="year-months-title">${navState.locationName || 'Unknown Location'}</h3>`;
-    html += '<h4 class="year-months-title">Days in the month may change by location because current lunation is not exactly 30 days.</h4>';
     html += '<ul class="year-months-ul accordion-content">';
      // Fix: add missing class
     months.forEach((m, i) => {
