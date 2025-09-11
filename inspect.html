@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Inspection</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .controls { margin-bottom: 20px; }
+        button { margin: 5px; padding: 10px 15px; }
+        .results { margin-top: 20px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Calendar Grid Inspection Tool</h1>
+
+    <div class="controls">
+        <button onclick="switchToCustom()">Custom Mode</button>
+        <button onclick="switchToGregorian()">Gregorian Mode</button>
+        <button onclick="runInspection()">Run Inspection</button>
+        <button onclick="compareGrids()">Compare Grids</button>
+        <button onclick="testMapping()">Test Single Mapping</button>
+    </div>
+
+    <div id="calendar-root">
+        <!-- Calendar will be loaded here -->
+    </div>
+
+    <div class="results">
+        <h2>Inspection Results</h2>
+        <pre id="results"></pre>
+    </div>
+
+    <script>
+        let originalConsoleLog = console.log;
+        let logs = [];
+
+        // Capture console logs
+        console.log = function(...args) {
+            logs.push(args.join(' '));
+            originalConsoleLog.apply(console, args);
+        };
+
+        function displayResults() {
+            document.getElementById('results').textContent = logs.join('\n');
+        }
+
+        function clearLogs() {
+            logs = [];
+        }
+
+        function switchToCustom() {
+            if (window.CalendarMode) {
+                window.CalendarMode.mode = 'custom';
+                if (window.updateModeButtons) window.updateModeButtons();
+                if (window.renderCalendarForState) window.renderCalendarForState();
+            }
+        }
+
+        function switchToGregorian() {
+            if (window.CalendarMode) {
+                window.CalendarMode.mode = 'gregorian';
+                if (window.updateModeButtons) window.updateModeButtons();
+                if (window.renderCalendarForState) window.renderCalendarForState();
+            }
+        }
+
+        function runInspection() {
+            clearLogs();
+            if (window.inspectCalendar) {
+                window.inspectCalendar();
+            } else {
+                console.log('Inspection function not available');
+            }
+            setTimeout(displayResults, 1000);
+        }
+
+        function compareGrids() {
+            clearLogs();
+            if (window.compareMappings) {
+                window.compareMappings();
+            } else {
+                console.log('Compare function not available');
+            }
+            setTimeout(displayResults, 1000);
+        }
+
+        async function testMapping() {
+            clearLogs();
+            console.log('Testing single date mapping...');
+
+            const testDate = '2025-09-10'; // Today
+            try {
+                const mapping = await window.isoToCustomMonthDay(testDate);
+                console.log(`Test Date: ${testDate}`);
+                console.log(`Mapping Result:`, mapping);
+
+                if (mapping) {
+                    console.log(`Custom Date: ${mapping.monthNum}/${mapping.dayNum}`);
+                    console.log(`Year Index: ${mapping.yearIdx}`);
+                    console.log(`Months in Year: ${mapping.monthsInYear ? mapping.monthsInYear.length : 'N/A'}`);
+                } else {
+                    console.log('No mapping found');
+                }
+            } catch (error) {
+                console.error('Error testing mapping:', error);
+            }
+
+            setTimeout(displayResults, 500);
+        }
+
+        // Load the calendar page
+        window.onload = function() {
+            // Redirect to the main calendar page
+            window.location.href = 'http://localhost:5001';
+        };
+    </script>
+</body>
+</html>

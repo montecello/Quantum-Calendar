@@ -1,6 +1,5 @@
-# Spica-moon logic
-
-from datetime import datetime
+# Yearly anchor and month cycle logic
+from datetime import datetime, timedelta
 import pytz
 from backend.data import load_new_years_days, load_full_moon_times
 from backend.astronomy.moon import count_dawn_cycles, find_first_dawn_after
@@ -9,7 +8,7 @@ def get_multi_year_calendar_data(start_year, end_year, lat, lon, tzname):
     """
     Returns a list of years, each with:
       - 'year': year
-      - 'months': list of dicts: {'start': datetime, 'days': int, 'dawn_tag': str}
+      - 'months': list of dicts: {'start': datetime, 'days': int, 'dawn_tag': str, 'full_moon_utc': datetime}
     """
     new_years_days = load_new_years_days()
     full_moon_times = load_full_moon_times()
@@ -34,7 +33,7 @@ def get_multi_year_calendar_data(start_year, end_year, lat, lon, tzname):
                 days = count_dawn_cycles(dawn, next_dawn, lat, lon, tzname)
             else:
                 days = None
-            months.append({'start': dawn, 'days': days, 'dawn_tag': dawn_tag})
+            months.append({'start': dawn, 'days': days, 'dawn_tag': dawn_tag, 'full_moon_utc': moon})
         result.append({'year': year, 'months': months})
     return result
 

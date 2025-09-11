@@ -1,0 +1,217 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gregorian Render Test</title>
+    <style>
+        .calendar-grid { border-collapse: collapse; }
+        .calendar-grid th, .calendar-grid td { border: 1px solid #ccc; padding: 5px; text-align: center; }
+        .day-cell { cursor: pointer; }
+        .empty-cell { background: #f5f5f5; }
+        .current-day { background: #e6f3ff; }
+    </style>
+</head>
+<body>
+    <h1>Gregorian Calendar Render Test</h1>
+    <div id="test-target"></div>
+
+    <script>
+        // Mock GregorianCalendar object (copied from gregorian.js)
+        (function(){
+            const WEEK_START = 0;
+            const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+            function isoDate(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${dd}`;
+            }
+
+            function getWeekdayLabels() {
+                const base = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+                if (WEEK_START === 1) return base.slice(1).concat(base.slice(0,1));
+                return base;
+            }
+
+            function getMonthMatrix(year, month) {
+                const first = new Date(year, month, 1);
+                const last = new Date(year, month + 1, 0);
+                const daysInMonth = last.getDate();
+
+                let startIdx = first.getDay();
+                startIdx = (startIdx - WEEK_START + 7) % 7;
+
+                const cells = [];
+                for (let i = 0; i < startIdx; i++) cells.push(null);
+                for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+                while (cells.length % 7 !== 0) cells.push(null);
+
+                const weeks = [];
+                for (let i = 0; i < cells.length; i += 7) {
+                    weeks.push(cells.slice(i, i + 7));
+                }
+                return { weeks, daysInMonth };
+            }
+
+            function markCurrentDay(td, y, m, d) {
+                const today = new Date();
+                if (y === today.getFullYear() && m === today.getMonth() && d === today.getDate()) {
+                    td.classList.add('current-day');
+                }
+            }
+
+            function render(rootEl, year, month, monthsInYear) {
+                console.log('GregorianCalendar.render called with:', { year, month, monthsInYear });
+
+                if (!rootEl) {
+                    console.error('No root element provided to render');
+                    return;
+                }
+
+                rootEl.innerHTML = '';
+
+                const table = document.createElement('table');
+                table.className = 'calendar-grid';
+
+                const thead = document.createElement('thead');
+                const labelRow = document.createElement('tr');
+                const thLabel = document.createElement('th');
+                thLabel.colSpan = 7;
+                thLabel.className = 'month-label';
+                thLabel.textContent = `${MONTH_NAMES[month]} ${year}`;
+                labelRow.appendChild(thLabel);
+                thead.appendChild(labelRow);
+
+                const trh = document.createElement('tr');
+                for (const lbl of getWeekdayLabels()) {
+                    const th = document.createElement('th');
+                    th.textContent = lbl;
+                    trh.appendChild(th);
+                }
+                thead.appendChild(trh);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+                const { weeks } = getMonthMatrix(year, month);
+                console.log('Generated weeks:', weeks.length);
+
+                for (const wk of weeks) {
+                    const tr = document.createElement('tr');
+                    for (const dayNum of wk) {
+                        const td = document.createElement('td');
+                        td.className = 'day-cell';
+                        if (dayNum != null) {
+                            const d = new Date(year, month, dayNum);
+                            const dateStr = isoDate(d);
+                            td.dataset.iso = dateStr;
+                            td.dataset.gregorian = 'true';
+                            td.tabIndex = 0;
+
+                            const span = document.createElement('span');
+                            span.className = 'holiday-daynum';
+                            span.textContent = String(dayNum);
+                            td.appendChild(span);
+
+                            markCurrentDay(td, year, month, dayNum);
+                        } else {
+                            td.classList.add('empty-cell');
+                        }
+                        tr.appendChild(td);
+                    }
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
+
+                rootEl.appendChild(table);
+
+                console.log('Gregorian calendar rendered successfully');
+                console.log('Cells created:', document.querySelectorAll('td[data-iso]').length);
+
+                // Dispatch event
+                document.dispatchEvent(new CustomEvent('gregorian:rendered', { detail: { year, month } }));
+            }
+
+            window.GregorianCalendar = { render, isoDate, weekStart: WEEK_START };
+        })();
+
+        // Test the render function
+        console.log('Testing Gregorian calendar render...');
+        const target = document.getElementById('test-target');
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth(); // 0-based
+
+        console.log('Rendering Gregorian calendar for:', { year, month: month + 1 });
+
+        try {
+            window.GregorianCalendar.render(target, year, month);
+
+            // Check results
+            setTimeout(() => {
+                const cells = document.querySelectorAll('td[data-iso]');
+                const totalCells = cells.length;
+                console.log('✅ Gregorian cells created:', totalCells);
+
+                if (totalCells > 0) {
+                    console.log('Sample cell data:');
+                    const sampleCell = cells[0];
+                    console.log('  ISO:', sampleCell.dataset.iso);
+                    console.log('  Gregorian:', sampleCell.dataset.gregorian);
+                    console.log('  Content:', sampleCell.textContent.trim());
+                }
+
+                // Test custom calendar info addition
+                console.log('\nTesting custom calendar info addition...');
+
+                // Mock the required functions
+                window.isoToCustomMonthDay = async function(iso) {
+                    // Simple mock
+                    const parts = iso.split('-');
+                    const day = parseInt(parts[2]);
+                    return { monthNum: 6, dayNum: day, monthsInYear: 12 };
+                };
+
+                window.getSilverCounter = function(month, day, monthsInYear) {
+                    return (month - 1) * 29 + day;
+                };
+
+                // Simulate adding custom info to first cell
+                const firstCell = cells[0];
+                if (firstCell) {
+                    const iso = firstCell.dataset.iso;
+                    console.log('Adding custom info to cell:', iso);
+
+                    window.isoToCustomMonthDay(iso).then(customMapping => {
+                        if (customMapping && customMapping.monthNum && customMapping.dayNum) {
+                            console.log('Custom mapping:', customMapping);
+
+                            // Create container
+                            const container = document.createElement('div');
+                            container.className = 'dual-date-container';
+
+                            // Add custom calendar info
+                            const customInfo = document.createElement('div');
+                            customInfo.className = 'custom-calendar-info';
+                            customInfo.textContent = `${customMapping.monthNum}/${customMapping.dayNum}`;
+                            container.appendChild(customInfo);
+
+                            // Add to cell
+                            const daySpan = firstCell.querySelector('.holiday-daynum');
+                            if (daySpan) {
+                                container.appendChild(daySpan);
+                                firstCell.appendChild(container);
+                                console.log('✅ Custom calendar info added successfully');
+                            }
+                        }
+                    });
+                }
+
+            }, 100);
+
+        } catch (error) {
+            console.error('❌ Error rendering Gregorian calendar:', error);
+        }
+    </script>
+</body>
+</html>

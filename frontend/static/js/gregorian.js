@@ -223,5 +223,5 @@
     document.dispatchEvent(new CustomEvent('gregorian:rendered', { detail: { year, month } }));
   }
 
-  window.GregorianCalendar = { render, isoDate, weekStart: WEEK_START, getBronzeCounter };
+  window.GregorianCalendar = { render, isoDate, weekStart: WEEK_START, getBronzeCounter, getMoonPhaseEmoji };
 })();

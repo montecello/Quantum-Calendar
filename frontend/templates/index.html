@@ -70,58 +70,6 @@
             <div id="calendar-grid-root"></div>
         </div>
 
-        <!-- Lunar Month Heatmap Section -->
-        <div class="heatmap-section" style="margin: 20px 0; text-align: center;">
-            <h3 style="color: #333; margin-bottom: 15px;">Accurate International Datelines For The Month</h3><p>
-                <em style="color: #555; font-size: 14px;">Since lunations are not exactly 30 days. month begin exactly where dawn is after full moon event</em><br>
-                <em style="color: #555; font-size: 14px;">(Going clockwise on blue and where blue transitions into red is where the month begins)</em>
-            </p>
-
-            <div id="heatmap-loading" style="display: none; margin: 10px 0;">
-                <div style="display: inline-block; width: 300px; height: 6px; background: #f0f0f0; border-radius: 3px; margin-bottom: 8px;">
-                    <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); border-radius: 3px; transition: width 0.3s ease;"></div>
-                </div>
-                <p style="margin: 5px 0; color: #666; font-size: 14px; font-weight: 500;">Loading lunar month heatmaps...</p>
-            </div>
-            <div id="heatmap-container" style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
-                <div class="heatmap-item">
-                    <h4>Current Month</h4>
-                    <p style="font-size: 12px; color: #666; margin: 5px 0;">
-                        <span id="current-gregorian-date"></span>
-                    </p>
-                    <div id="current-heatmap" class="heatmap-placeholder">
-                        <p>Loading current lunar month heatmap...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Shared Color Legend for both heatmaps -->
-            <div class="shared-heatmap-legend" style="margin-top: 20px; text-align: center; font-size: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
-                <p style="margin: 10px 0; color: #555; font-weight: bold;">Color Key - Lunar Month Lengths</p>
-                <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
-                        <div style="width: 15px; height: 15px; background: rgba(255, 0, 0, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
-                        <span style="text-align: left;">30-Day Primary: Exactly 30 dawn cycles between full moons</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
-                        <div style="width: 15px; height: 15px; background: rgba(255, 192, 203, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
-                        <span style="text-align: left;">30-Day Secondary: 30 days, astronomical twilight unavailable</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
-                        <div style="width: 15px; height: 15px; background: rgba(0, 0, 255, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
-                        <span style="text-align: left;">29-Day Primary: Exactly 29 dawn cycles between full moons</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
-                        <div style="width: 15px; height: 15px; background: rgba(135, 206, 235, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
-                        <span style="text-align: left;">29-Day Secondary: 29 days, astronomical twilight unavailable</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
-                        <div style="width: 15px; height: 15px; background: rgba(128, 128, 128, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
-                        <span style="text-align: left;">Unknown: Unable to calculate lunar month length</span>
-                    </div>
-                </div>
-            </div>
-
         <!-- Side Panel -->
         <div class="side-panel" id="side-panel"></div>
     </div>
@@ -133,5 +81,8 @@
     <script src="/static/js/accordion.js"></script>
     <script src="/static/js/matrix_rain.js"></script>
     <script src="/static/js/heatmap.js"></script>
+
+    <!-- Footer -->
+    {% include 'footer.html' %}
 </body>
 </html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>⏰ Quantum Clock v1.0 ⏰</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Basic SEO -->
+    <meta name="description" content="Quantum Clock: sun and moon events, lunar months, and accurate dawn-based timing for any location.">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="http://localhost:5001/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Quantum Clock">
+    <meta property="og:site_name" content="Quantum Clock">
+    <meta property="og:description" content="A natural way to keep time and organize life">
+    <meta property="og:url" content="http://localhost:5001/">
+    <meta property="og:image" content="http://localhost:5001/static/img/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Quantum Clock">
+    <meta name="twitter:description" content="Calendar of the Future...">
+    <meta name="twitter:image" content="http://localhost:5001/static/img/og-image.png">
+
+    <!-- Theme color (mobile address bar) -->
+    <meta name="theme-color" content="#20639b">
+
+    <link rel="preload" href="/static/fonts/Pictocrypto-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/navbar.css">
+    <link rel="stylesheet" href="/static/css/calendar_grid.css">
+    <link rel="stylesheet" href="/static/css/side_panel.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <!-- Navigation Bar Component -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <a href="/" style="color: inherit; text-decoration: none;">ה HEY YOU! ה</a>
+    </div>
+    <div class="navbar-menu" id="navbar-menu">
+        <div class="navbar-item">
+            <a href="/how_it_works" class="nav-link">How It Works</a>
+            <button id="effects-play-pause" class="effects-btn" title="Play/Pause Effects">▶️</button>
+            <button id="effects-stop" class="effects-btn" title="Stop and Clear Effects">⏹️</button>
+        </div>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">☰</button>
+</nav>
+
+<!-- Navigation Script -->
+<script>
+    // Hamburger toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const hamburger = document.getElementById('hamburger');
+        const navbarMenu = document.getElementById('navbar-menu');
+        if (hamburger && navbarMenu) {
+            hamburger.addEventListener('click', function() {
+                navbarMenu.classList.toggle('active');
+            });
+        }
+    });
+</script>
+
+    <!-- Live background canvas -->
+    <canvas id="bg-matrix" aria-hidden="true"></canvas>
+
+    <div class="app-root">
+        <div class="title-placemat">
+            <h1 class="calendar-title">⏰ Quantum Clock v1.0 ⏰</h1>
+        </div>
+        <div class="search-bar-container">
+            <div class="input-wrapper">
+                <input type="text" class="search-bar" id="location-input" placeholder="Enter location...('Greenwich, England')" autocomplete="off">
+                <div id="suggestions"></div>
+            </div>
+        </div>
+
+        <!-- Location mode toggle -->
+        <div class="calendar-mode-toggle" style="margin:8px 0 0 0;">
+            <button id="mode-place" class="mode-btn" aria-pressed="true">Place</button>
+            <button id="mode-coordinates" class="mode-btn" aria-pressed="false">Coordinates</button>
+            <button id="search-btn" type="button" style="display: none;">🔍</button>
+        </div>
+
+        <!-- Calendar mode toggle -->
+        <div class="calendar-mode-toggle" style="margin:8px 0 0 0;">
+            <button id="mode-custom" class="mode-btn" aria-pressed="true">Quantum</button>
+            <button id="mode-gregorian" class="mode-btn" aria-pressed="false">Gregorian</button>
+        </div>
+
+        <div class="calendar-container">
+            <div id="calendar-grid-root"></div>
+        </div>
+
+        <!-- Lunar Month Heatmap Section -->
+        <div class="heatmap-section" style="margin: 20px 0; text-align: center;">
+            <h3 style="color: #333; margin-bottom: 15px;">Accurate International Datelines For The Month</h3><p>
+                <em style="color: #555; font-size: 14px;">Since lunations are not exactly 30 days. month begin exactly where dawn is after full moon event</em><br>
+                <em style="color: #555; font-size: 14px;">(Going clockwise on blue and where blue transitions into red is where the month begins)</em>
+            </p>
+
+            <div id="heatmap-loading" style="display: none; margin: 10px 0;">
+                <div style="display: inline-block; width: 300px; height: 6px; background: #f0f0f0; border-radius: 3px; margin-bottom: 8px;">
+                    <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); border-radius: 3px; transition: width 0.3s ease;"></div>
+                </div>
+                <p style="margin: 5px 0; color: #666; font-size: 14px; font-weight: 500;">Loading lunar month heatmaps...</p>
+            </div>
+            <div id="heatmap-container" style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+                <div class="heatmap-item">
+                    <h4>Current Month</h4>
+                    <p style="font-size: 12px; color: #666; margin: 5px 0;">
+                        <span id="current-gregorian-date"></span>
+                    </p>
+                    <div id="current-heatmap" class="heatmap-placeholder">
+                        <p>Loading current lunar month heatmap...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shared Color Legend for both heatmaps -->
+            <div class="shared-heatmap-legend" style="margin-top: 20px; text-align: center; font-size: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <p style="margin: 10px 0; color: #555; font-weight: bold;">Color Key - Lunar Month Lengths</p>
+                <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
+                        <div style="width: 15px; height: 15px; background: rgba(255, 0, 0, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                        <span style="text-align: left;">30-Day Primary: Exactly 30 dawn cycles between full moons</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
+                        <div style="width: 15px; height: 15px; background: rgba(255, 192, 203, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                        <span style="text-align: left;">30-Day Secondary: 30 days, astronomical twilight unavailable</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
+                        <div style="width: 15px; height: 15px; background: rgba(0, 0, 255, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                        <span style="text-align: left;">29-Day Primary: Exactly 29 dawn cycles between full moons</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
+                        <div style="width: 15px; height: 15px; background: rgba(135, 206, 235, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                        <span style="text-align: left;">29-Day Secondary: 29 days, astronomical twilight unavailable</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%; max-width: 400px;">
+                        <div style="width: 15px; height: 15px; background: rgba(128, 128, 128, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                        <span style="text-align: left;">Unknown: Unable to calculate lunar month length</span>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Side Panel -->
+        <div class="side-panel" id="side-panel"></div>
+    </div>
+
+    <script src="/static/js/geoapify.js"></script>
+    <script src="/static/js/gregorian.js"></script>
+    <script src="/static/js/calendar.js"></script>
+    <script src="/static/js/side_panel.js"></script>
+    <script src="/static/js/accordion.js"></script>
+    <script src="/static/js/matrix_rain.js"></script>
+    <script src="/static/js/heatmap.js"></script>
+
+    <!-- Footer -->
+    <!-- Footer Navigation Bar Component -->
+<footer class="footer">
+    <div class="footer-content">
+        <div class="social-links">
+            <a href="#" class="social-link youtube-link" title="YouTube" aria-label="Visit our YouTube channel">
+                <span class="social-icon">📺</span>
+                <span class="social-text">YouTube</span>
+            </a>
+            <a href="#" class="social-link discord-link" title="Discord" aria-label="Join our Discord server">
+                <span class="social-icon">💬</span>
+                <span class="social-text">Discord</span>
+            </a>
+        </div>
+        <div class="footer-text">
+            <span>© 2025 Quantum Clock</span>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

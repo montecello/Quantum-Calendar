@@ -237,12 +237,12 @@ body, .calendar-title, .search-bar, #suggestions {
     .fade-out { transition: none !important; }
 }
 
-/* Dark pink special day for the day after n=50 on the silver counter */
-.calendar-grid td.dark-pink-day {
-    background: linear-gradient(135deg, #d72660 70%, #ffb7c5 100%) !important;
+/* Hot pink special day for the day after n=50 on the silver counter */
+.calendar-grid td.hot-pink-day {
+    background: linear-gradient(135deg, #ff1493 70%, #ff69b4 100%) !important;
     color: #fff !important;
     font-weight: bold;
-    box-shadow: 0 0 10px 2px #d7266055;
+    box-shadow: 0 0 10px 2px #ff149355;
     position: relative;
     z-index: 2;
 }
@@ -302,6 +302,16 @@ body, .calendar-title, .search-bar, #suggestions {
     color: #fff !important;
     font-weight: bold;
     box-shadow: 0 0 10px 2px #e0115f55;
+}
+/* Magenta special day for Festival of Atonement (7th month, 9th-10th days) */
+.calendar-grid td.atonement-magenta-day {
+    background: linear-gradient(135deg, #ff00ff 70%, #cc00cc 100%) !important;
+    color: #fff !important;
+    font-weight: bold;
+    box-shadow: 0 0 10px 2px #ff00ff55;
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
 }
 /* Pink special day for 7th month, 15th and 22nd days */
 .calendar-grid td.seventh-pink-day {

@@ -142,3 +142,117 @@
     padding-top: 60px;
   }
 }
+
+/* Footer Styles */
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(60, 174, 163, 0.3);
+  padding: 8px 20px;
+  z-index: 1000;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+  font-family: 'Pictocrypto', sans-serif;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.social-links {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+  border: 1px solid transparent;
+}
+
+.social-link:hover {
+  background: rgba(60, 174, 163, 0.1);
+  border-color: rgba(60, 174, 163, 0.5);
+  color: #3caea3;
+}
+
+.youtube-link:hover {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 0, 0, 0.5);
+  color: #ff4444;
+}
+
+.discord-link:hover {
+  background: rgba(114, 137, 218, 0.1);
+  border-color: rgba(114, 137, 218, 0.5);
+  color: #7289da;
+}
+
+.social-icon {
+  font-size: 1.1rem;
+}
+
+.social-text {
+  font-weight: 500;
+}
+
+.footer-text {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+/* Mobile Footer Styles */
+@media (max-width: 768px) {
+  .footer {
+    padding: 6px 16px;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .social-links {
+    gap: 12px;
+  }
+
+  .social-link {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+  }
+
+  .social-icon {
+    font-size: 1rem;
+  }
+
+  .footer-text {
+    font-size: 0.75rem;
+  }
+}
+
+/* Adjust body content to account for fixed footer */
+.app-root {
+  padding-bottom: 60px; /* Space for footer */
+}
+
+@media (max-width: 768px) {
+  .app-root {
+    padding-bottom: 70px;
+  }
+}

@@ -11,9 +11,7 @@ function calculateFallbackDayNumber(gregorianDate, monthStart, monthDays) {
 
         // Ensure we don't go below 1 or above the maximum days in month
         const maxDays = monthDays || 30; // Default to 30 if not specified
-        const dayNum = Math.min(Math.max(1, daysSinceMonthStart + 1), maxDays);
-
-    // calculation complete
+        const dayNum = Math.min(Math.max(1, daysSinceMonthStart + 1), maxDays);    // calculation complete
 
         // Additional validation
         if (dayNum < 1 || dayNum > 31) {
@@ -43,22 +41,23 @@ async function isoToCustomMonthDay(iso) {
             return null;
         }
 
-        // Parse ISO 'YYYY-MM-DD' timezone-agnostically by constructing a UTC date at noon.
-        // Noon avoids accidental day-rollover when converting between zones.
+        // Parse ISO 'YYYY-MM-DD' timezone-agnostically by constructing a local date at noon.
+        // Use local noon to ensure calculations are consistent with the location's timezone
+        // and astronomical events (dawn) that the custom calendar is based on.
         const parts = iso.split('-');
         if (parts.length < 3) {
             console.warn('isoToCustomMonthDay: invalid ISO format');
             return null;
         }
-    const isoY = parseInt(parts[0], 10);
-    const isoM = parseInt(parts[1], 10);
-    const isoD = parseInt(parts[2], 10);
+        const isoY = parseInt(parts[0], 10);
+        const isoM = parseInt(parts[1], 10);
+        const isoD = parseInt(parts[2], 10);
         if (isNaN(isoY) || isNaN(isoM) || isNaN(isoD)) {
             console.warn('isoToCustomMonthDay: invalid ISO numeric parts');
             return null;
         }
-        // Use UTC noon to make the date stable across client timezones
-    const locationAdjustedDate = new Date(Date.UTC(isoY, isoM - 1, isoD, 12, 0, 0));
+        // Use local noon for the location's timezone to ensure consistency with astronomical calculations
+        const locationAdjustedDate = new Date(isoY, isoM - 1, isoD, 12, 0, 0);
 
         // Validate the adjusted date object
         if (isNaN(locationAdjustedDate.getTime())) {
@@ -271,7 +270,7 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
         }
         // --- 7th month special days ---
         if (isDarkPink) {
-            extra = ' dark-pink-day';
+            extra = ' hot-pink-day';
         } else if (monthNum === 1 && dayNum === 14) {
             extra = ' ruby-red-day';
         } else if (monthNum === 1 && dayNum === 15) {
@@ -285,7 +284,7 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
         } else if (monthNum === 7 && dayNum === 1) {
             extra = ' seventh-emerald-green-day seventh-orange-day';
         } else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) {
-            extra = ' seventh-ruby-red-day seventh-orange-day';
+            extra = ' atonement-magenta-day seventh-orange-day';
         } else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) {
             extra = ' seventh-ruby-red-day seventh-orange-day seventh-pink-day';
         } else if (monthNum === 7 && dayNum >= 16 && dayNum <= 21) {
@@ -399,6 +398,7 @@ function renderYearMonths(months, activeMonth, currentMonth, onMonthClick, yearR
     html += `</button>`;
     html += '<div class="accordion-panel" style="display: block;">';
     html += `<h3 class="year-months-title">${navState.locationName || 'Unknown Location'}</h3>`;
+    html += '<h4 class="year-months-title">Days in the month may change by location because current lunation is not exactly 30 days.</h4>';
     html += '<ul class="year-months-ul accordion-content">';
      // Fix: add missing class
     months.forEach((m, i) => {
@@ -692,6 +692,8 @@ function updateCalendar(monthNum, currentDay, daysInMonth, monthsInYear, current
                 }
 
                 updateCalendar(selectedMonth, newDayToHighlight, m.days, monthsInYear, currentMonth, yearRange);
+                // Dispatch navigation event for heatmap updates
+                document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'month', direction: 'jump' } }));
             };
 
             if (newHighlightPromise && typeof newHighlightPromise.then === 'function') {
@@ -1143,8 +1145,39 @@ function renderCalendarForState() {
                 const today = new Date();
                 const cl = clampGregorianYM(ns.gYear ?? today.getFullYear(), ns.gMonth ?? today.getMonth());
                 ns.gYear = cl.y; ns.gMonth = cl.m;
-                window.GregorianCalendar.render(target, cl.y, cl.m);
+
+                // Find quantum calendar months for current Gregorian year
+                let monthsInYear = null;
+                if (ns.yearsData && ns.yearsData.length) {
+                    // Find matching quantum year for Gregorian year
+                    const quantumYearObj = ns.yearsData.find(yobj => yobj.year === cl.y);
+                    if (quantumYearObj) {
+                        monthsInYear = quantumYearObj.months.map(m => ({ days: m.days }));
+                    }
+                }
+
+                // Clear target and prepare for Gregorian render
+                target.innerHTML = '';
+
+                // Create wrapper for animation
+                const wrapper = document.createElement('div');
+                wrapper.id = 'calendar-grid-anim';
+                wrapper.style.opacity = '0';
+                wrapper.style.transition = 'opacity 0.3s ease-in-out';
+                target.appendChild(wrapper);
+
+                // Pass monthsInYear to GregorianCalendar.render if possible
+                if (window.GregorianCalendar.render.length >= 4) {
+                    window.GregorianCalendar.render(wrapper, cl.y, cl.m, monthsInYear);
+                } else {
+                    window.GregorianCalendar.render(wrapper, cl.y, cl.m);
+                }
                 rebindNavForGregorian();
+
+                // Trigger animation after render completes
+                setTimeout(() => {
+                    wrapper.style.opacity = '1';
+                }, 10);
             });
             return;
         }
@@ -1181,6 +1214,78 @@ function renderCalendarForState() {
             window.GregorianCalendar.render(wrapper, cl.y, cl.m);
         }
         rebindNavForGregorian();
+
+        // Add heatmap container below the calendar grid
+        const heatmapContainer = document.createElement('div');
+        heatmapContainer.id = 'heatmap-container';
+        heatmapContainer.className = 'heatmap-container';
+        heatmapContainer.innerHTML = `
+            <div class="heatmap-section" style="margin: 20px 0; text-align: center;">
+                <h1 style="color: #ffd700; margin-bottom: 15px; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">Monthly Dateline</h1>
+
+                <div id="heatmap-loading" style="display: none; margin: 10px 0;">
+                    <div style="display: inline-block; width: 300px; height: 6px; background: #f0f0f0; border-radius: 3px; margin-bottom: 8px;">
+                        <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); border-radius: 3px; transition: width 0.3s ease;"></div>
+                    </div>
+                    <p style="margin: 5px 0; color: #666; font-size: 14px; font-weight: 500;">Loading lunar month heatmaps...</p>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div class="heatmap-item">
+                        <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">Current Month</h4>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0;">
+                            <span id="current-gregorian-date"></span>
+                        </p>
+                        <div id="current-heatmap" class="heatmap-placeholder">
+                            <p>Loading current lunar month heatmap...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shared Color Legend for both heatmaps -->
+                <div class="shared-heatmap-legend" style="margin-top: 20px; text-align: center; font-size: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    <p style="margin: 10px 0; color: #ffd700; font-weight: bold; text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);">Color Key - Lunar Month Lengths</p>
+                    <div style="display: flex; flex-direction: row; gap: 20px; justify-content: center; align-items: flex-start;">
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 35px; height: 35px; background: rgba(255, 0, 0, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                                <span style="text-align: left; font-size: 16px; font-weight: bold;">30 Days</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 35px; height: 35px; background: rgba(255, 192, 203, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                                <span style="text-align: left; font-size: 16px; font-weight: bold; position: relative;">
+                                    30 Days 
+                                    <span style="cursor: help; color: #3caea3; font-size: 14px; margin-left: 4px;" 
+                                          title="Secondary indicators were used when no dawn could be found:
+-Nautical/Civil twilight or sunrise
+- When those couldn't be found, we moved 1 degree towards the equator to find:
+• dawn (extreme winter) or
+• sunrise (extreme summer)">ℹ️</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 35px; height: 35px; background: rgba(0, 0, 255, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                                <span style="text-align: left; font-size: 16px; font-weight: bold;">29 Days</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 35px; height: 35px; background: rgba(135, 206, 235, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                                <span style="text-align: left; font-size: 16px; font-weight: bold; position: relative;">
+                                    29 Days 
+                                    <span style="cursor: help; color: #3caea3; font-size: 14px; margin-left: 4px;" 
+                                          title="Secondary indicators were used when no dawn could be found:
+-Nautical/Civil twilight or sunrise
+- When those couldn't be found, we moved 1 degree towards the equator to find:
+• dawn (extreme winter) or
+• sunrise (extreme summer)">ℹ️</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        target.appendChild(heatmapContainer);
 
         // Trigger animation after render completes
         setTimeout(() => {
@@ -1539,11 +1644,11 @@ function recalculateMonthCalculations() {
             renderCalendarForState();
         }
 
-        // If in Gregorian mode, force refresh of special day mappings for all visible cells
+        // If in Gregorian mode, force refresh of special day mappings and custom calendar info for all visible cells
         if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
             setTimeout(() => {
                 const gregorianCells = document.querySelectorAll('td.day-cell[data-iso]');
-                gregorianCells.forEach(cell => {
+                gregorianCells.forEach(async (cell) => {
                     const iso = cell.dataset.iso;
                     if (iso) {
                         // Re-apply special day classes with fresh data
@@ -1561,6 +1666,82 @@ function recalculateMonthCalculations() {
                         }).catch(error => {
                             console.warn('Failed to refresh special day classes for cell:', iso, error);
                         });
+
+                        // Re-apply custom calendar info with fresh data
+                        try {
+                            const customMapping = await window.isoToCustomMonthDay(iso);
+                            if (customMapping && customMapping.monthNum && customMapping.dayNum) {
+                                // Remove existing custom calendar info
+                                const existingContainer = cell.querySelector('.dual-date-container .custom-calendar-info');
+                                if (existingContainer) {
+                                    existingContainer.remove();
+                                }
+
+                                // Remove existing counters
+                                const existingSilver = cell.querySelector('.silver-counter');
+                                if (existingSilver) existingSilver.remove();
+                                const existingBronze = cell.querySelector('.bronze-counter');
+                                if (existingBronze) existingBronze.remove();
+
+                                // Remove existing emoji
+                                const existingEmoji = cell.querySelector('.calendar-emoji-bg');
+                                if (existingEmoji) existingEmoji.remove();
+
+                                // Create new container if it doesn't exist
+                                let container = cell.querySelector('.dual-date-container');
+                                if (!container) {
+                                    container = document.createElement('div');
+                                    container.className = 'dual-date-container';
+                                    const daySpan = cell.querySelector('.holiday-daynum');
+                                    if (daySpan) {
+                                        container.appendChild(daySpan);
+                                        cell.appendChild(container);
+                                    }
+                                }
+
+                                // Add custom calendar info
+                                const customInfo = document.createElement('div');
+                                customInfo.className = 'custom-calendar-info';
+                                customInfo.textContent = `${customMapping.monthNum}/${customMapping.dayNum}`;
+                                container.appendChild(customInfo);
+
+                                // Add custom calendar counters if available
+                                if (customMapping.monthsInYear && typeof window.getSilverCounter === 'function') {
+                                    const silverCounter = window.getSilverCounter(customMapping.monthNum, customMapping.dayNum, customMapping.monthsInYear);
+                                    if (silverCounter !== null) {
+                                        const silverSpan = document.createElement('span');
+                                        silverSpan.className = 'silver-counter';
+                                        silverSpan.textContent = `${silverCounter}`;
+                                        cell.appendChild(silverSpan);
+                                    }
+                                }
+
+                                // Add bronze counter for custom calendar
+                                if (customMapping.monthsInYear && typeof window.GregorianCalendar !== 'undefined' && typeof window.GregorianCalendar.getBronzeCounter === 'function') {
+                                    const bronzeCounter = window.GregorianCalendar.getBronzeCounter(customMapping.monthNum, customMapping.dayNum);
+                                    if (bronzeCounter !== null) {
+                                        const bronzeSpan = document.createElement('span');
+                                        bronzeSpan.className = 'bronze-counter';
+                                        bronzeSpan.textContent = `${bronzeCounter}`;
+                                        cell.appendChild(bronzeSpan);
+                                    }
+                                }
+
+                                // Add moon phase emoji for custom calendar
+                                const emoji = window.GregorianCalendar && typeof window.GregorianCalendar.getMoonPhaseEmoji === 'function' 
+                                    ? window.GregorianCalendar.getMoonPhaseEmoji(customMapping.dayNum) 
+                                    : null;
+                                if (emoji) {
+                                    const emojiSpan = document.createElement('span');
+                                    emojiSpan.className = 'calendar-emoji-bg';
+                                    emojiSpan.textContent = emoji;
+                                    // Insert emoji as background behind the day number
+                                    cell.insertBefore(emojiSpan, cell.firstChild);
+                                }
+                            }
+                        } catch (error) {
+                            console.warn('Failed to refresh custom calendar info for cell:', iso, error);
+                        }
                     }
                 });
             }, 500); // Delay to ensure render is complete
@@ -1652,6 +1833,8 @@ function updateMultiYearCalendarUI() {
             function(selectedMonth) {
                 navState.currentMonthIdx = selectedMonth-1;
                 updateMultiYearCalendarUI();
+                // Dispatch navigation event for heatmap updates
+                document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'month', direction: 'jump' } }));
             },
             yearLabel,
             isCurrentYear
@@ -1659,7 +1842,74 @@ function updateMultiYearCalendarUI() {
         let navBtns = renderNavButtons();
         // Insert side panel between grid and months list
         let sidePanelHtml = `<div id="side-panel" class="side-panel"></div>`;
-        root.innerHTML = navBtns + `<div class="calendar-columns" id="calendar-columns"><div id="calendar-grid-anim">${gridHtml}</div>${sidePanelHtml}</div>` + monthsHtml;
+        // Add heatmap container below the calendar grid and above the months list
+        let heatmapHtml = `<div id="heatmap-container" class="heatmap-container">
+            <div class="heatmap-section" style="margin: 20px 0; text-align: center;">
+                <h1 style="color: #ffd700; margin-bottom: 15px; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">Monthly Dateline</h1>
+
+                <div id="heatmap-loading" style="display: none; margin: 10px 0;">
+                    <div style="display: inline-block; width: 300px; height: 6px; background: #f0f0f0; border-radius: 3px; margin-bottom: 8px;">
+                        <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); border-radius: 3px; transition: width 0.3s ease;"></div>
+                    </div>
+                    <p style="margin: 5px 0; color: #666; font-size: 14px; font-weight: 500;">Loading lunar month heatmaps...</p>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div class="heatmap-item">
+                        <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">Current Month</h4>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0;">
+                            <span id="current-gregorian-date"></span>
+                        </p>
+                        <div id="current-heatmap" class="heatmap-placeholder">
+                            <p>Loading current lunar month heatmap...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shared Color Legend for both heatmaps -->
+                <div class="shared-heatmap-legend" style="margin-top: 20px; text-align: center; font-size: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    <p style="margin: 10px 0; color: #ffd700; font-weight: bold; text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);">Color Key - Lunar Month Lengths</p>
+                    <div style="display: flex; flex-direction: row; gap: 20px; justify-content: center; align-items: flex-start;">
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 35px; height: 35px; background: rgba(255, 0, 0, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                                <span style="text-align: left; font-size: 16px; font-weight: bold;">30 Days</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 35px; height: 35px; background: rgba(255, 192, 203, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                                <span style="text-align: left; font-size: 16px; font-weight: bold; position: relative;">
+                                    30 Days 
+                                    <span style="cursor: help; color: #3caea3; font-size: 14px; margin-left: 4px;" 
+                                          title="Secondary indicators were used when no dawn could be found:
+-Nautical/Civil twilight or sunrise
+- When those couldn't be found, we moved 1 degree towards the equator to find:
+• dawn (extreme winter) or
+• sunrise (extreme summer)">ℹ️</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 35px; height: 35px; background: rgba(0, 0, 255, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                                <span style="text-align: left; font-size: 16px; font-weight: bold;">29 Days</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 35px; height: 35px; background: rgba(135, 206, 235, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
+                                <span style="text-align: left; font-size: 16px; font-weight: bold; position: relative;">
+                                    29 Days 
+                                    <span style="cursor: help; color: #3caea3; font-size: 14px; margin-left: 4px;" 
+                                          title="Secondary indicators were used when no dawn could be found:
+-Nautical/Civil twilight or sunrise
+- When those couldn't be found, we moved 1 degree towards the equator to find:
+• dawn (extreme winter) or
+• sunrise (extreme summer)">ℹ️</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        root.innerHTML = navBtns + `<div class="calendar-columns" id="calendar-columns"><div id="calendar-grid-anim">${gridHtml}</div>${sidePanelHtml}</div>` + heatmapHtml + monthsHtml;
         
         // Add initial animation for custom mode
         animateGridTransition();
@@ -1680,7 +1930,11 @@ function updateMultiYearCalendarUI() {
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
-                setTimeout(() => hideLoadingIndicator(), 300);
+                setTimeout(() => {
+                    hideLoadingIndicator();
+                    // Dispatch navigation event for heatmap updates
+                    document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'year', direction: 'prev' } }));
+                }, 300);
             }
         };
 
@@ -1693,7 +1947,11 @@ function updateMultiYearCalendarUI() {
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
-                setTimeout(() => hideLoadingIndicator(), 300);
+                setTimeout(() => {
+                    hideLoadingIndicator();
+                    // Dispatch navigation event for heatmap updates
+                    document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'year', direction: 'next' } }));
+                }, 300);
             }
         };
 
@@ -1705,7 +1963,11 @@ function updateMultiYearCalendarUI() {
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
-                setTimeout(() => hideLoadingIndicator(), 300);
+                setTimeout(() => {
+                    hideLoadingIndicator();
+                    // Dispatch navigation event for heatmap updates
+                    document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'month', direction: 'prev' } }));
+                }, 300);
             } else if (navState.currentYearIdx > 0) {
                 showLoadingIndicator();
                 navState.currentYearIdx--;
@@ -1714,7 +1976,11 @@ function updateMultiYearCalendarUI() {
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
-                setTimeout(() => hideLoadingIndicator(), 300);
+                setTimeout(() => {
+                    hideLoadingIndicator();
+                    // Dispatch navigation event for heatmap updates
+                    document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'month', direction: 'prev' } }));
+                }, 300);
             }
         };
 
@@ -1726,7 +1992,11 @@ function updateMultiYearCalendarUI() {
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
-                setTimeout(() => hideLoadingIndicator(), 300);
+                setTimeout(() => {
+                    hideLoadingIndicator();
+                    // Dispatch navigation event for heatmap updates
+                    document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'month', direction: 'next' } }));
+                }, 300);
             } else if (navState.currentYearIdx < navState.yearsData.length - 1) {
                 showLoadingIndicator();
                 navState.currentYearIdx++;
@@ -1735,7 +2005,11 @@ function updateMultiYearCalendarUI() {
                 syncNavigationState('custom', 'gregorian');
                 animateGridTransition();
                 updateMultiYearCalendarUI();
-                setTimeout(() => hideLoadingIndicator(), 300);
+                setTimeout(() => {
+                    hideLoadingIndicator();
+                    // Dispatch navigation event for heatmap updates
+                    document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'month', direction: 'next' } }));
+                }, 300);
             }
         };
 
@@ -1753,14 +2027,22 @@ function updateMultiYearCalendarUI() {
                         syncNavigationState('custom', 'gregorian');
                         animateGridTransition();
                         updateMultiYearCalendarUI();
-                        setTimeout(() => hideLoadingIndicator(), 300);
+                        setTimeout(() => {
+                            hideLoadingIndicator();
+                            // Dispatch navigation event for heatmap updates
+                            document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'jump', direction: 'home' } }));
+                        }, 300);
                     } else {
                         navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
                         // Sync Gregorian state
                         syncNavigationState('custom', 'gregorian');
                         animateGridTransition();
                         updateMultiYearCalendarUI();
-                        setTimeout(() => hideLoadingIndicator(), 300);
+                        setTimeout(() => {
+                            hideLoadingIndicator();
+                            // Dispatch navigation event for heatmap updates
+                            document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'jump', direction: 'home' } }));
+                        }, 300);
                     }
                 }).catch(() => {
                     // Fallback without dawn info
@@ -1772,14 +2054,22 @@ function updateMultiYearCalendarUI() {
                         syncNavigationState('custom', 'gregorian');
                         animateGridTransition();
                         updateMultiYearCalendarUI();
-                        setTimeout(() => hideLoadingIndicator(), 300);
+                        setTimeout(() => {
+                            hideLoadingIndicator();
+                            // Dispatch navigation event for heatmap updates
+                            document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'jump', direction: 'home' } }));
+                        }, 300);
                     } else {
                         navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
                         // Sync Gregorian state
                         syncNavigationState('custom', 'gregorian');
                         animateGridTransition();
                         updateMultiYearCalendarUI();
-                        setTimeout(() => hideLoadingIndicator(), 300);
+                        setTimeout(() => {
+                            hideLoadingIndicator();
+                            // Dispatch navigation event for heatmap updates
+                            document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'jump', direction: 'home' } }));
+                        }, 300);
                     }
                 });
             }
@@ -2050,7 +2340,7 @@ function computeCustomSpecialClasses(monthNum, dayNum, monthsInYear) {
         pinkStartAbsDay += 9 + 50; // 3rd month 9th day + 50 days => next day
 
         const isDarkPink = (absDay === pinkStartAbsDay); // Exact match, no fractional comparison
-        if (isDarkPink) classes.push('dark-pink-day');
+        if (isDarkPink) classes.push('hot-pink-day');
 
         // Month-based specials (copied from renderCalendarGrid logic)
         if (!isDarkPink) {
@@ -2060,7 +2350,7 @@ function computeCustomSpecialClasses(monthNum, dayNum, monthsInYear) {
             else if (monthNum === 1 && dayNum >= 17 && dayNum <= 21) classes.push('indigo-purple-day');
             else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) classes.push('emerald-green-day');
             else if (monthNum === 7 && dayNum === 1) { classes.push('seventh-emerald-green-day','seventh-orange-day'); }
-            else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) { classes.push('seventh-ruby-red-day','seventh-orange-day'); }
+            else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) { classes.push('atonement-magenta-day','seventh-orange-day'); }
             else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) { classes.push('seventh-ruby-red-day','seventh-orange-day','seventh-pink-day'); }
             else if (monthNum === 7 && dayNum >= 16 && dayNum <= 21) classes.push('seventh-indigo-purple-day');
             else if (dayNum === 1) classes.push('gold-bronze-day');
@@ -2081,6 +2371,13 @@ function ensureFrameAndGetGridTarget() {
   // Ensure nav + columns frame exists so we can swap only the grid
   let target = document.getElementById('calendar-grid-anim');
   if (!target) {
+    // In Gregorian mode, don't try to create the frame using Custom mode functions
+    if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+      // For Gregorian mode, use calendar-grid-root directly
+      return document.getElementById('calendar-grid-root');
+    }
+
+    // For Custom mode, ensure the frame exists
     if (typeof updateMultiYearCalendarUI === 'function') {
       updateMultiYearCalendarUI();
       target = document.getElementById('calendar-grid-anim');
@@ -2124,7 +2421,11 @@ function rebindNavForGregorian() {
     syncNavigationState('gregorian', 'custom');
     animateGridTransition();
     renderCalendarForState();
-    setTimeout(() => hideLoadingIndicator(), 300);
+    setTimeout(() => {
+        hideLoadingIndicator();
+        // Dispatch navigation event for heatmap updates
+        document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'month', direction: delta > 0 ? 'next' : 'prev' } }));
+    }, 300);
   }
 
   function bumpYear(delta) {
@@ -2135,7 +2436,11 @@ function rebindNavForGregorian() {
     syncNavigationState('gregorian', 'custom');
     animateGridTransition();
     renderCalendarForState();
-    setTimeout(() => hideLoadingIndicator(), 300);
+    setTimeout(() => {
+        hideLoadingIndicator();
+        // Dispatch navigation event for heatmap updates
+        document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'year', direction: delta > 0 ? 'next' : 'prev' } }));
+    }, 300);
   }
 
   setOnClick(prevYearBtn, () => bumpYear(-1));
@@ -2150,7 +2455,11 @@ function rebindNavForGregorian() {
     syncNavigationState('gregorian', 'custom');
     animateGridTransition();
     renderCalendarForState();
-    setTimeout(() => hideLoadingIndicator(), 300);
+    setTimeout(() => {
+        hideLoadingIndicator();
+        // Dispatch navigation event for heatmap updates
+        document.dispatchEvent(new CustomEvent('calendar:navigation', { detail: { type: 'jump', direction: 'home' } }));
+    }, 300);
   });
 }
 
@@ -2273,73 +2582,68 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchMultiYearCalendar(navState?.lat || 51.48, navState?.lon || 0.0, navState?.tz || 'Europe/London', 2000, 2048, function(data) {
             navState.yearsData = data;
 
-            // Use dawn info for more accurate positioning
-            fetchCurrentDawnInfo().then(dawnInfo => {
-                const foundIdx2 = findQuantumIndexForDate(today2, data, dawnInfo);
-                if (foundIdx2) {
-                    navState.currentYearIdx = foundIdx2.yearIdx;
-                    navState.currentMonthIdx = foundIdx2.monthIdx;
-                } else {
-                    navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
-                }
+            // PRESERVE CURRENT NAVIGATION POSITION instead of resetting to today
+            // Only update position if this is the first load (no existing position)
+            if (navState.currentYearIdx === undefined || navState.currentMonthIdx === undefined) {
+                // Use dawn info for more accurate positioning
+                fetchCurrentDawnInfo().then(dawnInfo => {
+                    const foundIdx2 = findQuantumIndexForDate(today2, data, dawnInfo);
+                    if (foundIdx2) {
+                        navState.currentYearIdx = foundIdx2.yearIdx;
+                        navState.currentMonthIdx = foundIdx2.monthIdx;
+                    } else {
+                        navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
+                    }
 
+                    try {
+                        navState.gYear = navState.yearsData[navState.currentYearIdx].year;
+                        navState.gMonth = navState.currentMonthIdx;
+                    } catch (e) {
+                        console.warn('Could not set Gregorian pointers:', e);
+                    }
+                }).catch(() => {
+                    // Fallback without dawn info
+                    const foundIdx2 = findQuantumIndexForDate(today2, data);
+                    if (foundIdx2) {
+                        navState.currentYearIdx = foundIdx2.yearIdx;
+                        navState.currentMonthIdx = foundIdx2.monthIdx;
+                    } else {
+                        navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
+                    }
+
+                    try {
+                        navState.gYear = navState.yearsData[navState.currentYearIdx].year;
+                        navState.gMonth = navState.currentMonthIdx;
+                    } catch (e) {
+                        console.warn('Could not set Gregorian pointers:', e);
+                    }
+                });
+            } else {
+                // Preserve existing navigation position
                 try {
                     navState.gYear = navState.yearsData[navState.currentYearIdx].year;
                     navState.gMonth = navState.currentMonthIdx;
                 } catch (e) {
                     console.warn('Could not set Gregorian pointers:', e);
                 }
+            }
 
-                // Only render if this callback is still relevant
-                const currentLoadingState = window.dataLoadingState;
-                if (!currentLoadingState.isLoading) {
-                    // Hide loading bar with delay for smooth transition
-                    setTimeout(() => {
-                        hideStartupLoadingBar();
-                    }, 500);
+            // Only render if this callback is still relevant
+            const currentLoadingState = window.dataLoadingState;
+            if (!currentLoadingState.isLoading) {
+                // Hide loading bar with delay for smooth transition
+                setTimeout(() => {
+                    hideStartupLoadingBar();
+                }, 500);
 
-                    renderCalendarForState();
-                    if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
-                        document.dispatchEvent(new Event('gregorian:rendered'));
-                    }
-
-                    // Recalculate all month-dependent calculations for new location
-                    recalculateMonthCalculations();
-                }
-            }).catch(() => {
-                // Fallback without dawn info
-                const foundIdx2 = findQuantumIndexForDate(today2, data);
-                if (foundIdx2) {
-                    navState.currentYearIdx = foundIdx2.yearIdx;
-                    navState.currentMonthIdx = foundIdx2.monthIdx;
-                } else {
-                    navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
+                renderCalendarForState();
+                if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
+                    document.dispatchEvent(new Event('gregorian:rendered'));
                 }
 
-                try {
-                    navState.gYear = navState.yearsData[navState.currentYearIdx].year;
-                    navState.gMonth = navState.currentMonthIdx;
-                } catch (e) {
-                    console.warn('Could not set Gregorian pointers:', e);
-                }
-
-                // Only render if this callback is still relevant
-                const currentLoadingState = window.dataLoadingState;
-                if (!currentLoadingState.isLoading) {
-                    // Hide loading bar with delay for smooth transition
-                    setTimeout(() => {
-                        hideStartupLoadingBar();
-                    }, 500);
-
-                    renderCalendarForState();
-                    if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
-                        document.dispatchEvent(new Event('gregorian:rendered'));
-                    }
-
-                    // Recalculate all month-dependent calculations for new location
-                    recalculateMonthCalculations();
-                }
-            });
+                // Recalculate all month-dependent calculations for new location
+                recalculateMonthCalculations();
+            }
         });
     });
 });
@@ -2347,3 +2651,6 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('gregorian:rendered', () => { if (window.CalendarMode.mode === 'gregorian') rebindNavForGregorian(); });
 // Also after custom renders, ensure nav works when switching
 document.addEventListener('calendar:rendered', () => { if (window.CalendarMode.mode === 'gregorian') rebindNavForGregorian(); });
+
+// Expose functions globally for calendar access
+window.getSilverCounter = getSilverCounter;
