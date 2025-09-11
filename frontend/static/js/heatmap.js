@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Heatmap loader starting...');
 
     let retryCount = 0;
-    const maxRetries = 20; // 10 seconds max wait
+    const maxRetries = 30; // 30 seconds max wait (increased from 20)
 
     // Track searched locations for map pins
     let searchedLocations = [];
@@ -349,8 +349,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Retry in 500ms
-            setTimeout(updateHeatmapsWhenReady, 500);
+            // Retry in 1 second (increased from 500ms for better performance)
+            setTimeout(updateHeatmapsWhenReady, 1000);
             return;
         }
 
@@ -396,6 +396,12 @@ document.addEventListener('DOMContentLoaded', function() {
             searchedLocations.push(currentLocation);
         }
 
+        updateHeatmapsWithData();
+    });
+
+    // Listen for calendar data loaded event (for initial load)
+    document.addEventListener('calendar:data-loaded', function() {
+        console.log('Calendar data loaded, updating heatmap...');
         updateHeatmapsWithData();
     });
 
@@ -447,6 +453,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // Automatically load heatmap on page startup
+    console.log('Starting automatic heatmap loading on page startup...');
+    updateHeatmapsWhenReady();
 });
 
 // Debug functions for testing location pins

@@ -1019,6 +1019,9 @@ function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
                     renderCalendarForState();
                 }
             }
+
+            // Dispatch event to notify that calendar data has been loaded
+            document.dispatchEvent(new CustomEvent('calendar:data-loaded', { detail: { yearsData: navState.yearsData } }));
         }
     })
     .catch(error => {
@@ -1215,7 +1218,7 @@ function renderCalendarForState() {
         }
         rebindNavForGregorian();
 
-        // Add heatmap container below the calendar grid
+                // Add heatmap container below the calendar grid
         const heatmapContainer = document.createElement('div');
         heatmapContainer.id = 'heatmap-container';
         heatmapContainer.className = 'heatmap-container';
@@ -1231,7 +1234,7 @@ function renderCalendarForState() {
                 </div>
                 <div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
                     <div class="heatmap-item">
-                        <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">Current Month</h4>
+                        <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">${navState.currentMonthIdx + 1}th Month ${navState.yearsData[navState.currentYearIdx].year}-${String(navState.yearsData[navState.currentYearIdx].year + 1).slice(-2)}</h4>
                         <p style="font-size: 12px; color: #666; margin: 5px 0;">
                             <span id="current-gregorian-date"></span>
                         </p>
@@ -1239,9 +1242,7 @@ function renderCalendarForState() {
                             <p>Loading current lunar month heatmap...</p>
                         </div>
                     </div>
-                </div>
-
-                <!-- Shared Color Legend for both heatmaps -->
+                </div>                <!-- Shared Color Legend for both heatmaps -->
                 <div class="shared-heatmap-legend" style="margin-top: 20px; text-align: center; font-size: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
                     <p style="margin: 10px 0; color: #ffd700; font-weight: bold; text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);">Color Key - Lunar Month Lengths</p>
                     <div style="display: flex; flex-direction: row; gap: 20px; justify-content: center; align-items: flex-start;">
@@ -1855,7 +1856,7 @@ function updateMultiYearCalendarUI() {
                 </div>
                 <div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
                     <div class="heatmap-item">
-                        <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">Current Month</h4>
+                        <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">${navState.currentMonthIdx + 1}th Month ${yearObj.year}-${String(yearObj.year + 1).slice(-2)}</h4>
                         <p style="font-size: 12px; color: #666; margin: 5px 0;">
                             <span id="current-gregorian-date"></span>
                         </p>
@@ -2505,6 +2506,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 renderCalendarForState();
                 updateModeButtons();
+
+                // Dispatch event to notify heatmap that calendar data has been loaded
+                document.dispatchEvent(new CustomEvent('calendar:data-loaded', { detail: { yearsData: navState.yearsData } }));
             }
         }).catch(() => {
             // Fallback without dawn info
@@ -2533,11 +2537,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 renderCalendarForState();
                 updateModeButtons();
+
+                // Dispatch event to notify heatmap that calendar data has been loaded
+                document.dispatchEvent(new CustomEvent('calendar:data-loaded', { detail: { yearsData: navState.yearsData } }));
             }
         });
     });
-
-    // Single calendar:update handler for location changes with race condition prevention
     window.addEventListener('calendar:update', function(e) {
         if (!e.detail) return;
 
