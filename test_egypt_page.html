@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Egypt Search</title>
+</head>
+<body>
+    <h1>Testing Egypt Search Prioritization</h1>
+    <div id="results"></div>
+
+    <script src="/static/js/hebrew_xml_parser.js"></script>
+    <script>
+        async function testEgyptSearch() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '🔄 Loading parser...';
+
+            try {
+                // Create parser
+                const parser = new HebrewXMLParser();
+
+                // Load XML
+                resultsDiv.innerHTML = '🔄 Loading Hebrew XML...';
+                await parser.loadXML();
+
+                // Test search
+                resultsDiv.innerHTML = '🔍 Testing search for "egypt"...';
+                const results = parser.search('egypt', 10);
+
+                // Display results
+                let html = '<h2>Search Results for "egypt":</h2><ol>';
+                results.forEach((result, index) => {
+                    const isTarget = result.entryNumber === '4714';
+                    const marker = isTarget ? ' 🎯 TARGET ENTRY' : '';
+                    const style = isTarget ? 'style="color: red; font-weight: bold;"' : '';
+                    html += `<li ${style}>${result.entryNumber}: ${result.hebrewWord} - "${result.meanings[0] || 'No meaning'}"${marker}</li>`;
+                });
+                html += '</ol>';
+
+                // Check if H4714 is at the top
+                if (results.length > 0 && results[0].entryNumber === '4714') {
+                    html += '<p style="color: green; font-weight: bold;">✅ SUCCESS: Egypt (H4714) is at the top!</p>';
+                } else {
+                    html += '<p style="color: red; font-weight: bold;">❌ ISSUE: Egypt (H4714) is not at the top</p>';
+                    if (results.length > 0) {
+                        html += `<p>Top result is: ${results[0].entryNumber}: ${results[0].hebrewWord}</p>`;
+                    }
+                }
+
+                resultsDiv.innerHTML = html;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `❌ Error: ${error.message}`;
+                console.error(error);
+            }
+        }
+
+        // Run test when page loads
+        window.addEventListener('load', testEgyptSearch);
+    </script>
+</body>
+</html>
