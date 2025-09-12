@@ -77,10 +77,7 @@ def api_health():
         "astro": os.environ.get("ASTRO_API_BASE", ""),
     }
 
-# Serve legacy static path if templates reference /frontend/static/*
-@app.route("/frontend/static/<path:filename>")
-def legacy_static(filename: str):
-    return send_from_directory(os.path.join(BASE_DIR, "frontend", "static"), filename)
+# Bible SDK routes removed - focusing on XML parsing instead
 
 # Serve favicon if present (avoid noisy 404s)
 @app.route("/favicon.ico")
@@ -208,6 +205,20 @@ def select_location():
 def how_it_works():
     ensure_data_loaded()
     return render_template('how_it_works.html')
+
+@app.route('/the_letters')
+def the_letters():
+    ensure_data_loaded()
+    return render_template('the_letters.html')
+
+@app.route('/primitive_roots')
+def primitive_roots():
+    ensure_data_loaded()
+    return render_template('primitive_roots.html')
+
+@app.route('/font-test')
+def font_test():
+    return render_template('font_test.html')
 
 @app.route('/api/generate-heatmaps', methods=['POST'])
 def generate_heatmaps():
