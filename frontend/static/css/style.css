@@ -10,6 +10,33 @@ body, .calendar-title, .search-bar, #suggestions {
     font-style: normal;
 }
 
+@font-face {
+    font-family: 'Aurebesh';
+    src: url('/static/fonts/Aurebesh.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Font for Hebrew content pages */
+@font-face {
+    font-family: 'AllLetters';
+    src: url('/static/fonts/all_letters.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Apply AllLetters font to primitive roots page */
+body.primitive-roots-page,
+body.primitive-roots-page * {
+    font-family: 'AllLetters', sans-serif !important;
+}
+
+/* Apply AllLetters font to the letters page */
+body.the-letters-page,
+body.the-letters-page * {
+    font-family: 'AllLetters', sans-serif !important;
+}
+
 /* Title placemat */
 .title-placemat {
   width: min(640px, 92vw);
@@ -941,5 +968,195 @@ body, .calendar-title, .search-bar, #suggestions {
         height: auto;
         max-height: 300px;
         object-fit: contain;
+    }
+}
+
+/* Primitive Root Pulsing Animation */
+.primitive-root-entry {
+    position: relative;
+    animation: primitive-pulse 2s ease-in-out infinite;
+    border: 2px solid rgba(255, 215, 0, 0.8) !important;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05)) !important;
+}
+
+@keyframes primitive-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), inset 0 0 0 9999px rgba(255, 215, 0, 0.1);
+        border-color: rgba(255, 215, 0, 0.8);
+    }
+    50% {
+        box-shadow: 0 0 0 15px rgba(255, 215, 0, 0), inset 0 0 0 9999px rgba(255, 215, 0, 0.05);
+        border-color: rgba(255, 215, 0, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), inset 0 0 0 9999px rgba(255, 215, 0, 0.1);
+        border-color: rgba(255, 215, 0, 0.8);
+    }
+}
+
+/* Respect reduced motion for primitive root pulse */
+@media (prefers-reduced-motion: reduce) {
+    .primitive-root-entry {
+        animation: none;
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), inset 0 0 0 9999px rgba(255, 215, 0, 0.1);
+        border-color: rgba(255, 215, 0, 0.8);
+    }
+}
+
+.result-item {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.result-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 215, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.strongs-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.strongs-header h3 {
+    color: #ffd700;
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+}
+
+.hebrew-word {
+    font-size: 2rem;
+    color: #40e0d0;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.english-translation {
+    color: #e0e6ed;
+    font-size: 1.1rem;
+    font-style: italic;
+}
+
+.primitive-root-section h4 {
+    color: #40e0d0;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.primitive-root-info {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.root-number {
+    font-size: 1.3rem;
+    color: #ffd700;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.root-details h5 {
+    color: #ffd700;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.root-details p {
+    color: #e0e6ed;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.root-details strong {
+    color: #40e0d0;
+}
+
+.verb-meaning {
+    background: rgba(64, 224, 208, 0.1);
+    border-left: 3px solid #40e0d0;
+    padding: 10px 15px;
+    margin-top: 10px;
+    border-radius: 0 6px 6px 0;
+}
+
+.no-results {
+    text-align: center;
+    color: #888;
+    font-size: 1.1rem;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.error-message {
+    font-size: 1rem;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+/* Responsive adjustments for primitive roots */
+@media (max-width: 768px) {
+    .result-item {
+        padding: 20px;
+    }
+
+    .hebrew-word {
+        font-size: 1.8rem;
+    }
+
+    .strongs-header h3 {
+        font-size: 1.3rem;
+    }
+
+    .primitive-root-info {
+        padding: 15px;
+    }
+}
+
+/* Letter content responsive layout */
+@media (min-width: 769px) {
+    /* Desktop: side-by-side layout */
+    .letter-content {
+        display: flex !important;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .video-container {
+        flex: 0 0 auto;
+        width: 400px;
+    }
+
+    .transcript-content {
+        flex: 1;
+        min-width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Mobile: stacked layout */
+    .letter-content {
+        display: flex !important;
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .video-container {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .transcript-content {
+        width: 100%;
+        max-width: 400px;
     }
 }

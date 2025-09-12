@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>The Letters - Quantum Clock v1.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Basic SEO -->
+    <meta name="description" content="The Letters: Exploring the symbolic and astronomical significance of letters in the Quantum Clock system.">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="{{ (request.url_root | trim('/')) }}/the_letters">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="The Letters - Quantum Clock">
+    <meta property="og:site_name" content="Quantum Clock">
+    <meta property="og:description" content="Exploring the symbolic and astronomical significance of letters in the Quantum Clock system">
+    <meta property="og:url" content="{{ (request.url_root | trim('/')) }}/the_letters">
+    <meta property="og:image" content="{{ (request.url_root | trim('/')) }}/static/img/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Letters - Quantum Clock">
+    <meta name="twitter:description" content="Exploring the symbolic and astronomical significance of letters in the Quantum Clock system">
+    <meta name="twitter:image" content="{{ (request.url_root | trim('/')) }}/static/img/og-image.png">
+
+    <!-- Theme color (mobile address bar) -->
+    <meta name="theme-color" content="#20639b">
+
+    <link rel="preload" href="/static/fonts/Pictocrypto-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/navbar.css">
+    <link rel="stylesheet" href="/static/css/calendar_grid.css">
+    <link rel="stylesheet" href="/static/css/side_panel.css">
+    <style>
+        .transcript-container {
+            display: block;
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            margin: 0 15px 0 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border-left: 3px solid #40e0d0;
+            border-right: 3px solid #40e0d0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .transcript-text-clean {
+            color: #e0e6ed;
+            line-height: 1.6;
+            font-size: 0.9rem;
+            white-space: normal;
+        }
+
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+            .transcript-container {
+                margin: 0;
+                padding: 12px;
+                min-width: 200px;
+                max-width: 100%;
+                box-sizing: border-box;
+                border-left: 2px solid #40e0d0;
+                border-right: 2px solid #40e0d0;
+                border-radius: 6px;
+            }
+            .transcript-text-clean {
+                font-size: 0.85rem;
+                line-height: 1.5;
+            }
+            .letter-content {
+                gap: 10px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .transcript-container {
+                margin: 0;
+                padding: 10px;
+                min-width: 150px;
+                max-width: 100%;
+                box-sizing: border-box;
+                border-left: 2px solid #40e0d0;
+                border-right: 2px solid #40e0d0;
+                border-radius: 5px;
+            }
+            .transcript-text-clean {
+                font-size: 0.8rem;
+                line-height: 1.4;
+            }
+            .letter-content {
+                gap: 5px !important;
+            }
+        }
+
+        /* Hebrew Letter Sparkle Animation */
+        @keyframes sparkle {
+            0%, 100% {
+                text-shadow:
+                    0 0 5px rgba(255, 215, 0, 0.8),
+                    0 0 10px rgba(255, 215, 0, 0.6),
+                    0 0 15px rgba(255, 215, 0, 0.4),
+                    0 0 20px rgba(255, 215, 0, 0.3),
+                    0 0 25px rgba(255, 215, 0, 0.2);
+            }
+            50% {
+                text-shadow:
+                    0 0 10px rgba(255, 215, 0, 1),
+                    0 0 20px rgba(255, 215, 0, 0.8),
+                    0 0 30px rgba(255, 215, 0, 0.6),
+                    0 0 40px rgba(255, 215, 0, 0.4),
+                    0 0 50px rgba(255, 215, 0, 0.3),
+                    0 0 60px rgba(255, 215, 0, 0.2);
+            }
+        }
+
+        .hebrew-sparkle {
+            animation: sparkle 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="the-letters-page">
+    <!-- Navigation Bar -->
+    {% include 'navbar.html' %}
+
+    <!-- Live background canvas -->
+    <canvas id="bg-matrix" aria-hidden="true"></canvas>
+
+    <div class="app-root">
+        <!-- Hebrew Letters Sections -->
+        <div class="letters-container">
+
+            <!-- Introduction to The Letters -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Introduction to The Letters</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/cjOokX00ySA"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="cjOokX00ySA-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            In this short series we go into a look about the old school Hebrew letters and their implied meanings.<br><br>
+                            A simple disclaimer here: what you are about to see in these short videos are obviously in no way the absolute definition in what these letters can mean.<br><br>
+                            This is really an exercise in creativity as you'll see. There are many more meanings we can assign to the letters that cannot be contained in these short presentations.<br><br>
+                            But what they can do is give you a quick and easy to comprehend frame of reference to go back to.<br><br>
+                            You may find many more meanings on your own and that's perfectly fine.<br><br>
+                            Just remember what you see in these letters will simply be a reflection of what's inside your own heart so it's a good way to check how you are currently seeing the world around yourself and others and gives you options as to where you may like to go from there.<br><br>
+                            More features coming to Pikto Crypto soon so stay tuned.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- א Aleph -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">א</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/FajeA-NbAs0"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="FajeA-NbAs0-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The first letter looks like an ox or bull which is reflected in its name as Aleph comes from the Hebrew word for ox.<br><br>
+                            It is associated with strength and power. It can also represent me, myself and I because you can't do anything for anyone else unless you have yourself figured out first.<br><br>
+                            The name Aleph has a root word meaning both to learn and to teach going around in an endless cycle of learning, growing and teaching.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ב Bet -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ב</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/gqyiWhX-ck0"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="gqyiWhX-ck0-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The second letter resembles a house or a floor plan which is reflected in the name itself.<br><br>
+                            But having an overhead look you can see what's inside which is fitting because Bet used as a prefix means to be inside something as in "in the beginning".<br><br>
+                            It also looks like a maze to explore or wrinkles in the brain meaning the more training in the Maze the smarter you become.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ג Gimel -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ג</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/lh2bxLUqko4"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="lh2bxLUqko4-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The third letter looks more like a camel's hump which is fitting given that it is the word for Camel.<br><br>
+                            It's the idea of traveling over long distances to pay or reward someone for a service or a very expensive item.<br><br>
+                            It also looks like a foot or a boot on its way somewhere meaning it has a purpose in making progress towards its destination and goal.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ד Dalet -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ד</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/CpZ7ed6yBx8"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="CpZ7ed6yBx8-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The fourth letter is shaped to look like a doorway.<br><br>
+                            It is an entrance or exit of a portal or passageway to Another Place, Another World or another dimension.<br><br>
+                            It represents change in transition or even transformation.<br><br>
+                            A coming and going, a giving and receiving.<br><br>
+                            Where you end up going however is all up to you.<br><br>
+                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ה Hey -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ה</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/a6pQY-2WSFw"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="a6pQY-2WSFw-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The fifth letter looks like someone with his hands up trying to get someone's attention.<br><br>
+                            It is a revealing, an awareness to something, a realization.<br><br>
+                            The Hey prefix denotes the Hebrew equivalent for the word "the" and the suffix denotes a demonstrative force of whatever precedes it.<br><br>
+                            It is the actual release of power like the name of the Creator itself.<br><br>
+                           
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ו Vav -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ו</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/A0PaC-h-_as"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="A0PaC-h-_as-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The sixth letter looks like and is also the same word for a nail or a peg.<br><br>
+                            It's the idea of linking or joining ideas, things and people together.<br><br>
+                            In Hebrew the letter itself is the word for "and" so it literally connects words and phrases together.<br><br>
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ז Zayin -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ז</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/i2Mj0OgsZKs"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="i2Mj0OgsZKs-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The seventh letter has a double meaning.<br><br>
+                            It can be a weapon for you to cut obstacles out of your way or it can be a plow that goes through a field tilling the ground and planting the things and ideas you want in its place.<br><br>
+                            Which ultimately leads to its root meaning of being well fed.<br><br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ח Het -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ח</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/WSU9peR4cis"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="WSU9peR4cis-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The eighth letter represents a fence or an enclosure.<br><br>
+                            It's the idea of setting a border or boundary to protect you from what's harmful outside and to keep inside more of what you want.<br><br>
+                            It can even have a bonus meaning like a hurdle or an obstacle to climb over and overcome.<br><br>
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ט Tet -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ט</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/jdKN2ZVf4dc"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="jdKN2ZVf4dc-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The ninth letter is very flexible since it looks like several things like a wheel that rolls onward, a container lid that keeps Goods inside, X's and O's to play Tic-Tac-Toe with, and of course the other kind of x's and o's.<br><br>
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- י Yod -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">י</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/r7yIbliI0bg"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="r7yIbliI0bg-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The tenth letter looks like an arm reaching out for something.<br><br>
+                            Fitting because Yad actually means arm in Hebrew.<br><br>
+                            It implies a source of power to get or obtain things that you want.<br><br>
+                            It's the first letter of the name of the source implying the power to be anything in everything.<br><br>
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- כ Kaf -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">כ</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/v_rGPh9xJxM"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="v_rGPh9xJxM-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 11th letter resembles an open Palm which is an act of freely giving, freely receiving or allowing someone to do or to be something or someone.<br><br>
+                            And it's fitting because the letter used as a suffix is used to refer to you.<br><br>
+                         
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ל Lamed -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ל</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/IDIykJjc8Go"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="IDIykJjc8Go-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 12th letter is represented by a staff or a cane that guides the way.<br><br>
+                            Lamed itself means to learn, study and its prefix is the equivalent in English for the word "to" or "for".<br><br>
+                            It highlights intention, Direction and the purpose of one's actions.<br><br>
+                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- מ Mem -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">מ</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/v8sYvt6xNjk"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="v8sYvt6xNjk-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 13th letter looks like waves of water representing the constant movement and change of life.<br><br>
+                            Water is a means of transport and cleansing.<br><br>
+                            Note that all life originates from the water.<br><br>
+                            Mem used as a prefix is the English equivalent for the word "from".<br><br>
+                            The suffix Yod-Mem makes anything plural.<br><br>
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- נ Nun -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">נ</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/2Q2qTBa2hSc"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="2Q2qTBa2hSc-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 14th letter resembles a sprouted seed representing growth, progress and profitability in the things being pursued.<br><br>
+                            In Hebrew the word Nun itself means to continue and to increase in perpetuity.<br><br>
+                            In the pale aversion it resembles more of a spark or a bolt of lightning.<br><br>
+                   
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ס Samekh -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ס</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/d50Z4unavzk"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="d50Z4unavzk-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 15th letter is represented by a pictograph of a prop or support.<br><br>
+                            It symbolizes a sturdy foundation or structure that provides stability and security.<br><br>
+                            In Hebrew Samekh also means to support or to lean on.<br><br>
+                            Even words associated with the letter can imply that support systems lead to one feeling rested, refreshed and revived.<br><br>
+                          
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ע Ayin -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ע</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/bnKa03Bm-LA"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="bnKa03Bm-LA-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 16th letter is an "i" which is all about Vision, perception, appearance and insight.<br><br>
+                            It implies the ability to see, consider and understand things in a very deep way.<br><br>
+                            Even to know something or someone by intimate experience.<br><br>
+                         
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- פ Pe -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">פ</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/0xF-Vb5LqZo"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="0xF-Vb5LqZo-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 17th letter looks like it is the word for mouth and it even can represent the Winds of speech.<br><br>
+                            It's about the ability to express yourself and communicate ideas freely and effectively.<br><br>
+                            As it also looks like an opening it implies that you can speak your way into and out of certain situations.<br><br>
+                            So watch what you say.<br><br>
+                   
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- צ Tsadi -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">צ</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/170vnvFYEns"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="170vnvFYEns-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 18th letter is represented by a bait hook.<br><br>
+                            It can also resemble someone who is patiently lying and wait for something like for an object of Desire or in another circumstance a sniper lying in wait for the Target.<br><br>
+                            In Hebrew the word Tsadi literally means "side".<br><br>
+                            If we add the 19th letter we get the word for righteous.<br><br>
+                            So be patient in getting what you want because it will all be made right eventually.<br><br>
+                      
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ק Qof -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ק</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/PbBSTea8ubM"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="PbBSTea8ubM-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 19th letter is represented by a pictograph of the rising or Setting Sun and symbolizes time.<br><br>
+                            It's the base word for circuit or revolution.<br><br>
+                            It symbolizes the idea of looking at the future coming towards you or going away from you.<br><br>
+                            It is the Eternal now that is ever before us.<br><br>
+                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ר Resh -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ר</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/4UegjlFmbIw"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="4UegjlFmbIw-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 20th letter is ahead of a person's face.<br><br>
+                            It symbolizes the leader, someone who is at the top of what they do.<br><br>
+                            It also represents the first, the beginning and the foundation of anything that comes after it.<br><br>
+                        
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ש Shin -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ש</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/uglUSBMuRsM"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="uglUSBMuRsM-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 21st letter is represented by two sharp teeth that crunch things to bits.<br><br>
+                            Teeth are used to break things down and so it's fitting that they form the base for words like change and repeat.<br><br>
+                            But because of the destructive nature of chewing things it is also the base for other words like hatred and fire.<br><br>
+                            You are what you eat and consume indeed.<br><br>
+                       
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ת Tav -->
+            <div class="letter-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 class="hebrew-sparkle" style="color: #ffd700; font-size: 6rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);">ת</h2>
+                <div class="letter-content" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                    <div class="video-container" style="flex: 1; min-width: 300px; max-width: 400px;">
+                        <div style="position: relative; padding-bottom: 177.78%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                            <iframe src="https://www.youtube.com/embed/7wpQzZ_1XWY"
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    <div id="7wpQzZ_1XWY-transcript" class="transcript-content transcript-container">
+                        <div class="transcript-text transcript-text-clean">
+                            The 22nd and final letter is represented by an X like the shape of a Mark or where a signature goes on a document.<br><br>
+                            It symbolizes an agreement to do something and also represents the idea of marking something as completed.<br><br>
+                            Also it can be seen as if it were to lead you to the buried treasure.<br><br>
+                      
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="/static/js/geoapify.js"></script>
+    <script src="/static/js/gregorian.js"></script>
+    <script src="/static/js/calendar.js"></script>
+    <script src="/static/js/side_panel.js"></script>
+<script src="/static/js/matrix_rain.js"></script>
+
+    <!-- Transcript functionality -->
+    <script>
+        // Add transcript toggles to all letter sections
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Transcript functionality loaded');
+        });
+    </script>
+
+    <!-- Footer -->
+    {% include 'footer.html' %}
+</body>
+</html>
