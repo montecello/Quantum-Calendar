@@ -220,6 +220,10 @@ def primitive_roots():
 def font_test():
     return render_template('font_test.html')
 
+@app.route('/font-comparison')
+def font_comparison():
+    return render_template('complete_font_comparison_test.html')
+
 @app.route('/api/generate-heatmaps', methods=['POST'])
 def generate_heatmaps():
     """Generate lunar month heatmap for current month"""

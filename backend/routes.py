@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_from_directory
 import logging
 import os
 import requests
@@ -8,7 +8,32 @@ from backend.calendar import get_calendar_for_year
 from backend.astronomy.years import get_multi_year_calendar_data
 from config import ASTRO_API_BASE
 
+# MongoDB imports
+try:
+    from pymongo import MongoClient
+    from config import MONGODB_URI, DATABASE_NAME, STRONG_COLLECTION, KJV_COLLECTION
+    MONGODB_AVAILABLE = True
+except ImportError:
+    MONGODB_AVAILABLE = False
+    logging.warning("MongoDB not available - using static file fallback")
+
 api = Blueprint('api', __name__)
+
+# MongoDB client (lazy initialization)
+_mongo_client = None
+_db = None
+
+def get_mongo_client():
+    global _mongo_client, _db
+    if _mongo_client is None and MONGODB_AVAILABLE and MONGODB_URI:
+        try:
+            _mongo_client = MongoClient(MONGODB_URI)
+            _db = _mongo_client[DATABASE_NAME]
+            logging.info("Connected to MongoDB Atlas")
+        except Exception as e:
+            logging.error(f"Failed to connect to MongoDB: {e}")
+            _mongo_client = None
+    return _db
 
 # Cache geocoding responses for 1 hour to reduce API usage and latency
 _geocode_cache = TTLCache(maxsize=256, ttl=3600)
@@ -202,3 +227,85 @@ def api_current_dawn():
     except Exception as e:
         logging.exception("Exception in /api/current-dawn")
         return jsonify({"error": str(e)}), 500
+
+
+# Serve Strong's Hebrew data
+@api.route('/backend/data/hebrew_strongs.json')
+def serve_hebrew_strongs():
+    try:
+        # Try MongoDB first
+        db = get_mongo_client()
+        if db is not None:
+            collection = db[STRONG_COLLECTION]
+            # Get all documents from the collection
+            data = list(collection.find({}, {'_id': 0}))  # Exclude MongoDB _id field
+            logging.info(f"Served {len(data)} Strong's entries from MongoDB")
+            return jsonify(data)
+
+        # Fallback to static file
+        logging.warning("MongoDB not available, falling back to static file")
+        data_dir = os.path.join(os.path.dirname(__file__), 'data')
+        return send_from_directory(data_dir, 'hebrew_strongs.json', mimetype='application/json')
+    except Exception as e:
+        logging.exception("Exception serving hebrew_strongs.json")
+        return jsonify({"error": str(e)}), 500
+
+
+# Serve KJV verses data
+@api.route('/backend/data/kjv_verses.json')
+def serve_kjv_verses():
+    try:
+        # Try MongoDB first
+        db = get_mongo_client()
+        if db is not None:
+            collection = db[KJV_COLLECTION]
+            # Get all documents from the collection
+            data = list(collection.find({}, {'_id': 0}))  # Exclude MongoDB _id field
+            logging.info(f"Served {len(data)} KJV verses from MongoDB")
+            return jsonify(data)
+
+        # Fallback to static file
+        logging.warning("MongoDB not available, falling back to static file")
+        data_dir = os.path.join(os.path.dirname(__file__), 'data')
+        return send_from_directory(data_dir, 'kjv_verses.json', mimetype='application/json')
+    except Exception as e:
+        logging.exception("Exception serving kjv_verses.json")
+        return jsonify({"error": str(e)}), 500
+
+
+# Test MongoDB connection endpoint
+@api.route('/api/test-mongodb')
+def test_mongodb():
+    try:
+        db = get_mongo_client()
+        if db is None:
+            return jsonify({
+                'status': 'disconnected',
+                'message': 'MongoDB not configured or unavailable',
+                'fallback': 'static files'
+            })
+
+        # Test collections
+        strong_collection = db[STRONG_COLLECTION]
+        kjv_collection = db[KJV_COLLECTION]
+
+        strong_count = strong_collection.count_documents({})
+        kjv_count = kjv_collection.count_documents({})
+
+        return jsonify({
+            'status': 'connected',
+            'database': DATABASE_NAME,
+            'strongs_collection': STRONG_COLLECTION,
+            'kjv_collection': KJV_COLLECTION,
+            'strongs_count': strong_count,
+            'kjv_count': kjv_count,
+            'message': 'MongoDB Atlas connected successfully!'
+        })
+
+    except Exception as e:
+        logging.exception("Exception testing MongoDB")
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'fallback': 'static files'
+        }), 500

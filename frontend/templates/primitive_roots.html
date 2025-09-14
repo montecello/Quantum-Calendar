@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Primitive Roots - Quantum Clock v1.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Basic SEO -->
+    <meta name="description" content="Primitive Roots: Explore the fundamental meanings of Hebrew words through Strong's numbers and primitive root analysis.">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="{{ (request.url_root | trim('/')) }}/primitive_roots">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Primitive Roots - Quantum Clock">
+    <meta property="og:site_name" content="Quantum Clock">
+    <meta property="og:description" content="Explore the fundamental meanings of Hebrew words through Strong's numbers and primitive root analysis">
+    <meta property="og:url" content="{{ (request.url_root | trim('/')) }}/primitive_roots">
+    <meta property="og:image" content="{{ (request.url_root | trim('/')) }}/static/img/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Primitive Roots - Quantum Clock">
+    <meta name="twitter:description" content="Explore the fundamental meanings of Hebrew words through Strong's numbers and primitive root analysis">
+    <meta name="twitter:image" content="{{ (request.url_root | trim('/')) }}/static/img/og-image.png">
+
+    <!-- Theme color (mobile address bar) -->
+    <meta name="theme-color" content="#20639b">
+
+    <link rel="preload" href="/static/fonts/Pictocrypto-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/navbar.css">
+    <link rel="stylesheet" href="/static/css/calendar_grid.css">
+    <link rel="stylesheet" href="/static/css/side_panel.css">
+</head>
+<body class="primitive-roots-page">
+    <!-- Navigation Bar -->
+    {% include 'navbar.html' %}
+
+    <!-- Live background canvas -->
+    <canvas id="bg-matrix" aria-hidden="true"></canvas>
+
+    <div class="app-root">
+        <div class="title-placemat">
+            <h1 class="calendar-title">Primitive Roots</h1>
+            <p class="subtitle">Uncovering the True Meanings of Hebrew Words</p>
+        </div>
+
+        <!-- Search Interface -->
+        <div class="search-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+            <div class="search-section" style="background: rgba(0,0,0,0.8); border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1);">
+                <h2 style="color: #ffd700; margin-bottom: 20px;">🔍 Word Analysis Tool</h2>
+
+                <div class="search-inputs" style="margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label for="strongs-search" style="color: #40e0d0; display: block; margin-bottom: 8px; font-weight: bold;">Search Hebrew Words & Strong's Numbers</label>
+                        <input type="text" id="strongs-search" placeholder="Type Hebrew word, Strong's number (H1, H120), or English meaning..." style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #e0e6ed; font-size: 16px; font-family: 'HybridFont', 'Pictocrypto', sans-serif;">
+                        <small style="color: #888; display: block; margin-top: 5px;">Start typing to see autosuggestions from the complete Strong's Hebrew concordance</small>
+                    </div>
+                </div>
+
+                <div id="error-message" class="error-message" style="display: none; color: #ff6b6b; background: rgba(255,107,107,0.1); border: 1px solid #ff6b6b; border-radius: 6px; padding: 10px; margin-bottom: 20px;"></div>
+
+                <div id="loading-message" class="loading-message" style="display: none; color: #40e0d0; background: rgba(64,224,208,0.1); border: 1px solid #40e0d0; border-radius: 6px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                    <p>🔄 Loading Hebrew concordance database...</p>
+                    <div class="progress-bar-container" style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 4px; height: 8px; margin-top: 10px;">
+                        <div id="progress-bar" class="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #40e0d0, #ffd700); border-radius: 4px; transition: width 0.5s ease;"></div>
+                    </div>
+                </div>
+
+                <div class="search-buttons" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button id="search-button" style="background: linear-gradient(135deg, #ffd700, #ffb347); color: #000; padding: 12px 24px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s; font-family: 'HybridFont', 'Pictocrypto', sans-serif;">🔍 Search & Analyze</button>
+                    <button id="clear-button" style="background: rgba(255,255,255,0.1); color: #e0e6ed; padding: 12px 24px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; cursor: pointer; transition: all 0.3s; font-family: 'HybridFont', 'Pictocrypto', sans-serif;">🗑️ Clear</button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-container" class="results-section" style="display: none; background: rgba(0,0,0,0.8); border-radius: 12px; padding: 30px; border: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="color: #ffd700; margin-bottom: 20px;">📊 Analysis Results</h3>
+                <div id="search-results" class="search-results">
+                    <!-- Results will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Educational Content -->
+            <div class="educational-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; margin-top: 40px;">
+                <!-- How It Works -->
+                <div class="info-card" style="background: rgba(0,0,0,0.8); border-radius: 12px; padding: 25px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="color: #ffd700; margin-bottom: 15px;">🧠 How Primitive Roots Work</h3>
+                    <div class="info-content">
+                        <p style="color: #e0e6ed; margin-bottom: 15px; line-height: 1.6;">
+                            Hebrew words are built from three-letter primitive roots that carry the fundamental meaning. Understanding these roots reveals the true essence of words beyond their surface translations.
+                        </p>
+
+                        <div class="example-box" style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 3px solid #40e0d0;">
+                            <h4 style="color: #40e0d0; margin-bottom: 10px;">Example: אָדָם (Adam)</h4>
+                            <ul style="color: #e0e6ed; margin: 0; padding-left: 20px;">
+                                <li><strong>Root:</strong> אָדַם (to be red)</li>
+                                <li><strong>Concrete:</strong> red earth/clay</li>
+                                <li><strong>Figurative:</strong> man (made from earth)</li>
+                            </ul>
+                        </div>
+
+                        <p style="color: #e0e6ed; line-height: 1.6;">
+                            This system reveals how Hebrew thinking connects physical reality with spiritual concepts through concrete imagery.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Strong's Concordance -->
+                <div class="info-card" style="background: rgba(0,0,0,0.8); border-radius: 12px; padding: 25px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="color: #ffd700; margin-bottom: 15px;">📖 Strong's Concordance</h3>
+                    <div class="info-content">
+                        <p style="color: #e0e6ed; margin-bottom: 15px; line-height: 1.6;">
+                            James Strong's comprehensive concordance provides numbered references for every Hebrew word in the Bible, making it possible to trace words back to their primitive roots.
+                        </p>
+
+                        <div class="strongs-info" style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 6px; margin: 15px 0;">
+                            <h4 style="color: #40e0d0; margin-bottom: 10px;">Numbering System</h4>
+                            <ul style="color: #e0e6ed; margin: 0; padding-left: 20px;">
+                                <li><strong>H1-H8674:</strong> Hebrew words</li>
+                                <li><strong>G1-G5624:</strong> Greek words</li>
+                                <li><strong>T1-T867:</strong> Aramaic words</li>
+                            </ul>
+                        </div>
+
+                        <p style="color: #e0e6ed; line-height: 1.6;">
+                            Each number links to the original Hebrew word, its pronunciation, and all biblical occurrences.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Practical Applications -->
+                <div class="info-card" style="background: rgba(0,0,0,0.8); border-radius: 12px; padding: 25px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="color: #ffd700; margin-bottom: 15px;">🎯 Practical Applications</h3>
+                    <div class="info-content">
+                        <p style="color: #e0e6ed; margin-bottom: 15px; line-height: 1.6;">
+                            Understanding primitive roots enhances biblical interpretation by revealing the concrete imagery and thought patterns of ancient Hebrew culture.
+                        </p>
+
+                        <div class="applications-list" style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 6px; margin: 15px 0;">
+                            <h4 style="color: #40e0d0; margin-bottom: 10px;">Key Benefits</h4>
+                            <ul style="color: #e0e6ed; margin: 0; padding-left: 20px;">
+                                <li>• Deeper biblical understanding</li>
+                                <li>• Cultural context insights</li>
+                                <li>• Symbolic meaning revelation</li>
+                                <li>• Linguistic pattern recognition</li>
+                                <li>• Theological concept connections</li>
+                            </ul>
+                        </div>
+
+                        <p style="color: #e0e6ed; line-height: 1.6;">
+                            This approach bridges the gap between ancient Hebrew thought and modern understanding.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/geoapify.js"></script>
+    <script src="/static/js/side_panel.js"></script>
+    <script src="/static/js/accordion.js"></script>
+    <script src="/static/js/matrix_rain.js"></script>
+
+    <!-- Hebrew XML Parser and Enhanced Primitive Roots JavaScript -->
+    <script src="/static/js/hebrew_xml_parser.js"></script>
+    <script src="/static/js/primitive_roots.js"></script>
+
+    <!-- Test script for development (remove in production) -->
+    <script src="/static/js/test_hebrew_integration.js"></script>
+
+    <!-- Footer -->
+    {% include 'footer.html' %}
+</body>
+</html>

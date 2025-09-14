@@ -47,261 +47,239 @@
             <h1 class="calendar-title">How It Works</h1>
         </div>
 
-        <!-- Accordion: Notes and Explanations -->
-        <div class="accordion" id="extra-accordion" aria-label="Additional sections">
-            <h2 class="accordion-title">Notes</h2>
+        <!-- How It Works Sections -->
+        <div class="how-it-works-container">
 
             <!-- Intro -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Intro</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                        <p>The Quantum Clock builds time from observable nature:</p>
-                        <p>What would be the best way to keep track of time if you had absolutely no technological aides? and had no idea what day it was?</p>
-                        
-                        <!-- Island and List Layout -->
-                        <div class="island-list-container">
-                            <div class="tech-list">
-                                <div class="no-image-container">
-                                    <img src="/static/img/no.png" alt="no">
-                                </div>
-                            </div>
-                            <div class="island-image">
-                                <img src="/static/img/intro/island.png" alt="island">
+            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Intro</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <p>The Quantum Clock builds time from observable nature:</p>
+                    <p>What would be the best way to keep track of time if you had absolutely no technological aides? and had no idea what day it was?</p>
+                    
+                    <!-- Island and List Layout -->
+                    <div class="island-list-container">
+                        <div class="tech-list">
+                            <div class="no-image-container">
+                                <img src="/static/img/no.png" alt="no">
                             </div>
                         </div>
-
-                        <p><h2>Would there be a good way to manually find your point in the day, month, week, or year with <b color="red">no aides or tools. not even to see the equinox?</b></h2></p>
-                        <p><h1>👀 Just your eyes. 👀</h1></p>
-                        <p>This calendar is an attempt to do that.</p>
-
-                        <ul>
-                            <li>This attempts to solve that issue and hopefully integrate whoever aligns themselves to it to be more into with the natural world.</li>
-                            <li>Go Ahead. Type in your location and see what time it really is...</li>
-                            <li>Click/Tap a day, and a side panel shows all relevant daily events in local time for the chosen place</li>
-                        </ul>
+                        <div class="island-image">
+                            <img src="/static/img/intro/island.png" alt="island">
+                        </div>
                     </div>
+
+                    <p><h2>Would there be a good way to manually find your point in the day, month, week, or year with <b color="red">no aides or tools. not even to see the equinox?</b></h2></p>
+                    <p><h1>👀 Just your eyes. 👀</h1></p>
+                    <p>This calendar is an attempt to do that.</p>
+
+                    <ul>
+                        <li>This attempts to solve that issue and hopefully integrate whoever aligns themselves to it to be more into with the natural world.</li>
+                        <li>Go Ahead. Type in your location and see what time it really is...</li>
+                        <li>Click/Tap a day, and a side panel shows all relevant daily events in local time for the chosen place</li>
+                    </ul>
                 </div>
             </div>
 
             <!-- When a Day Begins -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">When a Day Begins</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                        <p>A day begins for most people when they wake up. The expression "start you day" comes to mind. It typically starts at first light (astronomical dawn) for the selected location. If astronomical dawn is not available (high latitudes/seasonal extremes), the app falls back to nautical or civil dawn. The side panel labels these as secondary types, e.g., <strong class="secondary-tag">(secondary: nautical/civil/sunrise)</strong>.</p>
-                        <div class="day-begins-comparison" role="group" aria-label="When a Day Begins comparison">
-                            <div class="day-card gold-glow first-day-pulse">
-                                <img src="/static/img/day/AB.png" alt="AB illustration" loading="lazy">
+            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">When a Day Begins</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <p>A day begins for most people when they wake up. The expression "start you day" comes to mind. It typically starts at first light (astronomical dawn) for the selected location. If astronomical dawn is not available (high latitudes/seasonal extremes), the app falls back to nautical or civil dawn. The side panel labels these as secondary types, e.g., <strong class="secondary-tag">(secondary: nautical/civil/sunrise)</strong>.</p>
+                    <div class="day-begins-comparison" role="group" aria-label="When a Day Begins comparison">
+                        <div class="day-card gold-glow first-day-pulse">
+                            <img src="/static/img/day/AB.png" alt="AB illustration" loading="lazy">
+                        </div>
+                        <div class="vs" aria-hidden="true">vs</div>
+                        <div class="day-card">
+                            <img src="/static/img/day/EF.png" alt="EF illustration" loading="lazy">
+                        </div>
+                        <div class="vs" aria-hidden="true">vs</div>
+                        <div class="day-card">
+                            <img src="/static/img/day/CD.png" alt="CD illustration" loading="lazy">
+                        </div>
+                    </div>
+                    <p><h2>"...and [the mighty ones] called the light 'day' and the darkness [they] called night" <br>(Genesis 1:5)</h2></p>
+                    <p>*No tools necessary to observe this</p>
+                </div>
+            </div>
+
+            <!-- Month: Full Moon IS New Moon -->
+            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Month: Full Moon IS New Moon</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px; padding-left: 20px; padding-right: 20px;">
+                            <h1><p>A month in this case begins at daybreak past the full moon. </p>
+                                <p>Why is the full moon really the <i>new</i> moon?  Think about it...</p>
+                                <p>What does a 'new' cookie look like?... how about a 'new' pizza? or a 'new' coin? a new house? car? the examples are endless... always complete and ready for use</p>
+                            </h1>
+                        </div>
+                        <div style="flex: 1; min-width: 200px; text-align: center;">
+                            <img src="/static/img/special/New_Moon.png" alt="New Moon" style="max-width:420px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;">
+                        </div>
+                    </div>
+                    <P></P>
+
+                    
+                    <div>
+                        <h3 class="month-new-title">What looks "new" to you?</h3>
+                        <div class="month-new-grid">
+                            <div class="month-col">
+                                <div class="month-label">🌙 Crescent 🌙</div>
+                                <img src="/static/img/month/crescent/a.png" alt="Crescent a" loading="lazy">
+                                <img src="/static/img/month/crescent/b.png" alt="Crescent b" loading="lazy">
+                                <img src="/static/img/month/crescent/c.png" alt="Crescent c" loading="lazy">
                             </div>
-                            <div class="vs" aria-hidden="true">vs</div>
-                            <div class="day-card">
-                                <img src="/static/img/day/EF.png" alt="EF illustration" loading="lazy">
+                            <div class="month-vs" aria-hidden="true">vs</div>
+                            <div class="month-col">
+                                <div class="month-label">🌑 Conjunction 🌑</div>
+                                <img src="/static/img/month/dark/a.png" alt="Conjunction a" loading="lazy">
+                                <img src="/static/img/month/dark/b.png" alt="Conjunction b" loading="lazy">
+                                <img src="/static/img/month/dark/c.png" alt="Conjunction c" loading="lazy">
                             </div>
-                            <div class="vs" aria-hidden="true">vs</div>
-                            <div class="day-card">
-                                <img src="/static/img/day/CD.png" alt="CD illustration" loading="lazy">
+                            <div class="month-vs" aria-hidden="true">vs</div>
+                            <div class="month-col full-moon-pulse">
+                                <div class="month-label">🌕 Full 🌕
+                                </div>
+                                <img src="/static/img/month/full/a.png" alt="Full a" loading="lazy">
+                                <img src="/static/img/month/full/b.png" alt="Full b" loading="lazy">
+                                <img src="/static/img/month/full/c.png" alt="Full c" loading="lazy">
                             </div>
                         </div>
-                        <p><h2>"...and [the mighty ones] called the light 'day' and the darkness [they] called night" <br>(Genesis 1:5)</h2></p>
-                        <p>*No tools necessary to observe this</p>
+                    </div>
+                    <div class="section-content" align="center" style="padding-left: 20px; padding-right: 20px;">
+                        <h1><p>Best visual indicator is that the night before 'new moon day' is that the moon will rise and be visible in the night sky <u><b>before</b></u> the stars appear. it will then rule all the night and still be visible as daylight comes and all the stars are no longer visible. very simple</p></h1>
+                        <h1><p>It requires calculators and computers to determine a conjuntion moon or, dark moon. The only time a conjunction moon is independently verifiable without calculation is during a solar eclipse, which is only visible in certain places on the earth at various times.</p></h1>
+                        
+
                     </div>
                 </div>
             </div>
 
-            <!-- When a Month Begins -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Month: Full Moon IS New Moon</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                                                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                                                    <div style="flex: 1; min-width: 200px; padding-left: 20px; padding-right: 20px;">
-                                                        <h1><p>A month in this case begins at daybreak past the full moon. </p>
-                                                            <p>Why is the full moon really the <i>new</i> moon?  Think about it...</p>
-                                                            <p>What does a 'new' cookie look like?... how about a 'new' pizza? or a 'new' coin? a new house? car? the examples are endless... always complete and ready for use</p>
-                                                        </h1>
-                                                    </div>
-                                                    <div style="flex: 1; min-width: 200px; text-align: center;">
-                                                        <img src="/static/img/special/New_Moon.png" alt="New Moon" style="max-width:420px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;">
-                                                    </div>
-                                                </div>
-                                                <P></P>
-
-                                                
-                                                <div>
-                                                    <h3 class="month-new-title">What looks "new" to you?</h3>
-                                                    <div class="month-new-grid">
-                                                        <div class="month-col">
-                                                            <div class="month-label">🌙 Crescent 🌙</div>
-                                                            <img src="/static/img/month/crescent/a.png" alt="Crescent a" loading="lazy">
-                                                            <img src="/static/img/month/crescent/b.png" alt="Crescent b" loading="lazy">
-                                                            <img src="/static/img/month/crescent/c.png" alt="Crescent c" loading="lazy">
-                                                        </div>
-                                                        <div class="month-vs" aria-hidden="true">vs</div>
-                                                        <div class="month-col">
-                                                            <div class="month-label">🌑 Conjunction 🌑</div>
-                                                            <img src="/static/img/month/dark/a.png" alt="Conjunction a" loading="lazy">
-                                                            <img src="/static/img/month/dark/b.png" alt="Conjunction b" loading="lazy">
-                                                            <img src="/static/img/month/dark/c.png" alt="Conjunction c" loading="lazy">
-                                                        </div>
-                                                        <div class="month-vs" aria-hidden="true">vs</div>
-                                                        <div class="month-col full-moon-pulse">
-                                                            <div class="month-label">🌕 Full 🌕
-                                                            </div>
-                                                            <img src="/static/img/month/full/a.png" alt="Full a" loading="lazy">
-                                                            <img src="/static/img/month/full/b.png" alt="Full b" loading="lazy">
-                                                            <img src="/static/img/month/full/c.png" alt="Full c" loading="lazy">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="accordion-content" align="center" style="padding-left: 20px; padding-right: 20px;">
-                                                    <h1><p>Best visual indicator is that the night before 'new moon day' is that the moon will rise and be visible in the night sky <u><b>before</b></u> the stars appear. it will then rule all the night and still be visible as daylight comes and all the stars are no longer visible. very simple</p></h1>
-                                                    <h1><p>It requires calculators and computers to determine a conjuntion moon or, dark moon. The only time a conjunction moon is independently verifiable without calculation is during a solar eclipse, which is only visible in certain places on the earth at various times.</p></h1>
-                                                    
-                                               
-        
-                    </div>
-                </div>
-            </div>
-
-            <!-- When a Week Begins -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">The Weekly Structure</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                        <p>Weeks are anchored to 'New Moon Day' by starting the day after it.</p>
-                        <p>2nd day of the month will always be the beginning of the 1st week of every month of the year.</p>
-                        <p>More organic that way. A natural rhythm. The month is divided into four 7‑day periods. </p>
-                        <div style="width:100%;text-align:center;margin-top:18px;">
-                            <img src="/static/img/grid.png" alt="Weekly Structure Grid" style="max-width:420px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;">
-                        </div>
+            <!-- The Weekly Structure -->
+            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">The Weekly Structure</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <p>Weeks are anchored to 'New Moon Day' by starting the day after it.</p>
+                    <p>2nd day of the month will always be the beginning of the 1st week of every month of the year.</p>
+                    <p>More organic that way. A natural rhythm. The month is divided into four 7‑day periods. </p>
+                    <div style="width:100%;text-align:center;margin-top:18px;">
+                        <img src="/static/img/grid.png" alt="Weekly Structure Grid" style="max-width:420px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;">
                     </div>
                 </div>
             </div>
 
             <!-- When a Year Begins -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">When a Year Begins</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                        <div style="margin-top: 20px; padding: 16px; background: rgba(255, 215, 0, 0.05); border-radius: 8px; border-left: 3px solid #ffd700;">
-                            <h2 style="color: white; margin-bottom: 12px; font-style: italic;">Ideally it's the first full moon day after Spica visibly crosses the moon and is seen leading it.</h2>
-                        </div>                                              
-                        <div style="width:100%;text-align:center;margin-top:18px;">
-                            <img src="/static/img/spica.png" alt="Spica and Moon" style="max-width:520px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;">
-                        </div>
-                        <div style="margin-top: 20px; padding: 16px; background: rgba(255, 215, 0, 0.05); border-radius: 8px; border-left: 3px solid #ffd700;">
-                            <h2 style="color: white; margin-bottom: 12px; font-style: italic;">...in the month of 'abib' you came out of [distress]...(Exodus 34:18b)</h4>
-                            <h1 style="color: #ffd700; margin-bottom: 12px; font-style: italic;">ABIB REFERS TO THE STAR SPICA</h1>
-                            <h1 style="color: #ffd700; margin-bottom: 12px; font-style: italic;">HOW DO WE KNOW FOR SURE?</h1>
-                            <h2 style="color: white; margin-bottom: 12px; font-style: italic;">...and [the mighty ones] said 'let there be lights in the [molten looking glass - Job 37:18] of the heavens' and let them be for the markers and appointments...And [the mighty ones] made the two great lights: the greater light to rule the day, and the lesser light to rule the night. The stars also..(Genesis 1:14,16)</h4>
-                            
-                            <div style="width:100%;text-align:center;margin:20px 0;">
-                                <img src="/static/img/snowglobe.png" alt="Snowglobe illustration" style="max-width:400px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;">
-                            </div>
+            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">When a Year Begins</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <div style="margin-top: 20px; padding: 16px; background: rgba(255, 215, 0, 0.05); border-radius: 8px; border-left: 3px solid #ffd700;">
+                        <h2 style="color: white; margin-bottom: 12px; font-style: italic;">Ideally it's the first full moon day after Spica visibly crosses the moon and is seen leading it.</h2>
+                    </div>
+                    <div style="width:100%;text-align:center;margin-top:18px;">
+                        <img src="/static/img/spica.png" alt="Spica and Moon" style="max-width:520px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;">
+                    </div>
+                    <div style="margin-top: 20px; padding: 16px; background: rgba(255, 215, 0, 0.05); border-radius: 8px; border-left: 3px solid #ffd700;">
+                        <h2 style="color: white; margin-bottom: 12px; font-style: italic;">...in the month of 'abib' you came out of [distress]...(Exodus 34:18b)</h2>
+                        <h1 style="color: #ffd700; margin-bottom: 12px; font-style: italic;">ABIB REFERS TO THE STAR SPICA</h1>
+                        <h1 style="color: #ffd700; margin-bottom: 12px; font-style: italic;">HOW DO WE KNOW FOR SURE?</h1>
+                        <h2 style="color: white; margin-bottom: 12px; font-style: italic;">...and [the mighty ones] said 'let there be lights in the [molten looking glass - Job 37:18] of the heavens' and let them be for the markers and appointments...And [the mighty ones] made the two great lights: the greater light to rule the day, and the lesser light to rule the night. The stars also..(Genesis 1:14,16)</h2>
 
-                            <p style="font-style: italic; line-height: 1.6; color: #e0e6ed;">
-                                ...the bright star <strong style="color: #40e0d0;">Spica</strong>, which marks <span style="color: #ff4444;">the ears of corn in the Virgo's hand</span>, rose above the eastern horizon as the sun set in the west, and at midnight must have shone down brilliantly on the Hebrew hosts; for <strong style="color: #40e0d0;">Spica</strong> is so bright a star, that even the beams of the <strong style="color: #ffd700;">full moon</strong> riding close at hand could not have obscured its lustre...
-                            </p>
-                            
-                            <!-- Spica Virgo Images -->
-                            <div class="spica-virgo-container" style="margin: 20px 0; text-align: center;">
-                                <div class="spica-images-grid">
-                                    <div class="spica-image-item">
-                                        <img src="/static/img/virgo.png" alt="Virgo constellation" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" loading="lazy">
-                                    </div>
-                                    <div class="spica-image-item">
-                                        <img src="/static/img/zoom.png" alt="Spica zoom detail" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" loading="lazy">
-                                    </div>
+                        <div style="width:100%;text-align:center;margin:20px 0;">
+                            <img src="/static/img/snowglobe.png" alt="Snowglobe illustration" style="max-width:400px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;">
+                        </div>
+
+                        <p style="font-style: italic; line-height: 1.6; color: #e0e6ed;">
+                            ...the bright star <strong style="color: #40e0d0;">Spica</strong>, which marks <span style="color: #ff4444;">the ears of corn in the Virgo's hand</span>, rose above the eastern horizon as the sun set in the west, and at midnight must have shone down brilliantly on the Hebrew hosts; for <strong style="color: #40e0d0;">Spica</strong> is so bright a star, that even the beams of the <strong style="color: #ffd700;">full moon</strong> riding close at hand could not have obscured its lustre...
+                        </p>
+
+                        <!-- Spica Virgo Images -->
+                        <div class="spica-virgo-container" style="margin: 20px 0; text-align: center;">
+                            <div class="spica-images-grid">
+                                <div class="spica-image-item">
+                                    <img src="/static/img/virgo.png" alt="Virgo constellation" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" loading="lazy">
                                 </div>
-                                <p class="spica-caption" style="font-style: italic; color: #cfe0f2; font-size: 0.9rem; margin-top: 12px; text-align: center;">
-                                    spica = corn in the lady's hand
-                                </p>
+                                <div class="spica-image-item">
+                                    <img src="/static/img/zoom.png" alt="Spica zoom detail" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" loading="lazy">
+                                </div>
                             </div>
-
-                            <p style="font-style: italic; line-height: 1.6; color: #e0e6ed;">
-                                <br>The Indians of to-day name their months from the stars in their <strong style="text-decoration: underline;">lunar Zodiac</strong> which are in opposition to, not from those in conjunction with, the sun. The close resemblance of the Arab and Indian <strong style="text-decoration: underline;">lunar Zodiacal</strong> series suggests the thought that the Arabs may have followed the same system of month nomenclature as the Indians:
-                            </p>
-                            <p style="font-style: italic; text-align: center; margin-top: 12px; color: #cfe0f2; font-size: 0.9rem;">
-                                - Ancient Calendars and Constellations by Emmeline Mary Plunket (1903)
+                            <p class="spica-caption" style="font-style: italic; color: #cfe0f2; font-size: 0.9rem; margin-top: 12px; text-align: center;">
+                                spica = corn in the lady's hand
                             </p>
                         </div>
+
+                        <p style="font-style: italic; line-height: 1.6; color: #e0e6ed;">
+                            <br>The Indians of to-day name their months from the stars in their <strong style="text-decoration: underline;">lunar Zodiac</strong> which are in opposition to, not from those in conjunction with, the sun. The close resemblance of the Arab and Indian <strong style="text-decoration: underline;">lunar Zodiacal</strong> series suggests the thought that the Arabs may have followed the same system of month nomenclature as the Indians:
+                        </p>
+                        <p style="font-style: italic; text-align: center; margin-top: 12px; color: #cfe0f2; font-size: 0.9rem;">
+                            - Ancient Calendars and Constellations by Emmeline Mary Plunket (1903)
+                        </p>
                     </div>
                 </div>
             </div>
 
             <!-- Special Days (Legend) -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Special Days (Legend)</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                        <p>Calendar cells are colored to highlight special days. These colors/styles are identical in both Custom and Gregorian views.</p>
-                        <ul>
-                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:gold;margin-right:8px;vertical-align:middle;"></span><strong>New Moon Day</strong> — First dawn after full moon (100%). </li>
-                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:royalblue;margin-right:8px;vertical-align:middle;"></span><strong>7th Day Rests</strong> — Always will be on the 8th, 15th, 22nd, 29th days of the month </li>
-                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:green;margin-right:8px;vertical-align:middle;"></span><strong>Main Bi-Yearly Week-Long Festival Commencements</strong> — Days near peak illumination. </li>   
-                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:purple;margin-right:8px;vertical-align:middle;"></span><strong>Festival Days</strong> </li>         
-                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:magenta;margin-right:8px;vertical-align:middle;"></span><strong>Passover / Festival of Atonement</strong> </li>  
-                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:orange;margin-right:8px;vertical-align:middle;"></span><strong>Festival of Trumpets / Memorial</strong> </li>       
-                            <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:pink;margin-right:8px;vertical-align:middle;"></span><strong>Festival of Weeks</strong> </li>               
-                        </ul>
-                        <p>More clarifications to come in v2.0</p>
-                    </div>
+            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Special Days (Legend)</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <p>Calendar cells are colored to highlight special days. These colors/styles are identical in both Custom and Gregorian views.</p>
+                    <ul>
+                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:gold;margin-right:8px;vertical-align:middle;"></span><strong>New Moon Day</strong> — First dawn after full moon (100%). </li>
+                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:royalblue;margin-right:8px;vertical-align:middle;"></span><strong>7th Day Rests</strong> — Always will be on the 8th, 15th, 22nd, 29th days of the month </li>
+                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:green;margin-right:8px;vertical-align:middle;"></span><strong>Main Bi-Yearly Week-Long Festival Commencements</strong> — Days near peak illumination. </li>
+                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:purple;margin-right:8px;vertical-align:middle;"></span><strong>Festival Days</strong> </li>
+                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:magenta;margin-right:8px;vertical-align:middle;"></span><strong>Passover / Festival of Atonement</strong> </li>
+                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:orange;margin-right:8px;vertical-align:middle;"></span><strong>Festival of Trumpets / Memorial</strong> </li>
+                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:pink;margin-right:8px;vertical-align:middle;"></span><strong>Festival of Weeks</strong> </li>
+                    </ul>
+                    <p>More clarifications to come in v2.0</p>
                 </div>
             </div>
 
             <!-- Limitations -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Limitations/Likely Errors</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                        <ul>
-                            <li><strong>Limited Range</strong>: The calendar covers a specific range of dates (2000-2048)</li>
-                            <li><strong>Atmospheric refraction</strong>: Local conditions can shift observed dawn a few minutes.</li>
-                            <li><strong>Time zones/DST</strong>: Transitions are handled, but extreme offsets can surprise.</li>
-                            <li><strong>Year Start Error</strong>: script used to calculate New Year's Day uses alignment thresholds that need refinement. Currently it selects the full moon with the smallest time gap to its preceding Spica crossing. If that chosen full moon is on/after the Sun–Hamal crossing for the year, it goes back to the previous full moon. This is causing the New Year to begin a month earlier in many cases than it should.</li>
-                            <li><strong>Jubilee/Sabbaticals</strong>: 50 Year and 7 Year Cycles currently cannot be determined with limited astronomical knowledge.</li> 
-                        </ul>
-                    </div>
+            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Limitations/Likely Errors</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <ul>
+                        <li><strong>Limited Range</strong>: The calendar covers a specific range of dates (2000-2048)</li>
+                        <li><strong>Atmospheric refraction</strong>: Local conditions can shift observed dawn a few minutes.</li>
+                        <li><strong>Time zones/DST</strong>: Transitions are handled, but extreme offsets can surprise.</li>
+                        <li><strong>Year Start Error</strong>: script used to calculate New Year's Day uses alignment thresholds that need refinement. Currently it selects the full moon with the smallest time gap to its preceding Spica crossing. If that chosen full moon is on/after the Sun–Hamal crossing for the year, it goes back to the previous full moon. This is causing the New Year to begin a month earlier in many cases than it should.</li>
+                        <li><strong>Jubilee/Sabbaticals</strong>: 50 Year and 7 Year Cycles currently cannot be determined with limited astronomical knowledge.</li>
+                    </ul>
                 </div>
             </div>
 
             <!-- Version 2 -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Version 2 (Under Construction)</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                        <ul>
-                            <li>Refinement of calculating the new year with refined set of rules that the computer can understand</li>
-                            <li>World map with the revised int’l date line after the next New Moon Day to see how that changes with each month.</li>
-                            <li>Transpose special days to their Gregorian equivalents</li>
-                            <li>Numbered co-ordinates to be digital and DD*MM'SS" compatible in search bar</li>
-                            <li>Ability to search areas over bodies of water (currently unavailable)</li>
-                            <li>Including the retrograde schedule of the 'wandering stars'</li>
-                            <li>More visuals on the how the festivals line up with astronomy using this reckoning</li>
-                            <li>Special Days superimposed while on Gregorian calendar mode</li>
-                        </ul>
-                    </div>
+                        <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Version 2 (Under Construction)</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <ul>
+                        <li>Refinement of calculating the new year with refined set of rules that the computer can understand</li>
+                        <li>World map with the revised int'l date line after the next New Moon Day to see how that changes with each month.</li>
+                        <li>Transpose special days to their Gregorian equivalents</li>
+                        <li>Numbered co-ordinates to be digital and DD*MM'SS" compatible in search bar</li>
+                        <li>Ability to search areas over bodies of water (currently unavailable)</li>
+                        <li>Including the retrograde schedule of the 'wandering stars'</li>
+                        <li>More visuals on the how the festivals line up with astronomy using this reckoning</li>
+                        <li>Special Days superimposed while on Gregorian calendar mode</li>
+                    </ul>
                 </div>
             </div>
 
             <!-- Engage -->
-            <div class="accordion-item">
-                <button class="accordion-header" aria-expanded="false"><span class="accordion-icon">▸</span><span class="accordion-label">Engage</span></button>
-                <div class="accordion-panel" hidden>
-                    <div class="accordion-content">
-                        <p>Discord and other Links coming soon.</p>
-                    </div>
+            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Engage</h2>
+                <div class="section-content" style="color: #ffffff;">
+                    <p>Discord and other Links coming soon.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="/static/js/geoapify.js"></script>
-    <script src="/static/js/gregorian.js"></script>
-    <script src="/static/js/calendar.js"></script>
     <script src="/static/js/side_panel.js"></script>
-    <script src="/static/js/accordion.js"></script>
     <script src="/static/js/matrix_rain.js"></script>
 
     <!-- Footer -->

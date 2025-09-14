@@ -1,0 +1,15 @@
+{
+  "name": "quantum-calendar-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Quantum Calendar with enhanced Hebrew XML parsing",
+  "main": "static/js/hebrew_xml_parser.js",
+  "scripts": {
+    "build": "mkdir -p dist && cp -r static dist/",
+    "dev": "echo 'Development server handled by Flask'"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": ["bible", "calendar", "quantum", "hebrew", "xml-parsing"],
+  "author": "Quantum Calendar Team",
+  "license": "MIT"
+}

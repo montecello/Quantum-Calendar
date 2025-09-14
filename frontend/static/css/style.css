@@ -1,10 +1,30 @@
 body, .calendar-title, .search-bar, #suggestions {
-    font-family: 'Pictocrypto', sans-serif;
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif;
+}
+
+/* Hybrid Font System: Pictocrypto for Latin, All Letters for Hebrew */
+@font-face {
+    font-family: 'HybridFont';
+    src: local('All Letters'), url('/static/fonts/all_letters.otf') format('opentype');
+    unicode-range: U+0590-05FF; /* Hebrew block only - no punctuation/symbols */
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'HybridFont';
+    src: local('Pictocrypto'), url('/static/fonts/Pictocrypto-Regular.woff2') format('woff2'),
+         url('/static/fonts/Pictocrypto-Regular.woff') format('woff'),
+         url('/static/fonts/Pictocrypto-Regular.ttf') format('truetype');
+    unicode-range: U+0020-007F, U+00A0-00FF, U+2000-206F, U+20A0-20CF, U+2100-214F, U+2190-21FF; /* Latin, numbers, punctuation, symbols */
+    font-weight: normal;
+    font-style: normal;
 }
 
 @font-face {
     font-family: 'Pictocrypto';
     src: url('/static/fonts/Pictocrypto-Regular.woff2') format('woff2'),
+         url('/static/fonts/Pictocrypto-Regular.woff') format('woff'),
          url('/static/fonts/Pictocrypto-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
@@ -23,12 +43,6 @@ body, .calendar-title, .search-bar, #suggestions {
     src: url('/static/fonts/all_letters.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
-}
-
-/* Apply AllLetters font to primitive roots page */
-body.primitive-roots-page,
-body.primitive-roots-page * {
-    font-family: 'AllLetters', sans-serif !important;
 }
 
 /* Apply AllLetters font to the letters page */
@@ -177,7 +191,7 @@ body.the-letters-page * {
   text-align: center; 
   color: #fff; 
   font-size: 1.4rem; 
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
 }
 .accordion-item { 
   border: 1px solid #284b63; 
@@ -198,13 +212,13 @@ body.the-letters-page * {
   display: flex; 
   align-items: center; 
   gap: 10px; 
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
   font-size: 1.1rem;
 }
 .accordion-header:hover { background: #173f5f; }
 .accordion-icon { width: 1em; display: inline-block; }
 .accordion-panel { padding: 0 14px 12px 36px; }
-.accordion-content { color: #cfe0f2; font-family: 'Pictocrypto', sans-serif; }
+.accordion-content { color: #cfe0f2; font-family: 'HybridFont', 'Pictocrypto', sans-serif; }
 
 /* Bullet point styling for accordion content */
 .accordion-content ul {
@@ -245,7 +259,7 @@ body.the-letters-page * {
   color: #ffe066;
   margin-bottom: 10px;
   letter-spacing: 1px;
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
 }
 .month-new-grid {
   display: grid;
@@ -274,7 +288,7 @@ body.the-letters-page * {
   font-size: 1.08rem;
   margin-bottom: 4px;
   letter-spacing: 1px;
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
 }
 .month-col img {
   width: 256px;
@@ -290,7 +304,7 @@ body.the-letters-page * {
   font-size: 1.1rem;
   letter-spacing: 1px;
   text-align: center;
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
 }
 
 @media (max-width: 700px) {
@@ -335,7 +349,7 @@ body.the-letters-page * {
   opacity: 0.82;
   font-weight: 800;
   letter-spacing: 1px;
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
 }
 .day-card {
   position: relative;
@@ -428,7 +442,7 @@ body.the-letters-page * {
   text-align: center;
   color: #fff;
   font-size: 1.2rem;
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
   letter-spacing: 1px;
 }
 
@@ -445,7 +459,7 @@ body.the-letters-page * {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
   font-size: 1.2rem;
   border-radius: 12px 12px 0 0;
   transition: background 0.2s;
@@ -497,7 +511,7 @@ body.the-letters-page * {
   color: #e0e6ed;
   text-decoration: none;
   font-weight: bold;
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
   font-size: 0.9rem;
   transition: color 0.2s;
 }
@@ -545,7 +559,7 @@ body.the-letters-page * {
   background: transparent;
   color: #e0e6ed;
   padding: 8px 14px;
-  font-family: 'Pictocrypto', sans-serif;
+  font-family: 'HybridFont', 'Pictocrypto', sans-serif;
   font-weight: 700;
   border-radius: 999px;
   cursor: pointer;

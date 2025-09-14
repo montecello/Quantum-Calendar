@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Font Comparison Test - All Fonts</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .font-section {
+            margin-bottom: 40px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .font-header {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .aurebesh-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+        }
+
+        .pictocrypto-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .all-letters-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .character-box {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+            background: #fafafa;
+            font-size: 20px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .character-label {
+            font-size: 10px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .comparison-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .comparison-section {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .comparison-header {
+            padding: 12px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        .aurebesh-bg {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+        }
+
+        .pictocrypto-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .all-letters-bg {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .comparison-content {
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .missing-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .font-info {
+            background: #e8f4fd;
+            border: 1px solid #b3d9ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #2c3e50;
+        }
+
+        @font-face {
+            font-family: 'Aurebesh';
+            src: url('/static/fonts/Aurebesh.otf') format('opentype');
+        }
+
+        @font-face {
+            font-family: 'Pictocrypto';
+            src: url('/static/fonts/Pictocrypto-Regular.woff2') format('woff2'),
+                 url('/static/fonts/Pictocrypto-Regular.woff') format('woff'),
+                 url('/static/fonts/Pictocrypto-Regular.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'all_letters';
+            src: url('/static/fonts/all_letters.ttf') format('truetype'),
+                 url('/static/fonts/all_letters.otf') format('opentype');
+        }
+
+        .aurebesh {
+            font-family: 'Aurebesh', monospace;
+        }
+
+        .pictocrypto {
+            font-family: 'Pictocrypto', monospace;
+        }
+
+        .all-letters {
+            font-family: 'all_letters', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Complete Font Comparison Test</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Comparing all fonts in the static/fonts folder: Aurebesh, Pictocrypto-Regular, and all_letters
+        </p>
+
+        <!-- Font Overview -->
+        <div class="comparison-row">
+            <div class="comparison-section">
+                <div class="comparison-header aurebesh-bg">Aurebesh Font</div>
+                <div class="comparison-content aurebesh">
+                    ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
+                    abcdefghijklmnopqrstuvwxyz<br>
+                    0123456789<br>
+                    Sample text: The quick brown fox jumps over the lazy dog.
+                </div>
+            </div>
+
+            <div class="comparison-section">
+                <div class="comparison-header pictocrypto-bg">Pictocrypto-Regular Font</div>
+                <div class="comparison-content pictocrypto">
+                    ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
+                    abcdefghijklmnopqrstuvwxyz<br>
+                    0123456789<br>
+                    Sample text: The quick brown fox jumps over the lazy dog.
+                </div>
+            </div>
+
+            <div class="comparison-section">
+                <div class="comparison-header all-letters-bg">All Letters Font</div>
+                <div class="comparison-content all-letters">
+                    ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>
+                    abcdefghijklmnopqrstuvwxyz<br>
+                    0123456789<br>
+                    Sample text: The quick brown fox jumps over the lazy dog.
+                </div>
+            </div>
+        </div>
+
+        <!-- Aurebesh Font Section -->
+        <div class="font-section">
+            <div class="font-header aurebesh-header">Aurebesh Font</div>
+            <div class="font-info">
+                <strong>Files:</strong> Aurebesh.otf<br>
+                <strong>Style:</strong> Sci-fi/Star Wars inspired font
+            </div>
+
+            <h3>Uppercase A-Z</h3>
+            <div class="character-grid aurebesh">
+                <div class="character-box">A</div>
+                <div class="character-box">B</div>
+                <div class="character-box">C</div>
+                <div class="character-box">D</div>
+                <div class="character-box">E</div>
+                <div class="character-box">F</div>
+                <div class="character-box">G</div>
+                <div class="character-box">H</div>
+                <div class="character-box">I</div>
+                <div class="character-box">J</div>
+                <div class="character-box">K</div>
+                <div class="character-box">L</div>
+                <div class="character-box">M</div>
+                <div class="character-box">N</div>
+                <div class="character-box">O</div>
+                <div class="character-box">P</div>
+                <div class="character-box">Q</div>
+                <div class="character-box">R</div>
+                <div class="character-box">S</div>
+                <div class="character-box">T</div>
+                <div class="character-box">U</div>
+                <div class="character-box">V</div>
+                <div class="character-box">W</div>
+                <div class="character-box">X</div>
+                <div class="character-box">Y</div>
+                <div class="character-box">Z</div>
+            </div>
+
+            <h3>Lowercase a-z</h3>
+            <div class="character-grid aurebesh">
+                <div class="character-box">a</div>
+                <div class="character-box">b</div>
+                <div class="character-box">c</div>
+                <div class="character-box">d</div>
+                <div class="character-box">e</div>
+                <div class="character-box">f</div>
+                <div class="character-box">g</div>
+                <div class="character-box">h</div>
+                <div class="character-box">i</div>
+                <div class="character-box">j</div>
+                <div class="character-box">k</div>
+                <div class="character-box">l</div>
+                <div class="character-box">m</div>
+                <div class="character-box">n</div>
+                <div class="character-box">o</div>
+                <div class="character-box">p</div>
+                <div class="character-box">q</div>
+                <div class="character-box">r</div>
+                <div class="character-box">s</div>
+                <div class="character-box">t</div>
+                <div class="character-box">u</div>
+                <div class="character-box">v</div>
+                <div class="character-box">w</div>
+                <div class="character-box">x</div>
+                <div class="character-box">y</div>
+                <div class="character-box">z</div>
+            </div>
+
+            <h3>Numbers 0-9</h3>
+            <div class="character-grid aurebesh">
+                <div class="character-box">0</div>
+                <div class="character-box">1</div>
+                <div class="character-box">2</div>
+                <div class="character-box">3</div>
+                <div class="character-box">4</div>
+                <div class="character-box">5</div>
+                <div class="character-box">6</div>
+                <div class="character-box">7</div>
+                <div class="character-box">8</div>
+                <div class="character-box">9</div>
+            </div>
+
+            <h3>Punctuation & Symbols</h3>
+            <div class="character-grid aurebesh">
+                <div class="character-box">!</div>
+                <div class="character-box">@</div>
+                <div class="character-box">#</div>
+                <div class="character-box">$</div>
+                <div class="character-box">%</div>
+                <div class="character-box">^</div>
+                <div class="character-box">&</div>
+                <div class="character-box">*</div>
+                <div class="character-box">(</div>
+                <div class="character-box">)</div>
+                <div class="character-box">_</div>
+                <div class="character-box">+</div>
+                <div class="character-box">-</div>
+                <div class="character-box">=</div>
+                <div class="character-box">[</div>
+                <div class="character-box">]</div>
+                <div class="character-box">{</div>
+                <div class="character-box">}</div>
+                <div class="character-box">|</div>
+                <div class="character-box">;</div>
+                <div class="character-box">:</div>
+                <div class="character-box">'</div>
+                <div class="character-box">"</div>
+                <div class="character-box">,</div>
+                <div class="character-box">.</div>
+                <div class="character-box">/</div>
+                <div class="character-box"><</div>
+                <div class="character-box">></div>
+                <div class="character-box">?</div>
+            </div>
+
+            <h3>Hebrew Letters (א-ת)</h3>
+            <div class="character-grid aurebesh">
+                <div class="character-box">א</div>
+                <div class="character-box">ב</div>
+                <div class="character-box">ג</div>
+                <div class="character-box">ד</div>
+                <div class="character-box">ה</div>
+                <div class="character-box">ו</div>
+                <div class="character-box">ז</div>
+                <div class="character-box">ח</div>
+                <div class="character-box">ט</div>
+                <div class="character-box">י</div>
+                <div class="character-box">כ</div>
+                <div class="character-box">ל</div>
+                <div class="character-box">מ</div>
+                <div class="character-box">נ</div>
+                <div class="character-box">ס</div>
+                <div class="character-box">ע</div>
+                <div class="character-box">פ</div>
+                <div class="character-box">צ</div>
+                <div class="character-box">ק</div>
+                <div class="character-box">ר</div>
+                <div class="character-box">ש</div>
+                <div class="character-box">ת</div>
+            </div>
+
+            <h3>Hebrew Vowel Points & Marks</h3>
+            <div class="character-grid aurebesh">
+                <div class="character-box">ּ</div> <!-- dagesh -->
+                <div class="character-box">ָ</div> <!-- qamats -->
+                <div class="character-box">ַ</div> <!-- patach -->
+                <div class="character-box">ֶ</div> <!-- segol -->
+                <div class="character-box">ֵ</div> <!-- tsere -->
+                <div class="character-box">ִ</div> <!-- hirik -->
+                <div class="character-box">ֹ</div> <!-- holam -->
+                <div class="character-box">ֻ</div> <!-- qubuts -->
+                <div class="character-box">ְ</div> <!-- sheva -->
+                <div class="character-box">ׂ</div> <!-- sin dot -->
+                <div class="character-box">ׁ</div> <!-- shin dot -->
+                <div class="character-box">׳</div> <!-- geresh -->
+                <div class="character-box">״</div> <!-- gershayim -->
+                <div class="character-box">־</div> <!-- maqaf -->
+                <div class="character-box">׀</div> <!-- paseq -->
+            </div>
+
+            <div class="missing-note">
+                <strong>Note:</strong> If characters appear as boxes or question marks, they are not available in this font.
+            </div>
+        </div>
+
+        <!-- Pictocrypto Font Section -->
+        <div class="font-section">
+            <div class="font-header pictocrypto-header">Pictocrypto-Regular Font</div>
+            <div class="font-info">
+                <strong>Files:</strong> Pictocrypto-Regular.ttf, Pictocrypto-Regular.woff, Pictocrypto-Regular.woff2<br>
+                <strong>Style:</strong> Cryptocurrency/tech-inspired font
+            </div>
+
+            <h3>Uppercase A-Z</h3>
+            <div class="character-grid pictocrypto">
+                <div class="character-box">A</div>
+                <div class="character-box">B</div>
+                <div class="character-box">C</div>
+                <div class="character-box">D</div>
+                <div class="character-box">E</div>
+                <div class="character-box">F</div>
+                <div class="character-box">G</div>
+                <div class="character-box">H</div>
+                <div class="character-box">I</div>
+                <div class="character-box">J</div>
+                <div class="character-box">K</div>
+                <div class="character-box">L</div>
+                <div class="character-box">M</div>
+                <div class="character-box">N</div>
+                <div class="character-box">O</div>
+                <div class="character-box">P</div>
+                <div class="character-box">Q</div>
+                <div class="character-box">R</div>
+                <div class="character-box">S</div>
+                <div class="character-box">T</div>
+                <div class="character-box">U</div>
+                <div class="character-box">V</div>
+                <div class="character-box">W</div>
+                <div class="character-box">X</div>
+                <div class="character-box">Y</div>
+                <div class="character-box">Z</div>
+            </div>
+
+            <h3>Lowercase a-z</h3>
+            <div class="character-grid pictocrypto">
+                <div class="character-box">a</div>
+                <div class="character-box">b</div>
+                <div class="character-box">c</div>
+                <div class="character-box">d</div>
+                <div class="character-box">e</div>
+                <div class="character-box">f</div>
+                <div class="character-box">g</div>
+                <div class="character-box">h</div>
+                <div class="character-box">i</div>
+                <div class="character-box">j</div>
+                <div class="character-box">k</div>
+                <div class="character-box">l</div>
+                <div class="character-box">m</div>
+                <div class="character-box">n</div>
+                <div class="character-box">o</div>
+                <div class="character-box">p</div>
+                <div class="character-box">q</div>
+                <div class="character-box">r</div>
+                <div class="character-box">s</div>
+                <div class="character-box">t</div>
+                <div class="character-box">u</div>
+                <div class="character-box">v</div>
+                <div class="character-box">w</div>
+                <div class="character-box">x</div>
+                <div class="character-box">y</div>
+                <div class="character-box">z</div>
+            </div>
+
+            <h3>Numbers 0-9</h3>
+            <div class="character-grid pictocrypto">
+                <div class="character-box">0</div>
+                <div class="character-box">1</div>
+                <div class="character-box">2</div>
+                <div class="character-box">3</div>
+                <div class="character-box">4</div>
+                <div class="character-box">5</div>
+                <div class="character-box">6</div>
+                <div class="character-box">7</div>
+                <div class="character-box">8</div>
+                <div class="character-box">9</div>
+            </div>
+
+            <h3>Punctuation & Symbols</h3>
+            <div class="character-grid pictocrypto">
+                <div class="character-box">!</div>
+                <div class="character-box">@</div>
+                <div class="character-box">#</div>
+                <div class="character-box">$</div>
+                <div class="character-box">%</div>
+                <div class="character-box">^</div>
+                <div class="character-box">&</div>
+                <div class="character-box">*</div>
+                <div class="character-box">(</div>
+                <div class="character-box">)</div>
+                <div class="character-box">_</div>
+                <div class="character-box">+</div>
+                <div class="character-box">-</div>
+                <div class="character-box">=</div>
+                <div class="character-box">[</div>
+                <div class="character-box">]</div>
+                <div class="character-box">{</div>
+                <div class="character-box">}</div>
+                <div class="character-box">|</div>
+                <div class="character-box">;</div>
+                <div class="character-box">:</div>
+                <div class="character-box">'</div>
+                <div class="character-box">"</div>
+                <div class="character-box">,</div>
+                <div class="character-box">.</div>
+                <div class="character-box">/</div>
+                <div class="character-box"><</div>
+                <div class="character-box">></div>
+                <div class="character-box">?</div>
+            </div>
+
+            <h3>Hebrew Letters (א-ת)</h3>
+            <div class="character-grid pictocrypto">
+                <div class="character-box">א</div>
+                <div class="character-box">ב</div>
+                <div class="character-box">ג</div>
+                <div class="character-box">ד</div>
+                <div class="character-box">ה</div>
+                <div class="character-box">ו</div>
+                <div class="character-box">ז</div>
+                <div class="character-box">ח</div>
+                <div class="character-box">ט</div>
+                <div class="character-box">י</div>
+                <div class="character-box">כ</div>
+                <div class="character-box">ל</div>
+                <div class="character-box">מ</div>
+                <div class="character-box">נ</div>
+                <div class="character-box">ס</div>
+                <div class="character-box">ע</div>
+                <div class="character-box">פ</div>
+                <div class="character-box">צ</div>
+                <div class="character-box">ק</div>
+                <div class="character-box">ר</div>
+                <div class="character-box">ש</div>
+                <div class="character-box">ת</div>
+            </div>
+
+            <h3>Hebrew Vowel Points & Marks</h3>
+            <div class="character-grid pictocrypto">
+                <div class="character-box">ּ</div> <!-- dagesh -->
+                <div class="character-box">ָ</div> <!-- qamats -->
+                <div class="character-box">ַ</div> <!-- patach -->
+                <div class="character-box">ֶ</div> <!-- segol -->
+                <div class="character-box">ֵ</div> <!-- tsere -->
+                <div class="character-box">ִ</div> <!-- hirik -->
+                <div class="character-box">ֹ</div> <!-- holam -->
+                <div class="character-box">ֻ</div> <!-- qubuts -->
+                <div class="character-box">ְ</div> <!-- sheva -->
+                <div class="character-box">ׂ</div> <!-- sin dot -->
+                <div class="character-box">ׁ</div> <!-- shin dot -->
+                <div class="character-box">׳</div> <!-- geresh -->
+                <div class="character-box">״</div> <!-- gershayim -->
+                <div class="character-box">־</div> <!-- maqaf -->
+                <div class="character-box">׀</div> <!-- paseq -->
+            </div>
+
+            <div class="missing-note">
+                <strong>Note:</strong> If characters appear as boxes or question marks, they are not available in this font.
+            </div>
+        </div>
+
+        <!-- All Letters Font Section -->
+        <div class="font-section">
+            <div class="font-header all-letters-header">All Letters Font</div>
+            <div class="font-info">
+                <strong>Files:</strong> all_letters.ttf, all_letters.otf<br>
+                <strong>Style:</strong> Hebrew-focused font with comprehensive character support
+            </div>
+
+            <h3>Uppercase A-Z</h3>
+            <div class="character-grid all-letters">
+                <div class="character-box">A</div>
+                <div class="character-box">B</div>
+                <div class="character-box">C</div>
+                <div class="character-box">D</div>
+                <div class="character-box">E</div>
+                <div class="character-box">F</div>
+                <div class="character-box">G</div>
+                <div class="character-box">H</div>
+                <div class="character-box">I</div>
+                <div class="character-box">J</div>
+                <div class="character-box">K</div>
+                <div class="character-box">L</div>
+                <div class="character-box">M</div>
+                <div class="character-box">N</div>
+                <div class="character-box">O</div>
+                <div class="character-box">P</div>
+                <div class="character-box">Q</div>
+                <div class="character-box">R</div>
+                <div class="character-box">S</div>
+                <div class="character-box">T</div>
+                <div class="character-box">U</div>
+                <div class="character-box">V</div>
+                <div class="character-box">W</div>
+                <div class="character-box">X</div>
+                <div class="character-box">Y</div>
+                <div class="character-box">Z</div>
+            </div>
+
+            <h3>Lowercase a-z</h3>
+            <div class="character-grid all-letters">
+                <div class="character-box">a</div>
+                <div class="character-box">b</div>
+                <div class="character-box">c</div>
+                <div class="character-box">d</div>
+                <div class="character-box">e</div>
+                <div class="character-box">f</div>
+                <div class="character-box">g</div>
+                <div class="character-box">h</div>
+                <div class="character-box">i</div>
+                <div class="character-box">j</div>
+                <div class="character-box">k</div>
+                <div class="character-box">l</div>
+                <div class="character-box">m</div>
+                <div class="character-box">n</div>
+                <div class="character-box">o</div>
+                <div class="character-box">p</div>
+                <div class="character-box">q</div>
+                <div class="character-box">r</div>
+                <div class="character-box">s</div>
+                <div class="character-box">t</div>
+                <div class="character-box">u</div>
+                <div class="character-box">v</div>
+                <div class="character-box">w</div>
+                <div class="character-box">x</div>
+                <div class="character-box">y</div>
+                <div class="character-box">z</div>
+            </div>
+
+            <h3>Numbers 0-9</h3>
+            <div class="character-grid all-letters">
+                <div class="character-box">0</div>
+                <div class="character-box">1</div>
+                <div class="character-box">2</div>
+                <div class="character-box">3</div>
+                <div class="character-box">4</div>
+                <div class="character-box">5</div>
+                <div class="character-box">6</div>
+                <div class="character-box">7</div>
+                <div class="character-box">8</div>
+                <div class="character-box">9</div>
+            </div>
+
+            <h3>Punctuation & Symbols</h3>
+            <div class="character-grid all-letters">
+                <div class="character-box">!</div>
+                <div class="character-box">@</div>
+                <div class="character-box">#</div>
+                <div class="character-box">$</div>
+                <div class="character-box">%</div>
+                <div class="character-box">^</div>
+                <div class="character-box">&</div>
+                <div class="character-box">*</div>
+                <div class="character-box">(</div>
+                <div class="character-box">)</div>
+                <div class="character-box">_</div>
+                <div class="character-box">+</div>
+                <div class="character-box">-</div>
+                <div class="character-box">=</div>
+                <div class="character-box">[</div>
+                <div class="character-box">]</div>
+                <div class="character-box">{</div>
+                <div class="character-box">}</div>
+                <div class="character-box">|</div>
+                <div class="character-box">;</div>
+                <div class="character-box">:</div>
+                <div class="character-box">'</div>
+                <div class="character-box">"</div>
+                <div class="character-box">,</div>
+                <div class="character-box">.</div>
+                <div class="character-box">/</div>
+                <div class="character-box"><</div>
+                <div class="character-box">></div>
+                <div class="character-box">?</div>
+            </div>
+
+            <h3>Hebrew Letters (א-ת)</h3>
+            <div class="character-grid all-letters">
+                <div class="character-box">א</div>
+                <div class="character-box">ב</div>
+                <div class="character-box">ג</div>
+                <div class="character-box">ד</div>
+                <div class="character-box">ה</div>
+                <div class="character-box">ו</div>
+                <div class="character-box">ז</div>
+                <div class="character-box">ח</div>
+                <div class="character-box">ט</div>
+                <div class="character-box">י</div>
+                <div class="character-box">כ</div>
+                <div class="character-box">ל</div>
+                <div class="character-box">מ</div>
+                <div class="character-box">נ</div>
+                <div class="character-box">ס</div>
+                <div class="character-box">ע</div>
+                <div class="character-box">פ</div>
+                <div class="character-box">צ</div>
+                <div class="character-box">ק</div>
+                <div class="character-box">ר</div>
+                <div class="character-box">ש</div>
+                <div class="character-box">ת</div>
+            </div>
+
+            <h3>Hebrew Vowel Points & Marks</h3>
+            <div class="character-grid all-letters">
+                <div class="character-box">ּ</div> <!-- dagesh -->
+                <div class="character-box">ָ</div> <!-- qamats -->
+                <div class="character-box">ַ</div> <!-- patach -->
+                <div class="character-box">ֶ</div> <!-- segol -->
+                <div class="character-box">ֵ</div> <!-- tsere -->
+                <div class="character-box">ִ</div> <!-- hirik -->
+                <div class="character-box">ֹ</div> <!-- holam -->
+                <div class="character-box">ֻ</div> <!-- qubuts -->
+                <div class="character-box">ְ</div> <!-- sheva -->
+                <div class="character-box">ׂ</div> <!-- sin dot -->
+                <div class="character-box">ׁ</div> <!-- shin dot -->
+                <div class="character-box">׳</div> <!-- geresh -->
+                <div class="character-box">״</div> <!-- gershayim -->
+                <div class="character-box">־</div> <!-- maqaf -->
+                <div class="character-box">׀</div> <!-- paseq -->
+            </div>
+
+            <div class="missing-note">
+                <strong>Note:</strong> If characters appear as boxes or question marks, they are not available in this font.
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div style="background: #e8f4fd; border: 1px solid #b3d9ff; padding: 20px; border-radius: 8px; margin-top: 30px;">
+            <h3 style="color: #2c3e50; margin-top: 0;">How to Use This Complete Font Test</h3>
+            <ol style="color: #333;">
+                <li><strong>Compare All Three Fonts:</strong> Aurebesh (sci-fi), Pictocrypto (tech/crypto), All Letters (Hebrew-focused)</li>
+                <li><strong>Check Character Availability:</strong> See which fonts support Hebrew, English, and special characters</li>
+                <li><strong>Evaluate Aesthetics:</strong> Which font style best matches your app's theme?</li>
+                <li><strong>Identify Gaps:</strong> Note missing characters that need to be filled by combining fonts</li>
+                <li><strong>Plan Hybrid Approach:</strong> Decide how to combine the best aspects of each font</li>
+            </ol>
+            <p><strong>Font Files Summary:</strong></p>
+            <ul>
+                <li><strong>Aurebesh.otf:</strong> Sci-fi/Star Wars inspired, may have limited Hebrew support</li>
+                <li><strong>Pictocrypto-Regular:</strong> Tech/crypto aesthetic, multiple web formats (.ttf, .woff, .woff2)</li>
+                <li><strong>all_letters:</strong> Hebrew-focused, dual formats (.ttf, .otf), likely best Hebrew support</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -44,7 +44,7 @@
   const LATIN_PROB = 0.10;
   const NUMBERS_PROB = 0.20;
 
-  const FONT_PRIMARY = 'HebrewMatrix';
+  const FONT_PRIMARY = 'HybridFont';
   const FONT_FALLBACK = 'Pictocrypto, sans-serif';
   let currentFont = FONT_PRIMARY;
   let aurebeshAvailable = false;

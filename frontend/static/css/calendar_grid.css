@@ -216,7 +216,7 @@
 }
 /* Grid animation and typography */
 body, .calendar-title, .search-bar, #suggestions {
-        font-family: 'Pictocrypto', sans-serif;
+        font-family: 'HybridFont', 'Pictocrypto', sans-serif;
 }
 
 /* Sliding animation for grid transitions
@@ -371,7 +371,7 @@ body, .calendar-title, .search-bar, #suggestions {
 .calendar-nav-btns {
     margin-bottom: 16px;
     text-align: center;
-    font-family: 'Pictocrypto', sans-serif;
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -395,7 +395,7 @@ body, .calendar-title, .search-bar, #suggestions {
     font-size: 1rem;
     cursor: pointer;
     transition: background 0.2s;
-    font-family: 'Pictocrypto', sans-serif;
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif;
     width: 40px;
     height: 40px;
     display: inline-flex;
@@ -403,7 +403,7 @@ body, .calendar-title, .search-bar, #suggestions {
     justify-content: center;
 }
 .calendar-nav-btns button:hover {
-    font-family: 'Pictocrypto', sans-serif;
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif;
     background: #2a8a7e;
 }
 .year-months-link.current {
@@ -423,6 +423,7 @@ body, .calendar-title, .search-bar, #suggestions {
     border-radius: 6px;
     transition: background 0.2s, color 0.2s;
     cursor: pointer;
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif;
 }
 .year-months-link:hover {
     background: #20639b;
