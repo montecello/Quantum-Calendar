@@ -48,16 +48,35 @@ def get_mongo_client():
         try:
             from pymongo import MongoClient
             from config import MONGODB_URI, DATABASE_NAME
+
+            logging.info("🔧 [MONGODB] Attempting to connect to MongoDB Atlas")
+            logging.info(f"🔧 [MONGODB] MongoDB URI configured: {'Yes' if MONGODB_URI else 'No'}")
+            logging.info(f"🔧 [MONGODB] Database name: {DATABASE_NAME}")
+
             if MONGODB_URI:
+                logging.info("🔌 [MONGODB] Creating MongoDB client...")
                 mongo_client = MongoClient(MONGODB_URI)
                 mongo_db = mongo_client[DATABASE_NAME]
-                logging.info("Connected to MongoDB Atlas")
+
+                # Test the connection
+                logging.info("🔌 [MONGODB] Testing connection with ping...")
+                mongo_client.admin.command('ping')
+                logging.info("✅ [MONGODB] Successfully connected to MongoDB Atlas")
+
+                # Log connection details (without sensitive info)
+                logging.info(f"✅ [MONGODB] Database: {DATABASE_NAME}")
+                logging.info(f"✅ [MONGODB] Server info: {mongo_client.server_info()['version']}")
+
             else:
-                logging.warning("MONGODB_URI not configured")
-        except ImportError:
-            logging.warning("PyMongo not installed")
-        except Exception as e:
-            logging.error(f"Failed to connect to MongoDB: {e}")
+                logging.warning("⚠️ [MONGODB] MONGODB_URI not configured")
+
+        except ImportError as import_error:
+            logging.error(f"❌ [MONGODB] PyMongo import failed: {import_error}")
+        except Exception as conn_error:
+            logging.error(f"❌ [MONGODB] MongoDB connection failed: {conn_error}")
+            logging.error(f"❌ [MONGODB] Error type: {type(conn_error).__name__}")
+            logging.error(f"❌ [MONGODB] Error details: {str(conn_error)}")
+
     return mongo_client, mongo_db
 
 
