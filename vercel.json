@@ -10,6 +10,7 @@
     }
   ],
   "routes": [
+    { "src": "/static/(.*)", "dest": "/frontend/static/$1" },
     { "src": "/api/(.*)", "dest": "/app.py" },
     { "src": "/backend/(.*)", "dest": "/app.py" },
     { "src": "/(.*)", "dest": "/app.py" }

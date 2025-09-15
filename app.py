@@ -21,6 +21,14 @@ try:
 except Exception:
     pass
 
+# Add CORS support
+try:
+    from flask_cors import CORS
+    CORS_ENABLED = True
+except ImportError:
+    CORS_ENABLED = False
+    print("⚠️  flask-cors not installed. Install with: pip install flask-cors")
+
 GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -32,6 +40,13 @@ app = Flask(
     static_folder=os.path.join(BASE_DIR, "frontend", "static"),
     static_url_path="/static",
 )
+
+# Enable CORS if available
+if CORS_ENABLED:
+    CORS(app)
+    print("✅ CORS enabled for all routes")
+else:
+    print("⚠️  CORS not enabled - install flask-cors for cross-origin requests")
 
 # Register API blueprint for /api/calendar and /api/multiyear-calendar endpoints
 from backend.routes import api

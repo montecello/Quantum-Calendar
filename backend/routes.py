@@ -388,11 +388,12 @@ def test_mongodb():
         strong_collection = db[STRONG_COLLECTION]
         kjv_collection = db[KJV_COLLECTION]
 
-        strong_count = strong_collection.count_documents({})
-        kjv_count = kjv_collection.count_documents({})
+        # Use estimated_document_count() for faster performance
+        strong_count = strong_collection.estimated_document_count()
+        kjv_count = kjv_collection.estimated_document_count()
 
-        logging.info(f"✅ [Test Debug] Strong's collection: {strong_count} documents")
-        logging.info(f"✅ [Test Debug] KJV collection: {kjv_count} documents")
+        logging.info(f"✅ [Test Debug] Strong's collection: {strong_count} documents (estimated)")
+        logging.info(f"✅ [Test Debug] KJV collection: {kjv_count} documents (estimated)")
 
         # Test sample data
         sample_strongs = list(strong_collection.find({}, {'_id': 0}).limit(1))
@@ -518,6 +519,22 @@ def api_strongs_data():
     """Alternative endpoint for Strong's data"""
     try:
         logging.info("📡 [API Debug] /api/strongs-data endpoint called")
+        logging.info(f"🔍 [API Debug] Request method: {request.method}")
+        logging.info(f"🔍 [API Debug] Request headers: {dict(request.headers)}")
+        logging.info(f"🔍 [API Debug] Request args: {dict(request.args)}")
+
+        # Parse pagination parameters
+        limit = request.args.get('limit', type=int, default=100)
+        offset = request.args.get('offset', type=int, default=0)
+
+        # Validate pagination parameters
+        if limit < 1 or limit > 1000:
+            limit = 100
+        if offset < 0:
+            offset = 0
+
+        logging.info(f"📄 [API Debug] Pagination: limit={limit}, offset={offset}")
+
         db = get_mongo_client()
 
         if db is not None:
@@ -526,16 +543,16 @@ def api_strongs_data():
 
             # Test collection access
             logging.info("📊 [API Debug] Counting documents in Strong's collection...")
-            doc_count = collection.count_documents({})
-            logging.info(f"📊 [API Debug] Found {doc_count} documents in Strong's collection")
+            doc_count = collection.estimated_document_count()
+            logging.info(f"📊 [API Debug] Found {doc_count} documents in Strong's collection (estimated)")
 
             if doc_count == 0:
                 logging.warning("⚠️  [API Debug] Strong's collection is empty!")
                 return jsonify({"error": "Strong's collection is empty", "collection": STRONG_COLLECTION}), 500
 
-            # Get all documents
-            logging.info("📥 [API Debug] Fetching all Strong's documents...")
-            data = list(collection.find({}, {'_id': 0}))  # Exclude MongoDB _id field
+            # Get paginated documents
+            logging.info(f"📥 [API Debug] Fetching Strong's documents (limit={limit}, offset={offset})...")
+            data = list(collection.find({}, {'_id': 0}).skip(offset).limit(limit))
 
             logging.info(f"✅ [API Debug] Successfully retrieved {len(data)} Strong's entries from MongoDB")
             logging.info(f"🚀 [API Debug] Data source: MongoDB Atlas ({DATABASE_NAME}.{STRONG_COLLECTION})")
@@ -545,21 +562,85 @@ def api_strongs_data():
                 sample = data[0]
                 logging.info(f"🔍 [API Debug] Sample Strong's entry: {sample.get('strongsNumber', 'N/A')} - {sample.get('word', 'N/A')}")
 
-            return jsonify(data)
+            # Calculate pagination info
+            has_more = (offset + limit) < doc_count
+            total_pages = (doc_count + limit - 1) // limit if limit > 0 else 1
+            current_page = (offset // limit) + 1 if limit > 0 else 1
+
+            # Return data with metadata
+            response_data = {
+                "data": data,
+                "count": len(data),
+                "total": doc_count,
+                "source": "mongodb",
+                "collection": STRONG_COLLECTION,
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "has_more": has_more,
+                    "current_page": current_page,
+                    "total_pages": total_pages
+                },
+                "timestamp": str(datetime.now())
+            }
+            logging.info(f"📤 [API Debug] Returning {len(data)} Strong's entries (page {current_page}/{total_pages})")
+            return jsonify(response_data)
 
         # Fallback to static file
         logging.warning("⚠️  [API Debug] MongoDB not available, falling back to static file")
-        logging.info("📁 [API Debug] Attempting to serve from backend/data/hebrew_strongs.json")
+        logging.info("📁 [API Debug] Attempting to serve from frontend/static/data/strongs_complete.json")
 
-        data_dir = os.path.join(os.path.dirname(__file__), 'data')
-        file_path = os.path.join(data_dir, 'hebrew_strongs.json')
+        static_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'static', 'data')
+        static_file_path = os.path.join(static_data_dir, 'strongs_complete.json')
 
-        if os.path.exists(file_path):
-            logging.info("✅ [API Debug] Static file exists, serving from backend/data/")
-            return send_from_directory(data_dir, 'hebrew_strongs.json', mimetype='application/json')
+        if os.path.exists(static_file_path):
+            logging.info("✅ [API Debug] Static file exists, reading from frontend/static/data/")
+            try:
+                import json
+                # Read file efficiently with streaming approach
+                with open(static_file_path, 'r', encoding='utf-8') as f:
+                    # Read the entire file but do it efficiently
+                    file_content = f.read()
+                    static_data = json.loads(file_content)
+                
+                logging.info(f"📊 [API Debug] Loaded {len(static_data)} entries from static file")
+
+                # Apply pagination to static data more efficiently
+                total_count = len(static_data)
+                start_idx = min(offset, total_count)
+                end_idx = min(start_idx + limit, total_count)
+                paginated_data = static_data[start_idx:end_idx]
+
+                # Calculate pagination info
+                has_more = end_idx < total_count
+                total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
+                current_page = (offset // limit) + 1 if limit > 0 else 1
+
+                # Return data with metadata
+                response_data = {
+                    "data": paginated_data,
+                    "count": len(paginated_data),
+                    "total": total_count,
+                    "source": "static_file",
+                    "path": static_file_path,
+                    "pagination": {
+                        "limit": limit,
+                        "offset": offset,
+                        "has_more": has_more,
+                        "current_page": current_page,
+                        "total_pages": total_pages
+                    },
+                    "timestamp": str(datetime.now())
+                }
+                logging.info(f"📤 [API Debug] Returning {len(paginated_data)} Strong's entries from static file (page {current_page}/{total_pages})")
+                return jsonify(response_data)
+            except Exception as file_error:
+                logging.error(f"❌ [API Debug] Error reading static file: {str(file_error)}")
+                return jsonify({"error": f"Error reading static file: {str(file_error)}", "path": static_file_path}), 500
         else:
-            logging.error(f"❌ [API Debug] Static file not found: {file_path}")
-            return jsonify({"error": "Static file not found", "path": file_path}), 500
+            logging.error(f"❌ [API Debug] Static file not found: {static_file_path}")
+            logging.info(f"📂 [API Debug] Directory contents: {os.listdir(static_data_dir) if os.path.exists(static_data_dir) else 'directory not found'}")
+            return jsonify({"error": "Static file not found", "path": static_file_path}), 500
 
     except Exception as e:
         logging.exception("💥 [API Debug] Exception in /api/strongs-data")
@@ -573,6 +654,22 @@ def api_kjv_data():
     """Alternative endpoint for KJV data"""
     try:
         logging.info("📡 [API Debug] /api/kjv-data endpoint called")
+        logging.info(f"🔍 [API Debug] Request method: {request.method}")
+        logging.info(f"🔍 [API Debug] Request headers: {dict(request.headers)}")
+        logging.info(f"🔍 [API Debug] Request args: {dict(request.args)}")
+
+        # Parse pagination parameters
+        limit = request.args.get('limit', type=int, default=100)
+        offset = request.args.get('offset', type=int, default=0)
+
+        # Validate pagination parameters
+        if limit < 1 or limit > 1000:
+            limit = 100
+        if offset < 0:
+            offset = 0
+
+        logging.info(f"📄 [API Debug] Pagination: limit={limit}, offset={offset}")
+
         db = get_mongo_client()
 
         if db is not None:
@@ -581,40 +678,104 @@ def api_kjv_data():
 
             # Test collection access
             logging.info("📊 [API Debug] Counting documents in KJV collection...")
-            doc_count = collection.count_documents({})
-            logging.info(f"📊 [API Debug] Found {doc_count} documents in KJV collection")
+            doc_count = collection.estimated_document_count()
+            logging.info(f"📊 [API Debug] Found {doc_count} documents in KJV collection (estimated)")
 
             if doc_count == 0:
                 logging.warning("⚠️  [API Debug] KJV collection is empty!")
                 return jsonify({"error": "KJV collection is empty", "collection": KJV_COLLECTION}), 500
 
-            # Get all documents
-            logging.info("📥 [API Debug] Fetching all KJV documents...")
-            data = list(collection.find({}, {'_id': 0}))  # Exclude MongoDB _id field
+            # Get paginated documents
+            logging.info(f"📥 [API Debug] Fetching KJV documents (limit={limit}, offset={offset})...")
+            data = list(collection.find({}, {'_id': 0}).skip(offset).limit(limit))
 
-            logging.info(f"✅ [API Debug] Successfully retrieved {len(data)} KJV verses from MongoDB")
+            logging.info(f"✅ [API Debug] Successfully retrieved {len(data)} KJV entries from MongoDB")
             logging.info(f"🚀 [API Debug] Data source: MongoDB Atlas ({DATABASE_NAME}.{KJV_COLLECTION})")
 
             # Log sample data for verification
             if data and len(data) > 0:
                 sample = data[0]
-                logging.info(f"🔍 [API Debug] Sample KJV verse: {sample.get('book', 'N/A')} {sample.get('chapter', 'N/A')}:{sample.get('verse', 'N/A')}")
+                logging.info(f"🔍 [API Debug] Sample KJV entry: {sample.get('book', 'N/A')} {sample.get('chapter', 'N/A')}:{sample.get('verse', 'N/A')}")
 
-            return jsonify(data)
+            # Calculate pagination info
+            has_more = (offset + limit) < doc_count
+            total_pages = (doc_count + limit - 1) // limit if limit > 0 else 1
+            current_page = (offset // limit) + 1 if limit > 0 else 1
+
+            # Return data with metadata
+            response_data = {
+                "data": data,
+                "count": len(data),
+                "total": doc_count,
+                "source": "mongodb",
+                "collection": KJV_COLLECTION,
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "has_more": has_more,
+                    "current_page": current_page,
+                    "total_pages": total_pages
+                },
+                "timestamp": str(datetime.now())
+            }
+            logging.info(f"📤 [API Debug] Returning {len(data)} KJV entries (page {current_page}/{total_pages})")
+            return jsonify(response_data)
 
         # Fallback to static file
         logging.warning("⚠️  [API Debug] MongoDB not available, falling back to static file")
-        logging.info("📁 [API Debug] Attempting to serve from backend/data/kjv_verses.json")
+        logging.info("📁 [API Debug] Attempting to serve from frontend/static/data/kjv_verses.json")
 
-        data_dir = os.path.join(os.path.dirname(__file__), 'data')
-        file_path = os.path.join(data_dir, 'kjv_verses.json')
+        static_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'static', 'data')
+        static_file_path = os.path.join(static_data_dir, 'kjv_verses.json')
 
-        if os.path.exists(file_path):
-            logging.info("✅ [API Debug] Static file exists, serving from backend/data/")
-            return send_from_directory(data_dir, 'kjv_verses.json', mimetype='application/json')
+        if os.path.exists(static_file_path):
+            logging.info("✅ [API Debug] Static file exists, reading from frontend/static/data/")
+            try:
+                import json
+                # Read file efficiently with streaming approach
+                with open(static_file_path, 'r', encoding='utf-8') as f:
+                    # Read the entire file but do it efficiently
+                    file_content = f.read()
+                    static_data = json.loads(file_content)
+                
+                logging.info(f"📊 [API Debug] Loaded {len(static_data)} entries from static file")
+
+                # Apply pagination to static data more efficiently
+                total_count = len(static_data)
+                start_idx = min(offset, total_count)
+                end_idx = min(start_idx + limit, total_count)
+                paginated_data = static_data[start_idx:end_idx]
+
+                # Calculate pagination info
+                has_more = end_idx < total_count
+                total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
+                current_page = (offset // limit) + 1 if limit > 0 else 1
+
+                # Return data with metadata
+                response_data = {
+                    "data": paginated_data,
+                    "count": len(paginated_data),
+                    "total": total_count,
+                    "source": "static_file",
+                    "path": static_file_path,
+                    "pagination": {
+                        "limit": limit,
+                        "offset": offset,
+                        "has_more": has_more,
+                        "current_page": current_page,
+                        "total_pages": total_pages
+                    },
+                    "timestamp": str(datetime.now())
+                }
+                logging.info(f"📤 [API Debug] Returning {len(paginated_data)} KJV entries from static file (page {current_page}/{total_pages})")
+                return jsonify(response_data)
+            except Exception as file_error:
+                logging.error(f"❌ [API Debug] Error reading static file: {str(file_error)}")
+                return jsonify({"error": f"Error reading static file: {str(file_error)}", "path": static_file_path}), 500
         else:
-            logging.error(f"❌ [API Debug] Static file not found: {file_path}")
-            return jsonify({"error": "Static file not found", "path": file_path}), 500
+            logging.error(f"❌ [API Debug] Static file not found: {static_file_path}")
+            logging.info(f"📂 [API Debug] Directory contents: {os.listdir(static_data_dir) if os.path.exists(static_data_dir) else 'directory not found'}")
+            return jsonify({"error": "Static file not found", "path": static_file_path}), 500
 
     except Exception as e:
         logging.exception("💥 [API Debug] Exception in /api/kjv-data")
