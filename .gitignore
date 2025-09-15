@@ -17,3 +17,7 @@ venv/
 
 
 .vscode/
+
+#
+kjv_verses.json
+strongs_complete.json
