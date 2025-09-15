@@ -10,104 +10,45 @@ class PrimitiveRootsAnalyzer {
     }
 
     async loadStrongsData() {
-        console.log('🔄 [PRIORITY SYSTEM] Starting data loading with priority system...');
-
-        // PRIMARY SOURCE: MongoDB API
         try {
-            console.log('🎯 [PRIMARY] Attempting to load from MongoDB API endpoints...');
-
+            // Load the complete Strong's dataset and KJV verses from backend
             const strongsResponse = await fetch('/api/strongs-data?limit=100');
             const versesResponse = await fetch('/api/kjv-data?limit=100');
-
-            if (strongsResponse.ok && versesResponse.ok) {
-                console.log('✅ [PRIMARY] MongoDB API responses successful');
-
-                const strongsData = await strongsResponse.json();
-                const versesData = await versesResponse.json();
-
-                console.log(`✅ [PRIMARY] Successfully loaded ${strongsData.length} Strong's entries and ${versesData.length} verses from MongoDB`);
-
-                // Process and store the data
-                this.strongsData = this.processStrongsData(strongsData);
-                this.versesData = this.processVersesData(versesData);
-
-                console.log('🎉 [SUCCESS] Data loaded from PRIMARY source (MongoDB API)');
-                console.log(`📊 [MONGODB SUMMARY] Ready for primitive root analysis with ${Object.keys(this.strongsData).length} Strong's entries and ${this.versesData.length} verses from MongoDB Atlas`);
-                return;
-            } else {
-                console.warn('⚠️ [PRIMARY] MongoDB API responses not OK:', {
-                    strongsStatus: strongsResponse.status,
-                    versesStatus: versesResponse.status
-                });
-                throw new Error('MongoDB API returned non-OK responses');
+            
+            if (!strongsResponse.ok || !versesResponse.ok) {
+                throw new Error('Failed to load data from API');
             }
-
+            
+            const strongsData = await strongsResponse.json();
+            const versesData = await versesResponse.json();
+            
+            // Process and store the data (e.g., index by Strong's number)
+            this.strongsData = this.processStrongsData(strongsData);
+            this.versesData = this.processVersesData(versesData);
+            
+            console.log(`Loaded ${Object.keys(this.strongsData).length} Strong's entries and ${this.versesData.length} verses`);
         } catch (error) {
-            console.error('❌ [PRIMARY] MongoDB API failed:', error.message);
-            console.log('🔄 [FALLBACK] Attempting SECONDARY source (static JSON files)...');
-
-            // SECONDARY SOURCE: Static JSON files
-            try {
-                console.log('📁 [SECONDARY] Loading from static JSON files...');
-
-                const strongsResponse = await fetch('/static/data/strongs_complete.json');
-                const versesResponse = await fetch('/static/data/kjv_verses.json');
-
-                if (strongsResponse.ok && versesResponse.ok) {
-                    console.log('✅ [SECONDARY] Static JSON responses successful');
-
-                    const strongsData = await strongsResponse.json();
-                    const versesData = await versesResponse.json();
-
-                    console.log(`✅ [SECONDARY] Successfully loaded ${strongsData.length} Strong's entries and ${versesData.length} verses from static files`);
-
-                    // Process and store the data
-                    this.strongsData = this.processStrongsData(strongsData);
-                    this.versesData = this.processVersesData(versesData);
-
-                    console.log('🎉 [SUCCESS] Data loaded from SECONDARY source (static JSON files)');
-                    console.log(`📊 [STATIC SUMMARY] Ready for primitive root analysis with ${Object.keys(this.strongsData).length} Strong's entries and ${this.versesData.length} verses from static files`);
-                    return;
-                } else {
-                    console.warn('⚠️ [SECONDARY] Static JSON responses not OK:', {
-                        strongsStatus: strongsResponse.status,
-                        versesStatus: versesResponse.status
-                    });
-                    throw new Error('Static JSON files returned non-OK responses');
-                }
-
-            } catch (secondaryError) {
-                console.error('❌ [SECONDARY] Static JSON files failed:', secondaryError.message);
-                console.log('💀 [ERROR] Both PRIMARY and SECONDARY sources failed');
-
-                // ERROR: Both sources failed
-                this.showError('Unable to load data from any source. Please check your internet connection and try again.');
-                this.strongsData = {};
-                this.versesData = [];
-                return;
-            }
+            console.error('Error loading data from API:', error);
+            // Fallback to sample data if API fails
+            this.strongsData = this.getSampleData();
+            this.versesData = [];
         }
     }
 
     // New method to process Strong's data into a searchable object
     processStrongsData(data) {
-        console.log(`🔧 [MONGODB PROCESS] Processing ${data.length} Strong's entries from MongoDB`);
         const processed = {};
         data.forEach(entry => {
             // Use strongsNumber as key, but also handle the case where it might be a number
             const key = entry.strongsNumber.toString();
             processed[key] = entry;
-            console.log(`📝 [MONGODB PROCESS] Processed Strong's H${entry.strongsNumber} (${entry.word}) from MongoDB`);
         });
-        console.log(`✅ [MONGODB PROCESS] Successfully processed ${Object.keys(processed).length} Strong's entries from MongoDB`);
         return processed;
     }
 
     // New method to process verses data
     processVersesData(data) {
-        console.log(`🔧 [MONGODB PROCESS] Processing ${data.length} KJV verses from MongoDB`);
         // For now, just store as array; you can add indexing later
-        console.log(`✅ [MONGODB PROCESS] Successfully processed ${data.length} verses from MongoDB`);
         return data;
     }
 
@@ -259,40 +200,27 @@ class PrimitiveRootsAnalyzer {
             return;
         }
 
-        // Check if data is loaded
-        if (Object.keys(this.strongsData).length === 0) {
-            this.showError('Data is still loading. Please wait a moment and try again.');
-            return;
-        }
-
         try {
-            console.log(`🔍 [SEARCH] Performing search for: "${query}"`);
-            console.log(`📊 [SEARCH] Using data source with ${Object.keys(this.strongsData).length} Strong's entries and ${this.versesData.length} verses`);
-
+            // Use local search instead of API for testing
             const results = this.searchStrongsData(query);
-            console.log(`📋 [SEARCH] Found ${results.length} results for "${query}"`);
-
             this.displayResults(results);
         } catch (error) {
-            console.error('❌ [SEARCH] Search error:', error);
+            console.error('Search error:', error);
             this.showError('Failed to search. Please try again.');
         }
     }
 
     // Search Strong's data for matches
     searchStrongsData(query) {
-        console.log(`🔍 [MONGODB SEARCH] Searching MongoDB data for: "${query}"`);
         const results = [];
         const lowerQuery = query.toLowerCase();
         
-        // Search Strong's entries from MongoDB
-        console.log(`📊 [MONGODB SEARCH] Scanning ${Object.keys(this.strongsData).length} Strong's entries from MongoDB`);
+        // Search Strong's entries
         for (const [num, entry] of Object.entries(this.strongsData)) {
             if (num.includes(query) || 
                 (entry.word && entry.word.includes(query)) || 
                 (entry.transliteration && entry.transliteration.toLowerCase().includes(lowerQuery)) || 
                 (entry.definitions && entry.definitions.some(def => def.toLowerCase().includes(lowerQuery)))) {
-                console.log(`✅ [MONGODB SEARCH] Found Strong's match: H${entry.strongsNumber} (${entry.word}) from MongoDB`);
                 results.push({
                     type: 'strongs',
                     strongsNumber: entry.strongsNumber,
@@ -300,18 +228,15 @@ class PrimitiveRootsAnalyzer {
                     language: entry.language,
                     transliteration: entry.transliteration,
                     definitions: entry.definitions,
-                    partOfSpeech: entry.partOfSpeech,
-                    primitiveRoot: entry.primitiveRoot
+                    partOfSpeech: entry.partOfSpeech
                 });
             }
         }
         
-        // Search verses from MongoDB
-        console.log(`📖 [MONGODB SEARCH] Scanning ${this.versesData.length} verses from MongoDB`);
+        // Search verses (basic text search)
         if (this.versesData) {
             this.versesData.forEach(verse => {
                 if (verse.text && verse.text.toLowerCase().includes(lowerQuery)) {
-                    console.log(`✅ [MONGODB SEARCH] Found verse match: ${verse.book} ${verse.chapter}:${verse.verse} from MongoDB`);
                     results.push({
                         type: 'verse',
                         book: verse.book,
@@ -324,18 +249,15 @@ class PrimitiveRootsAnalyzer {
             });
         }
         
-        console.log(`📋 [MONGODB SEARCH] Total results found: ${results.length} from MongoDB data`);
         return results.slice(0, 50); // Limit results for performance
     }
 
     // Display search results
     displayResults(results) {
-        console.log(`🎨 [MONGODB DISPLAY] Rendering ${results.length} results from MongoDB data`);
         const resultsContainer = document.getElementById('results-container');
         const resultsDiv = document.getElementById('search-results');
 
         if (!results || results.length === 0) {
-            console.log(`❌ [MONGODB DISPLAY] No results to display from MongoDB data`);
             resultsDiv.innerHTML = '<p class="no-results">No matches found for your search.</p>';
             resultsContainer.style.display = 'block';
             return;
@@ -345,11 +267,7 @@ class PrimitiveRootsAnalyzer {
 
         results.forEach(result => {
             if (result.type === 'strongs') {
-                console.log(`📝 [MONGODB DISPLAY] Displaying Strong's entry H${result.strongsNumber} (${result.word}) from MongoDB`);
                 const primitiveRoot = this.primitiveRoots[result.primitiveRoot];
-                if (primitiveRoot) {
-                    console.log(`🌳 [MONGODB DISPLAY] Found primitive root #${result.primitiveRoot} (${primitiveRoot.hebrew}) for H${result.strongsNumber} from MongoDB`);
-                }
                 html += `
                     <div class="result-item">
                         <div class="strongs-header">
@@ -381,7 +299,6 @@ class PrimitiveRootsAnalyzer {
                     </div>
                 `;
             } else if (result.type === 'verse') {
-                console.log(`📖 [MONGODB DISPLAY] Displaying verse ${result.book} ${result.chapter}:${result.verse} from MongoDB`);
                 html += `
                     <div class="result-item verse-result">
                         <div class="verse-header">
@@ -399,8 +316,6 @@ class PrimitiveRootsAnalyzer {
         html += '</div>';
         resultsDiv.innerHTML = html;
         resultsContainer.style.display = 'block';
-
-        console.log(`✅ [MONGODB DISPLAY] Successfully rendered all ${results.length} results with primitive root analysis from MongoDB`);
 
         // Scroll to results
         resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });

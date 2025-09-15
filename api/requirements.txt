@@ -1,4 +1,0 @@
-# Basic requirements for Vercel serverless functions
-# pymongo==4.6.0  # Commented out for initial deployment
-# requests==2.31.0  # Commented out for initial deployment
-# pytz==2023.3  # Commented out for initial deployment
