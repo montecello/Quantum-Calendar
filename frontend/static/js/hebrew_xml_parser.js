@@ -14,14 +14,14 @@ class HebrewXMLParser {
     // Load and parse the Hebrew.xml file
     async loadXML() {
         try {
-            console.log('🔄 Starting to load Hebrew data...');
+            console.log('🔄 Starting to load Hebrew.xml...');
 
             // Check if we have a cached version first
             const cacheKey = 'hebrew-xml-cache';
             const cachedData = this.loadFromCache(cacheKey);
 
             if (cachedData) {
-                console.log('📦 Using cached Hebrew data');
+                console.log('📦 Using cached Hebrew XML data');
                 this.xmlData = cachedData.xmlData;
                 this.entries = cachedData.entries;
                 this.searchIndex = cachedData.searchIndex;
@@ -30,109 +30,99 @@ class HebrewXMLParser {
                 return;
             }
 
-            // Step 1: Try API endpoint first (Primary: MongoDB API)
-            console.log('📡 Attempting to load Hebrew data from API endpoint...');
-            try {
-                const apiResponse = await fetch('/api/strongs-data');
-                if (apiResponse.ok) {
-                    const apiData = await apiResponse.json();
-                    console.log(`✅ Loaded Hebrew data from API: ${apiData.length} entries`);
+            const response = await fetch('/static/data/Hebrew.xml');
 
-                    // Convert API data to the expected format
-                    this.entries = new Map();
-                    this.searchIndex = new Map();
-
-                    apiData.forEach(entry => {
-                        if (entry.strongsNumber) {
-                            const entryKey = entry.strongsNumber.toString();
-                            this.entries.set(entryKey, {
-                                entryNumber: entryKey,
-                                hebrewWord: entry.word || '',
-                                strongsNumber: entry.strongsNumber,
-                                lemma: entry.lemma || '',
-                                transliteration: entry.transliteration || '',
-                                meanings: entry.definitions || [],
-                                exegesis: entry.exegesis || '',
-                                fromReferences: entry.fromReferences || [],
-                                explanation: entry.explanation || '',
-                                translation: entry.translation || '',
-                                isPrimitive: entry.isPrimitive || false
-                            });
-                        }
-                    });
-
-                    this.buildSearchIndex();
-                    this.saveToCache(cacheKey, {
-                        xmlData: null, // No XML data from API
-                        entries: this.entries,
-                        searchIndex: this.searchIndex,
-                        timestamp: Date.now()
-                    });
-
-                    this.isLoaded = true;
-                    console.log(`✅ Processed ${this.entries.size} Hebrew entries from API`);
-                    return;
-                } else {
-                    console.warn('⚠️ API endpoint failed, falling back to static JSON files');
-                }
-            } catch (apiError) {
-                console.warn('⚠️ API request failed:', apiError.message, '- falling back to static files');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
 
-            // Step 2: Fallback to static JSON file (Secondary)
-            console.log('🔄 Attempting fallback to static JSON file...');
-            try {
-                const staticResponse = await fetch('/static/data/strongs_complete.json');
-                if (staticResponse.ok) {
-                    const staticData = await staticResponse.json();
-                    console.log(`✅ Loaded Hebrew data from static JSON: ${staticData.length} entries`);
+            const total = response.headers.get('content-length');
+            const reader = response.body.getReader();
+            const chunks = [];
+            let loaded = 0;
 
-                    // Convert static JSON data to the expected format
-                    this.entries = new Map();
-                    this.searchIndex = new Map();
-
-                    staticData.forEach(entry => {
-                        if (entry.strongsNumber) {
-                            const entryKey = entry.strongsNumber.toString();
-                            this.entries.set(entryKey, {
-                                entryNumber: entryKey,
-                                hebrewWord: entry.word || '',
-                                strongsNumber: entry.strongsNumber,
-                                lemma: entry.lemma || '',
-                                transliteration: entry.transliteration || '',
-                                meanings: entry.definitions || [],
-                                exegesis: entry.exegesis || '',
-                                fromReferences: entry.fromReferences || [],
-                                explanation: entry.explanation || '',
-                                translation: entry.translation || '',
-                                isPrimitive: entry.isPrimitive || false
-                            });
-                        }
-                    });
-
-                    this.buildSearchIndex();
-                    this.saveToCache(cacheKey, {
-                        xmlData: null,
-                        entries: this.entries,
-                        searchIndex: this.searchIndex,
-                        timestamp: Date.now()
-                    });
-
-                    this.isLoaded = true;
-                    console.log(`✅ Processed ${this.entries.size} Hebrew entries from static JSON`);
-                    return;
-                } else {
-                    console.error(`❌ Static JSON file failed: ${staticResponse.status} ${staticResponse.statusText}`);
-                }
-            } catch (staticError) {
-                console.error('❌ Static JSON request failed:', staticError.message);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                loaded += value.length;
+                this.updateProgress(loaded, total);
             }
 
-            // Step 3: Tertiary - Show error (no data sources available)
-            throw new Error('All Hebrew data sources failed. Please check your deployment configuration.');
+            const blob = new Blob(chunks);
+            const xmlText = await blob.text();
+            console.log('📄 XML text loaded, length:', xmlText.length);
+
+            if (!xmlText || xmlText.length < 100) {
+                throw new Error('XML file appears to be empty or too small');
+            }
+
+            // Try to clean up malformed XML
+            const cleanedXmlText = this.cleanMalformedXML(xmlText);
+            console.log('🧹 XML cleaned, new length:', cleanedXmlText.length);
+
+            // Parse XML with namespace handling
+            this.xmlData = new DOMParser().parseFromString(cleanedXmlText, 'text/xml');
+
+            // Check for parse errors
+            const parseErrors = this.xmlData.getElementsByTagName('parsererror');
+            if (parseErrors.length > 0) {
+                console.error('❌ XML parsing errors found:', parseErrors.length);
+                for (let i = 0; i < parseErrors.length; i++) {
+                    console.error('Parse error:', parseErrors[i].textContent);
+                }
+                throw new Error('XML parsing failed due to malformed content');
+            }
+
+            // Validate that we have a proper document
+            if (!this.xmlData || !this.xmlData.documentElement) {
+                throw new Error('XML document is invalid or empty');
+            }
+
+            console.log('🔧 XML parsed, document element:', this.xmlData.documentElement.tagName);
+
+            // Remove default namespace to make querySelector work
+            this.removeDefaultNamespace(this.xmlData.documentElement);
+            console.log('🧹 Namespace removed');
+
+            // Parse entries
+            this.parseEntries();
+
+            // Validate that we parsed some entries
+            if (this.entries.size === 0) {
+                throw new Error('No entries were parsed from the XML file');
+            }
+
+            // Build search index
+            this.buildSearchIndex();
+
+            // Cache the parsed data
+            this.saveToCache(cacheKey, {
+                xmlData: this.xmlData,
+                entries: this.entries,
+                searchIndex: this.searchIndex,
+                timestamp: Date.now()
+            });
+
+            this.isLoaded = true;
+            console.log(`✅ Loaded ${this.entries.size} Hebrew entries`);
+            console.log('📊 Search index size:', this.searchIndex.size);
+
+            // Debug: Check if entry 226 was parsed (this is the "sign" entry)
+            const entry226 = this.entries.get('226');
+            if (entry226) {
+                console.log('🎯 Entry 226 found:', entry226.hebrewWord, entry226.meanings);
+            } else {
+                console.log('❌ Entry 226 not found - this may indicate parsing issues');
+            }
+
+            // Debug: Check search for "sign"
+            const signResults = this.search('sign');
+            console.log('🔍 Search for "sign" results:', signResults.length, signResults);
 
         } catch (error) {
-            console.error('❌ Error loading Hebrew data:', error);
+            console.error('❌ Error loading Hebrew.xml:', error);
+            console.error('Stack trace:', error.stack);
             throw error; // Re-throw to let caller handle it
         }
     }
@@ -1083,133 +1073,17 @@ class KJVParser {
             const response = await fetch('/static/data/kjv_strongs.txt');
 
             if (!response.ok) {
-                console.warn('⚠️ KJV static file failed, trying API endpoint...');
-                try {
-                    const apiResponse = await fetch('/api/kjv-data');
-                    if (apiResponse.ok) {
-                        const apiData = await apiResponse.json();
-                        console.log(`✅ Loaded KJV data from API: ${apiData.length} verses`);
-
-                        // Convert API data to the expected format
-                        this.verseMap = new Map();
-                        this.searchIndex = new Map();
-
-                        apiData.forEach(verse => {
-                            if (verse.book && verse.chapter && verse.verse) {
-                                const verseKey = `${verse.book}_${verse.chapter}_${verse.verse}`;
-                                this.verseMap.set(verseKey, {
-                                    book: verse.book,
-                                    chapter: verse.chapter,
-                                    verse: verse.verse,
-                                    text: verse.text || '',
-                                    strongsNumbers: verse.strongsNumbers || []
-                                });
-                            }
-                        });
-
-                        this.buildSearchIndex();
-                        this.saveToCache(cacheKey, {
-                            kjvData: null,
-                            verseMap: this.verseMap,
-                            searchIndex: this.searchIndex,
-                            timestamp: Date.now()
-                        });
-
-                        this.isLoaded = true;
-                        console.log(`✅ Processed ${this.verseMap.size} KJV verses from API`);
-                        return;
-                    } else {
-                        console.warn('⚠️ API endpoint also failed, trying static JSON...');
-                        const staticResponse = await fetch('/static/data/kjv_verses.json');
-                        if (staticResponse.ok) {
-                            const staticData = await staticResponse.json();
-                            console.log(`✅ Loaded KJV data from static JSON: ${staticData.length} verses`);
-
-                            // Convert static JSON data to the expected format
-                            this.verseMap = new Map();
-                            this.searchIndex = new Map();
-
-                            staticData.forEach(verse => {
-                                if (verse.book && verse.chapter && verse.verse) {
-                                    const verseKey = `${verse.book}_${verse.chapter}_${verse.verse}`;
-                                    this.verseMap.set(verseKey, {
-                                        book: verse.book,
-                                        chapter: verse.chapter,
-                                        verse: verse.verse,
-                                        text: verse.text || '',
-                                        strongsNumbers: verse.strongsNumbers || []
-                                    });
-                                }
-                            });
-
-                            this.buildSearchIndex();
-                            this.saveToCache(cacheKey, {
-                                kjvData: null,
-                                verseMap: this.verseMap,
-                                searchIndex: this.searchIndex,
-                                timestamp: Date.now()
-                            });
-
-                            this.isLoaded = true;
-                            console.log(`✅ Processed ${this.verseMap.size} KJV verses from static JSON`);
-                            return;
-                        } else {
-                            console.error(`❌ Static JSON file also failed: ${staticResponse.status} ${staticResponse.statusText}`);
-                        }
-                    }
-                } catch (apiError) {
-                    console.warn('⚠️ API request failed:', apiError.message, '- trying static JSON...');
-                    try {
-                        const staticResponse = await fetch('/static/data/kjv_verses.json');
-                        if (staticResponse.ok) {
-                            const staticData = await staticResponse.json();
-                            console.log(`✅ Loaded KJV data from static JSON: ${staticData.length} verses`);
-
-                            // Convert static JSON data to the expected format
-                            this.verseMap = new Map();
-                            this.searchIndex = new Map();
-
-                            staticData.forEach(verse => {
-                                if (verse.book && verse.chapter && verse.verse) {
-                                    const verseKey = `${verse.book}_${verse.chapter}_${verse.verse}`;
-                                    this.verseMap.set(verseKey, {
-                                        book: verse.book,
-                                        chapter: verse.chapter,
-                                        verse: verse.verse,
-                                        text: verse.text || '',
-                                        strongsNumbers: verse.strongsNumbers || []
-                                    });
-                                }
-                            });
-
-                            this.buildSearchIndex();
-                            this.saveToCache(cacheKey, {
-                                kjvData: null,
-                                verseMap: this.verseMap,
-                                searchIndex: this.searchIndex,
-                                timestamp: Date.now()
-                            });
-
-                            this.isLoaded = true;
-                            console.log(`✅ Processed ${this.verseMap.size} KJV verses from static JSON`);
-                            return;
-                        } else {
-                            console.error(`❌ Static JSON file failed: ${staticResponse.status} ${staticResponse.statusText}`);
-                        }
-                    } catch (staticError) {
-                        console.error('❌ Static JSON request failed:', staticError.message);
-                    }
-                }
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
 
             const text = await response.text();
-            console.log('📄 KJV text loaded, length:', text.length);
+            console.log('📄 KJV+ text loaded, length:', text.length);
 
             if (!text || text.length < 100) {
-                throw new Error('KJV file appears to be empty or too small');
+                throw new Error('KJV+ file appears to be empty or too small');
             }
 
-            // Parse the KJV data
+            // Parse the KJV+ data
             this.parseKJVData(text);
 
             // Validate that parsing was successful

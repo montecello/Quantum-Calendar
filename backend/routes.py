@@ -8,109 +8,7 @@ from backend.calendar import get_calendar_for_year
 from backend.astronomy.years import get_multi_year_calendar_data
 from config import ASTRO_API_BASE
 
-# MongoDB imports
-try:
-    from pymongo import MongoClient
-    from config import MONGODB_URI, DATABASE_NAME, STRONG_COLLECTION, KJV_COLLECTION
-    MONGODB_AVAILABLE = True
-except ImportError:
-    MONGODB_AVAILABLE = False
-    logging.warning("MongoDB not available - using static file fallback")
-
-# Add datetime import
-from datetime import datetime
-
 api = Blueprint('api', __name__)
-
-# MongoDB client (lazy initialization)
-_mongo_client = None
-_db = None
-
-def get_mongo_client():
-    global _mongo_client, _db
-    logging.info("🔍 [MongoDB Debug] Checking MongoDB connection requirements...")
-
-    # Check if MongoDB is available
-    if not MONGODB_AVAILABLE:
-        logging.error("❌ [MongoDB Debug] PyMongo not available - MongoDB features disabled")
-        logging.error("💡 [MongoDB Debug] Install PyMongo: pip install pymongo")
-        return None
-
-    # Check if URI is configured
-    if not MONGODB_URI:
-        logging.error("❌ [MongoDB Debug] MONGODB_URI not configured")
-        logging.error("💡 [MongoDB Debug] Set MONGODB_URI environment variable in Vercel")
-        logging.error("🔗 [MongoDB Debug] Expected format: mongodb+srv://username:password@cluster.mongodb.net/")
-        return None
-
-    # Check if already connected
-    if _mongo_client is not None:
-        logging.info("✅ [MongoDB Debug] Using existing MongoDB connection")
-        return _db
-
-    logging.info("🚀 [MongoDB Debug] Attempting new MongoDB Atlas connection...")
-    logging.info(f"📊 [MongoDB Debug] Database: {DATABASE_NAME}")
-    logging.info(f"📚 [MongoDB Debug] Strong's Collection: {STRONG_COLLECTION}")
-    logging.info(f"📖 [MongoDB Debug] KJV Collection: {KJV_COLLECTION}")
-
-    try:
-        # Log connection attempt
-        logging.info("🔌 [MongoDB Debug] Creating MongoClient...")
-        _mongo_client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
-
-        logging.info("📡 [MongoDB Debug] Testing connection with ping...")
-        _mongo_client.admin.command('ping')
-        logging.info("✅ [MongoDB Debug] Ping successful!")
-
-        logging.info("🗄️  [MongoDB Debug] Accessing database...")
-        _db = _mongo_client[DATABASE_NAME]
-
-        logging.info("📋 [MongoDB Debug] Testing database access...")
-        # Test database access by listing collections
-        collections = _db.list_collection_names()
-        logging.info(f"📋 [MongoDB Debug] Available collections: {collections}")
-
-        # Check if our collections exist
-        if STRONG_COLLECTION in collections:
-            strong_count = _db[STRONG_COLLECTION].count_documents({})
-            logging.info(f"📚 [MongoDB Debug] Strong's collection has {strong_count} documents")
-        else:
-            logging.warning(f"⚠️  [MongoDB Debug] Strong's collection '{STRONG_COLLECTION}' not found")
-
-        if KJV_COLLECTION in collections:
-            kjv_count = _db[KJV_COLLECTION].count_documents({})
-            logging.info(f"📖 [MongoDB Debug] KJV collection has {kjv_count} documents")
-        else:
-            logging.warning(f"⚠️  [MongoDB Debug] KJV collection '{KJV_COLLECTION}' not found")
-
-        logging.info("🎉 [MongoDB Debug] MongoDB Atlas connection successful!")
-        return _db
-
-    except Exception as e:
-        logging.error("❌ [MongoDB Debug] MongoDB connection failed!")
-        logging.error(f"🚨 [MongoDB Debug] Error type: {type(e).__name__}")
-        logging.error(f"🚨 [MongoDB Debug] Error message: {str(e)}")
-
-        # Provide specific guidance based on error type
-        if "Authentication failed" in str(e):
-            logging.error("🔐 [MongoDB Debug] Authentication failed - check username/password in MONGODB_URI")
-        elif "getaddrinfo failed" in str(e) or "ENOTFOUND" in str(e):
-            logging.error("🌐 [MongoDB Debug] DNS resolution failed - check cluster URL in MONGODB_URI")
-        elif "connection timed out" in str(e).lower():
-            logging.error("⏱️  [MongoDB Debug] Connection timed out - check network access and firewall rules")
-        elif "SSL" in str(e):
-            logging.error("🔒 [MongoDB Debug] SSL/TLS error - check MongoDB Atlas network access settings")
-        else:
-            logging.error("❓ [MongoDB Debug] Unknown connection error - check MongoDB Atlas dashboard")
-
-        logging.error("💡 [MongoDB Debug] Troubleshooting steps:")
-        logging.error("   1. Verify MONGODB_URI format: mongodb+srv://user:pass@cluster.mongodb.net/")
-        logging.error("   2. Check MongoDB Atlas dashboard for connection issues")
-        logging.error("   3. Ensure IP whitelist includes 0.0.0.0/0 for Vercel")
-        logging.error("   4. Verify database user has read access to collections")
-
-        _mongo_client = None
-        return None
 
 # Cache geocoding responses for 1 hour to reduce API usage and latency
 _geocode_cache = TTLCache(maxsize=256, ttl=3600)
@@ -310,17 +208,6 @@ def api_current_dawn():
 @api.route('/backend/data/hebrew_strongs.json')
 def serve_hebrew_strongs():
     try:
-        # Try MongoDB first
-        db = get_mongo_client()
-        if db is not None:
-            collection = db[STRONG_COLLECTION]
-            # Get all documents from the collection
-            data = list(collection.find({}, {'_id': 0}))  # Exclude MongoDB _id field
-            logging.info(f"Served {len(data)} Strong's entries from MongoDB")
-            return jsonify(data)
-
-        # Fallback to static file
-        logging.warning("MongoDB not available, falling back to static file")
         data_dir = os.path.join(os.path.dirname(__file__), 'data')
         return send_from_directory(data_dir, 'hebrew_strongs.json', mimetype='application/json')
     except Exception as e:
@@ -332,17 +219,6 @@ def serve_hebrew_strongs():
 @api.route('/backend/data/kjv_verses.json')
 def serve_kjv_verses():
     try:
-        # Try MongoDB first
-        db = get_mongo_client()
-        if db is not None:
-            collection = db[KJV_COLLECTION]
-            # Get all documents from the collection
-            data = list(collection.find({}, {'_id': 0}))  # Exclude MongoDB _id field
-            logging.info(f"Served {len(data)} KJV verses from MongoDB")
-            return jsonify(data)
-
-        # Fallback to static file
-        logging.warning("MongoDB not available, falling back to static file")
         data_dir = os.path.join(os.path.dirname(__file__), 'data')
         return send_from_directory(data_dir, 'kjv_verses.json', mimetype='application/json')
     except Exception as e:
@@ -350,435 +226,86 @@ def serve_kjv_verses():
         return jsonify({"error": str(e)}), 500
 
 
-# Test MongoDB connection endpoint
-@api.route('/api/test-mongodb')
-def test_mongodb():
-    try:
-        logging.info("🧪 [Test Debug] /api/test-mongodb endpoint called")
-
-        # Check environment variables first
-        logging.info("🔍 [Test Debug] Checking environment variables...")
-        env_status = {
-            "MONGODB_URI": bool(MONGODB_URI),
-            "DATABASE_NAME": bool(DATABASE_NAME),
-            "STRONG_COLLECTION": bool(STRONG_COLLECTION),
-            "KJV_COLLECTION": bool(KJV_COLLECTION),
-            "MONGODB_AVAILABLE": MONGODB_AVAILABLE
-        }
-        logging.info(f"📋 [Test Debug] Environment status: {env_status}")
-
-        db = get_mongo_client()
-        if db is None:
-            logging.error("❌ [Test Debug] MongoDB connection failed")
-            return jsonify({
-                'status': 'disconnected',
-                'message': 'MongoDB not configured or unavailable',
-                'environment': env_status,
-                'fallback': 'static files',
-                'troubleshooting': [
-                    'Check MONGODB_URI environment variable in Vercel',
-                    'Verify MongoDB Atlas cluster is running',
-                    'Ensure IP whitelist includes 0.0.0.0/0',
-                    'Check database user credentials'
-                ]
-            })
-
-        # Test collections
-        logging.info("📊 [Test Debug] Testing collection access...")
-        strong_collection = db[STRONG_COLLECTION]
-        kjv_collection = db[KJV_COLLECTION]
-
-        # Use estimated_document_count() for faster performance
-        strong_count = strong_collection.estimated_document_count()
-        kjv_count = kjv_collection.estimated_document_count()
-
-        logging.info(f"✅ [Test Debug] Strong's collection: {strong_count} documents (estimated)")
-        logging.info(f"✅ [Test Debug] KJV collection: {kjv_count} documents (estimated)")
-
-        # Test sample data
-        sample_strongs = list(strong_collection.find({}, {'_id': 0}).limit(1))
-        sample_kjv = list(kjv_collection.find({}, {'_id': 0}).limit(1))
-
-        return jsonify({
-            'status': 'connected',
-            'database': DATABASE_NAME,
-            'strongs_collection': STRONG_COLLECTION,
-            'kjv_collection': KJV_COLLECTION,
-            'strongs_count': strong_count,
-            'kjv_count': kjv_count,
-            'sample_strongs': sample_strongs[0] if sample_strongs else None,
-            'sample_kjv': sample_kjv[0] if sample_kjv else None,
-            'environment': env_status,
-            'message': 'MongoDB Atlas connected successfully!'
-        })
-
-    except Exception as e:
-        logging.exception("💥 [Test Debug] Exception testing MongoDB")
-        logging.error(f"🚨 [Test Debug] Error type: {type(e).__name__}")
-        logging.error(f"🚨 [Test Debug] Error message: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': str(e),
-            'error_type': type(e).__name__,
-            'fallback': 'static files'
-        }), 500
-
-
-# Debug endpoint for configuration and environment
-@api.route('/api/debug')
-def api_debug():
-    """Debug endpoint to check configuration and environment"""
-    try:
-        logging.info("🔧 [Debug] /api/debug endpoint called")
-
-        import os
-        import sys
-
-        # Environment variables
-        env_vars = {}
-        important_vars = [
-            'MONGODB_URI', 'DATABASE_NAME', 'STRONG_COLLECTION', 'KJV_COLLECTION',
-            'GEOAPIFY_API_KEY', 'ASTRO_API_BASE', 'VERCEL', 'VERCEL_ENV'
-        ]
-
-        for var in important_vars:
-            value = os.getenv(var)
-            if value:
-                if 'URI' in var or 'KEY' in var:
-                    # Hide sensitive parts
-                    env_vars[var] = f"***{value[-10:]}" if len(value) > 10 else "***"
-                else:
-                    env_vars[var] = value
-            else:
-                env_vars[var] = None
-
-        # Python environment
-        python_info = {
-            'version': sys.version,
-            'platform': sys.platform,
-            'executable': sys.executable
-        }
-
-        # File system checks
-        backend_data_dir = os.path.join(os.path.dirname(__file__), 'data')
-        static_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'static', 'data')
-
-        file_checks = {
-            'backend_data_dir': backend_data_dir,
-            'backend_data_exists': os.path.exists(backend_data_dir),
-            'static_data_dir': static_data_dir,
-            'static_data_exists': os.path.exists(static_data_dir),
-            'backend_strongs_file': os.path.exists(os.path.join(backend_data_dir, 'hebrew_strongs.json')),
-            'backend_kjv_file': os.path.exists(os.path.join(backend_data_dir, 'kjv_verses.json')),
-            'static_strongs_file': os.path.exists(os.path.join(static_data_dir, 'strongs_complete.json')),
-            'static_kjv_file': os.path.exists(os.path.join(static_data_dir, 'kjv_verses.json'))
-        }
-
-        # MongoDB availability
-        mongodb_status = {
-            'MONGODB_AVAILABLE': MONGODB_AVAILABLE,
-            'pymongo_importable': True
-        }
-
-        try:
-            import pymongo
-            mongodb_status['pymongo_version'] = pymongo.version
-        except ImportError:
-            mongodb_status['pymongo_importable'] = False
-            mongodb_status['pymongo_version'] = None
-
-        # Current working directory and paths
-        cwd_info = {
-            'current_working_directory': os.getcwd(),
-            'script_directory': os.path.dirname(__file__),
-            'project_root': os.path.dirname(os.path.dirname(__file__))
-        }
-
-        return jsonify({
-            'status': 'debug_info',
-            'timestamp': str(datetime.now()),
-            'environment_variables': env_vars,
-            'python_info': python_info,
-            'file_system': file_checks,
-            'mongodb_status': mongodb_status,
-            'paths': cwd_info,
-            'message': 'Debug information retrieved successfully'
-        })
-
-    except Exception as e:
-        logging.exception("💥 [Debug] Exception in /api/debug")
-        return jsonify({
-            'status': 'error',
-            'message': str(e),
-            'error_type': type(e).__name__
-        }), 500
-
-
+# MongoDB API endpoints for Strong's data
 @api.route('/api/strongs-data')
 def api_strongs_data():
-    """Alternative endpoint for Strong's data"""
     try:
-        logging.info("📡 [API Debug] /api/strongs-data endpoint called")
-        logging.info(f"🔍 [API Debug] Request method: {request.method}")
-        logging.info(f"🔍 [API Debug] Request headers: {dict(request.headers)}")
-        logging.info(f"🔍 [API Debug] Request args: {dict(request.args)}")
+        from flask import current_app
+        client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
 
-        # Parse pagination parameters
-        limit = request.args.get('limit', type=int, default=100)
-        offset = request.args.get('offset', type=int, default=0)
+        if client is None or db is None:
+            # Fallback to static file if MongoDB not available
+            return serve_hebrew_strongs()
 
-        # Validate pagination parameters
-        if limit < 1 or limit > 1000:
-            limit = 100
-        if offset < 0:
-            offset = 0
+        from config import STRONG_COLLECTION
+        collection = db[STRONG_COLLECTION]
 
-        logging.info(f"📄 [API Debug] Pagination: limit={limit}, offset={offset}")
+        # Get query parameters
+        strongs_num = request.args.get('strongs_num', type=int)
+        search = request.args.get('search', type=str)
+        language = request.args.get('language', type=str)
+        limit = request.args.get('limit', 100, type=int)
 
-        db = get_mongo_client()
+        query = {}
 
-        if db is not None:
-            logging.info("🗄️  [API Debug] Attempting to access Strong's collection from MongoDB")
-            collection = db[STRONG_COLLECTION]
+        if strongs_num:
+            query['strongsNumber'] = strongs_num
+        if language:
+            query['language'] = language
+        if search:
+            # Search in word, transliteration, or definitions
+            query['$or'] = [
+                {'word': {'$regex': search, '$options': 'i'}},
+                {'transliteration': {'$regex': search, '$options': 'i'}},
+                {'definitions': {'$regex': search, '$options': 'i'}}
+            ]
 
-            # Test collection access
-            logging.info("📊 [API Debug] Counting documents in Strong's collection...")
-            doc_count = collection.estimated_document_count()
-            logging.info(f"📊 [API Debug] Found {doc_count} documents in Strong's collection (estimated)")
-
-            if doc_count == 0:
-                logging.warning("⚠️  [API Debug] Strong's collection is empty!")
-                return jsonify({"error": "Strong's collection is empty", "collection": STRONG_COLLECTION}), 500
-
-            # Get paginated documents
-            logging.info(f"📥 [API Debug] Fetching Strong's documents (limit={limit}, offset={offset})...")
-            data = list(collection.find({}, {'_id': 0}).skip(offset).limit(limit))
-
-            logging.info(f"✅ [API Debug] Successfully retrieved {len(data)} Strong's entries from MongoDB")
-            logging.info(f"🚀 [API Debug] Data source: MongoDB Atlas ({DATABASE_NAME}.{STRONG_COLLECTION})")
-
-            # Log sample data for verification
-            if data and len(data) > 0:
-                sample = data[0]
-                logging.info(f"🔍 [API Debug] Sample Strong's entry: {sample.get('strongsNumber', 'N/A')} - {sample.get('word', 'N/A')}")
-
-            # Calculate pagination info
-            has_more = (offset + limit) < doc_count
-            total_pages = (doc_count + limit - 1) // limit if limit > 0 else 1
-            current_page = (offset // limit) + 1 if limit > 0 else 1
-
-            # Return data with metadata
-            response_data = {
-                "data": data,
-                "count": len(data),
-                "total": doc_count,
-                "source": "mongodb",
-                "collection": STRONG_COLLECTION,
-                "pagination": {
-                    "limit": limit,
-                    "offset": offset,
-                    "has_more": has_more,
-                    "current_page": current_page,
-                    "total_pages": total_pages
-                },
-                "timestamp": str(datetime.now())
-            }
-            logging.info(f"📤 [API Debug] Returning {len(data)} Strong's entries (page {current_page}/{total_pages})")
-            return jsonify(response_data)
-
-        # Fallback to static file
-        logging.warning("⚠️  [API Debug] MongoDB not available, falling back to static file")
-        logging.info("📁 [API Debug] Attempting to serve from frontend/static/data/strongs_complete.json")
-
-        static_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'static', 'data')
-        static_file_path = os.path.join(static_data_dir, 'strongs_complete.json')
-
-        if os.path.exists(static_file_path):
-            logging.info("✅ [API Debug] Static file exists, reading from frontend/static/data/")
-            try:
-                import json
-                # Read file efficiently with streaming approach
-                with open(static_file_path, 'r', encoding='utf-8') as f:
-                    # Read the entire file but do it efficiently
-                    file_content = f.read()
-                    static_data = json.loads(file_content)
-                
-                logging.info(f"📊 [API Debug] Loaded {len(static_data)} entries from static file")
-
-                # Apply pagination to static data more efficiently
-                total_count = len(static_data)
-                start_idx = min(offset, total_count)
-                end_idx = min(start_idx + limit, total_count)
-                paginated_data = static_data[start_idx:end_idx]
-
-                # Calculate pagination info
-                has_more = end_idx < total_count
-                total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
-                current_page = (offset // limit) + 1 if limit > 0 else 1
-
-                # Return data with metadata
-                response_data = {
-                    "data": paginated_data,
-                    "count": len(paginated_data),
-                    "total": total_count,
-                    "source": "static_file",
-                    "path": static_file_path,
-                    "pagination": {
-                        "limit": limit,
-                        "offset": offset,
-                        "has_more": has_more,
-                        "current_page": current_page,
-                        "total_pages": total_pages
-                    },
-                    "timestamp": str(datetime.now())
-                }
-                logging.info(f"📤 [API Debug] Returning {len(paginated_data)} Strong's entries from static file (page {current_page}/{total_pages})")
-                return jsonify(response_data)
-            except Exception as file_error:
-                logging.error(f"❌ [API Debug] Error reading static file: {str(file_error)}")
-                return jsonify({"error": f"Error reading static file: {str(file_error)}", "path": static_file_path}), 500
-        else:
-            logging.error(f"❌ [API Debug] Static file not found: {static_file_path}")
-            logging.info(f"📂 [API Debug] Directory contents: {os.listdir(static_data_dir) if os.path.exists(static_data_dir) else 'directory not found'}")
-            return jsonify({"error": "Static file not found", "path": static_file_path}), 500
+        results = list(collection.find(query, {'_id': 0}).limit(limit))
+        return jsonify(results)
 
     except Exception as e:
-        logging.exception("💥 [API Debug] Exception in /api/strongs-data")
-        logging.error(f"🚨 [API Debug] Error type: {type(e).__name__}")
-        logging.error(f"🚨 [API Debug] Error message: {str(e)}")
-        return jsonify({"error": str(e), "endpoint": "/api/strongs-data"}), 500
+        logging.exception("Exception in /api/strongs-data")
+        # Fallback to static file
+        return serve_hebrew_strongs()
 
 
+# MongoDB API endpoints for KJV verses data
 @api.route('/api/kjv-data')
 def api_kjv_data():
-    """Alternative endpoint for KJV data"""
     try:
-        logging.info("📡 [API Debug] /api/kjv-data endpoint called")
-        logging.info(f"🔍 [API Debug] Request method: {request.method}")
-        logging.info(f"🔍 [API Debug] Request headers: {dict(request.headers)}")
-        logging.info(f"🔍 [API Debug] Request args: {dict(request.args)}")
+        from flask import current_app
+        client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
 
-        # Parse pagination parameters
-        limit = request.args.get('limit', type=int, default=100)
-        offset = request.args.get('offset', type=int, default=0)
+        if client is None or db is None:
+            # Fallback to static file if MongoDB not available
+            return serve_kjv_verses()
 
-        # Validate pagination parameters
-        if limit < 1 or limit > 1000:
-            limit = 100
-        if offset < 0:
-            offset = 0
+        from config import KJV_COLLECTION
+        collection = db[KJV_COLLECTION]
 
-        logging.info(f"📄 [API Debug] Pagination: limit={limit}, offset={offset}")
+        # Get query parameters
+        book = request.args.get('book', type=str)
+        chapter = request.args.get('chapter', type=int)
+        verse = request.args.get('verse', type=int)
+        search = request.args.get('search', type=str)
+        limit = request.args.get('limit', 100, type=int)
 
-        db = get_mongo_client()
+        query = {}
 
-        if db is not None:
-            logging.info("🗄️  [API Debug] Attempting to access KJV collection from MongoDB")
-            collection = db[KJV_COLLECTION]
+        if book:
+            query['book'] = {'$regex': f'^{book}$', '$options': 'i'}
+        if chapter:
+            query['chapter'] = chapter
+        if verse:
+            query['verse'] = verse
+        if search:
+            # Search in text
+            query['text'] = {'$regex': search, '$options': 'i'}
 
-            # Test collection access
-            logging.info("📊 [API Debug] Counting documents in KJV collection...")
-            doc_count = collection.estimated_document_count()
-            logging.info(f"📊 [API Debug] Found {doc_count} documents in KJV collection (estimated)")
-
-            if doc_count == 0:
-                logging.warning("⚠️  [API Debug] KJV collection is empty!")
-                return jsonify({"error": "KJV collection is empty", "collection": KJV_COLLECTION}), 500
-
-            # Get paginated documents
-            logging.info(f"📥 [API Debug] Fetching KJV documents (limit={limit}, offset={offset})...")
-            data = list(collection.find({}, {'_id': 0}).skip(offset).limit(limit))
-
-            logging.info(f"✅ [API Debug] Successfully retrieved {len(data)} KJV entries from MongoDB")
-            logging.info(f"🚀 [API Debug] Data source: MongoDB Atlas ({DATABASE_NAME}.{KJV_COLLECTION})")
-
-            # Log sample data for verification
-            if data and len(data) > 0:
-                sample = data[0]
-                logging.info(f"🔍 [API Debug] Sample KJV entry: {sample.get('book', 'N/A')} {sample.get('chapter', 'N/A')}:{sample.get('verse', 'N/A')}")
-
-            # Calculate pagination info
-            has_more = (offset + limit) < doc_count
-            total_pages = (doc_count + limit - 1) // limit if limit > 0 else 1
-            current_page = (offset // limit) + 1 if limit > 0 else 1
-
-            # Return data with metadata
-            response_data = {
-                "data": data,
-                "count": len(data),
-                "total": doc_count,
-                "source": "mongodb",
-                "collection": KJV_COLLECTION,
-                "pagination": {
-                    "limit": limit,
-                    "offset": offset,
-                    "has_more": has_more,
-                    "current_page": current_page,
-                    "total_pages": total_pages
-                },
-                "timestamp": str(datetime.now())
-            }
-            logging.info(f"📤 [API Debug] Returning {len(data)} KJV entries (page {current_page}/{total_pages})")
-            return jsonify(response_data)
-
-        # Fallback to static file
-        logging.warning("⚠️  [API Debug] MongoDB not available, falling back to static file")
-        logging.info("📁 [API Debug] Attempting to serve from frontend/static/data/kjv_verses.json")
-
-        static_data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'static', 'data')
-        static_file_path = os.path.join(static_data_dir, 'kjv_verses.json')
-
-        if os.path.exists(static_file_path):
-            logging.info("✅ [API Debug] Static file exists, reading from frontend/static/data/")
-            try:
-                import json
-                # Read file efficiently with streaming approach
-                with open(static_file_path, 'r', encoding='utf-8') as f:
-                    # Read the entire file but do it efficiently
-                    file_content = f.read()
-                    static_data = json.loads(file_content)
-                
-                logging.info(f"📊 [API Debug] Loaded {len(static_data)} entries from static file")
-
-                # Apply pagination to static data more efficiently
-                total_count = len(static_data)
-                start_idx = min(offset, total_count)
-                end_idx = min(start_idx + limit, total_count)
-                paginated_data = static_data[start_idx:end_idx]
-
-                # Calculate pagination info
-                has_more = end_idx < total_count
-                total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
-                current_page = (offset // limit) + 1 if limit > 0 else 1
-
-                # Return data with metadata
-                response_data = {
-                    "data": paginated_data,
-                    "count": len(paginated_data),
-                    "total": total_count,
-                    "source": "static_file",
-                    "path": static_file_path,
-                    "pagination": {
-                        "limit": limit,
-                        "offset": offset,
-                        "has_more": has_more,
-                        "current_page": current_page,
-                        "total_pages": total_pages
-                    },
-                    "timestamp": str(datetime.now())
-                }
-                logging.info(f"📤 [API Debug] Returning {len(paginated_data)} KJV entries from static file (page {current_page}/{total_pages})")
-                return jsonify(response_data)
-            except Exception as file_error:
-                logging.error(f"❌ [API Debug] Error reading static file: {str(file_error)}")
-                return jsonify({"error": f"Error reading static file: {str(file_error)}", "path": static_file_path}), 500
-        else:
-            logging.error(f"❌ [API Debug] Static file not found: {static_file_path}")
-            logging.info(f"📂 [API Debug] Directory contents: {os.listdir(static_data_dir) if os.path.exists(static_data_dir) else 'directory not found'}")
-            return jsonify({"error": "Static file not found", "path": static_file_path}), 500
+        results = list(collection.find(query, {'_id': 0}).limit(limit))
+        return jsonify(results)
 
     except Exception as e:
-        logging.exception("💥 [API Debug] Exception in /api/kjv-data")
-        logging.error(f"🚨 [API Debug] Error type: {type(e).__name__}")
-        logging.error(f"🚨 [API Debug] Error message: {str(e)}")
-        return jsonify({"error": str(e), "endpoint": "/api/kjv-data"}), 500
+        logging.exception("Exception in /api/kjv-data")
+        # Fallback to static file
+        return serve_kjv_verses()

@@ -1,14 +1,3 @@
-import os
-import logging
-
-# Load .env for local development FIRST (before ANY imports that use config)
-try:
-    from dotenv import load_dotenv  # type: ignore
-    load_dotenv()
-    print("✅ .env file loaded successfully")
-except Exception as e:
-    print(f"⚠️  Could not load .env file: {e}")
-
 from flask import Flask, render_template, request, jsonify, send_from_directory
 
 from backend.geolocation import parse_coordinates, get_timezone
@@ -22,16 +11,17 @@ from backend.astronomy.moon import print_today_moon_events
 from backend.astronomy.years import print_multi_year_calendar
 from backend.astronomy.year import print_yearly_events
 
-# Now import config after .env is loaded
-from config import GEOAPIFY_API_KEY, ASTRO_API_BASE
+import os
+import logging
 
-# Add CORS support
+# Load .env for local development (safe on Vercel; ignored if no .env)
 try:
-    from flask_cors import CORS
-    CORS_ENABLED = True
-except ImportError:
-    CORS_ENABLED = False
-    print("⚠️  flask-cors not installed. Install with: pip install flask-cors")
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv()
+except Exception:
+    pass
+
+GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -43,16 +33,38 @@ app = Flask(
     static_url_path="/static",
 )
 
-# Enable CORS if available
-if CORS_ENABLED:
-    CORS(app)
-    print("✅ CORS enabled for all routes")
-else:
-    print("⚠️  CORS not enabled - install flask-cors for cross-origin requests")
-
 # Register API blueprint for /api/calendar and /api/multiyear-calendar endpoints
 from backend.routes import api
 app.register_blueprint(api)
+
+
+# MongoDB setup
+mongo_client = None
+mongo_db = None
+
+def get_mongo_client():
+    global mongo_client, mongo_db
+    if mongo_client is None:
+        try:
+            from pymongo import MongoClient
+            from config import MONGODB_URI, DATABASE_NAME
+            if MONGODB_URI:
+                mongo_client = MongoClient(MONGODB_URI)
+                mongo_db = mongo_client[DATABASE_NAME]
+                logging.info("Connected to MongoDB Atlas")
+            else:
+                logging.warning("MONGODB_URI not configured")
+        except ImportError:
+            logging.warning("PyMongo not installed")
+        except Exception as e:
+            logging.error(f"Failed to connect to MongoDB: {e}")
+    return mongo_client, mongo_db
+
+
+# Initialize MongoDB connection and store in app config
+client, db = get_mongo_client()
+app.config['mongo_client'] = client
+app.config['mongo_db'] = db
 
 
 # Load astronomical data at startup
