@@ -783,13 +783,16 @@ class HebrewXMLParser {
             localStorage.setItem(cacheKey, JSON.stringify(serializableData));
             console.log('💾 Data cached to localStorage');
         } catch (error) {
-            console.warn('⚠️ Error saving to cache:', error);
+            console.warn('⚠️ [CACHE] Error saving Hebrew XML to cache:', error.message);
             // If localStorage is full, try to clear old data
             try {
                 localStorage.clear();
                 localStorage.setItem(cacheKey, JSON.stringify(serializableData));
+                console.log('💾 [CACHE] Successfully saved Hebrew XML after clearing localStorage');
             } catch (retryError) {
-                console.warn('⚠️ Could not save to cache even after clearing');
+                console.warn('⚠️ [CACHE] Could not save Hebrew XML to cache even after clearing:', retryError.message);
+                // Continue without caching - data will still work
+                console.log('🔄 [CACHE] Continuing without Hebrew XML cache - data loaded successfully');
             }
         }
     }
@@ -1053,7 +1056,7 @@ class KJVParser {
     // Load and parse the KJV+ file
     async loadKJV() {
         try {
-            console.log('🔄 Starting to load KJV+ data...');
+            console.log('🔄 Starting to load KJV+ data from MongoDB API...');
 
             // Check if we have a cached version first
             const cacheKey = 'kjv-plus-cache-v2'; // Updated cache key to force reload with fixed parsing
@@ -1070,21 +1073,19 @@ class KJVParser {
                 return;
             }
 
-            const response = await fetch('/static/data/kjv_strongs.txt');
+            // Load from MongoDB API instead of static file
+            console.log('🎯 [KJV MONGODB] Attempting to load from MongoDB API...');
+            const response = await fetch('/api/kjv-data?limit=1000');
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
 
-            const text = await response.text();
-            console.log('📄 KJV+ text loaded, length:', text.length);
+            const versesData = await response.json();
+            console.log(`✅ [KJV MONGODB] Successfully loaded ${versesData.length} verses from MongoDB`);
 
-            if (!text || text.length < 100) {
-                throw new Error('KJV+ file appears to be empty or too small');
-            }
-
-            // Parse the KJV+ data
-            this.parseKJVData(text);
+            // Process the MongoDB data into KJV+ format
+            this.parseKJVFromMongoDB(versesData);
 
             // Validate that parsing was successful
             if (!this.kjvData || Object.keys(this.kjvData).length === 0) {
@@ -1099,14 +1100,18 @@ class KJVParser {
                 throw new Error('KJV+ search indexes are empty - no Strong\'s numbers were found');
             }
 
-            // Cache the parsed data
-            this.saveToCache(cacheKey, {
-                kjvData: this.kjvData,
-                wordToStrongsMap: this.wordToStrongsMap,
-                strongsToWordsMap: this.strongsToWordsMap,
-                strongsToVersesMap: this.strongsToVersesMap,
-                timestamp: Date.now()
-            });
+            // Cache the parsed data (but handle quota issues gracefully)
+            try {
+                this.saveToCache(cacheKey, {
+                    kjvData: this.kjvData,
+                    wordToStrongsMap: this.wordToStrongsMap,
+                    strongsToWordsMap: this.strongsToWordsMap,
+                    strongsToVersesMap: this.strongsToVersesMap,
+                    timestamp: Date.now()
+                });
+            } catch (cacheError) {
+                console.warn('⚠️ [KJV CACHE] Cache save failed, continuing without cache:', cacheError.message);
+            }
 
             this.isLoaded = true;
             console.log(`✅ Loaded KJV+ data with ${this.wordToStrongsMap.size} word mappings and ${this.strongsToWordsMap.size} Strong's mappings`);
@@ -1196,6 +1201,49 @@ class KJVParser {
         }
 
         console.log(`📊 Parsed ${Object.keys(this.kjvData).length} books`);
+    }
+
+    // Parse KJV data from MongoDB format
+    parseKJVFromMongoDB(versesData) {
+        console.log('🔧 [KJV MONGODB] Parsing KJV data from MongoDB format...');
+        this.kjvData = {};
+
+        versesData.forEach(verse => {
+            const { book, chapter, verse: verseNum, text, strongsNumbers } = verse;
+
+            // Ensure book exists
+            if (!this.kjvData[book]) {
+                this.kjvData[book] = {};
+            }
+
+            // Ensure chapter exists
+            if (!this.kjvData[book][chapter]) {
+                this.kjvData[book][chapter] = {};
+            }
+
+            // Store the verse text
+            this.kjvData[book][chapter][verseNum] = text;
+
+            // Process Strong's numbers for search indexing
+            if (strongsNumbers && Array.isArray(strongsNumbers)) {
+                const verseRef = `${book} ${chapter}:${verseNum}`;
+
+                strongsNumbers.forEach(strongsNum => {
+                    // Initialize maps if needed
+                    if (!this.strongsToVersesMap.has(strongsNum)) {
+                        this.strongsToVersesMap.set(strongsNum, []);
+                    }
+
+                    // Add verse reference
+                    this.strongsToVersesMap.get(strongsNum).push({
+                        reference: verseRef,
+                        context: text.replace(/\{[HG]\d+\}/g, '').trim() // Remove any Strong's markers for context
+                    });
+                });
+            }
+        });
+
+        console.log(`📊 [KJV MONGODB] Parsed ${Object.keys(this.kjvData).length} books from MongoDB`);
     }
 
     // Build search indexes for bidirectional lookup
@@ -1433,13 +1481,16 @@ class KJVParser {
             localStorage.setItem(cacheKey, JSON.stringify(serializableData));
             console.log('💾 KJV+ data cached to localStorage');
         } catch (error) {
-            console.warn('⚠️ Error saving KJV+ to cache:', error);
+            console.warn('⚠️ [CACHE] Error saving KJV+ to cache:', error.message);
             // If localStorage is full, try to clear old data
             try {
                 localStorage.clear();
                 localStorage.setItem(cacheKey, JSON.stringify(serializableData));
+                console.log('💾 [CACHE] Successfully saved after clearing localStorage');
             } catch (retryError) {
-                console.warn('⚠️ Could not save KJV+ to cache even after clearing');
+                console.warn('⚠️ [CACHE] Could not save KJV+ to cache even after clearing:', retryError.message);
+                // Continue without caching - data will still work
+                console.log('🔄 [CACHE] Continuing without cache - data loaded successfully');
             }
         }
     }
