@@ -11,19 +11,48 @@ class PrimitiveRootsAnalyzer {
 
     async loadStrongsData() {
         console.log('🔍 [MongoDB Test] Starting data loading process...');
+        console.log('🌐 [MongoDB Test] Current URL:', window.location.href);
+        console.log('📡 [MongoDB Test] API Base URL will be relative to current domain');
 
         try {
+            // First, try to get debug information
+            console.log('🔧 [MongoDB Test] Fetching debug information...');
+            try {
+                const debugResponse = await fetch('/api/debug');
+                if (debugResponse.ok) {
+                    const debugInfo = await debugResponse.json();
+                    console.log('🔧 [MongoDB Test] Debug info retrieved:', {
+                        mongodb_available: debugInfo.mongodb_status?.MONGODB_AVAILABLE,
+                        pymongo_version: debugInfo.mongodb_status?.pymongo_version,
+                        environment: debugInfo.environment_variables,
+                        files_exist: {
+                            backend_strongs: debugInfo.file_system?.backend_strongs_file,
+                            backend_kjv: debugInfo.file_system?.backend_kjv_file,
+                            static_strongs: debugInfo.file_system?.static_strongs_file,
+                            static_kjv: debugInfo.file_system?.static_kjv_file
+                        }
+                    });
+                } else {
+                    console.warn('⚠️  [MongoDB Test] Could not fetch debug info:', debugResponse.status);
+                }
+            } catch (debugError) {
+                console.warn('⚠️  [MongoDB Test] Debug fetch failed:', debugError.message);
+            }
+
             // Try primary routes first (original backend routes)
             console.log('📡 [MongoDB Test] Attempting to load from primary Flask routes...');
 
             let strongsResponse = await fetch('/backend/data/hebrew_strongs.json');
             let versesResponse = await fetch('/backend/data/kjv_verses.json');
 
+            console.log(`📊 [MongoDB Test] Primary routes status - Strong's: ${strongsResponse.status}, KJV: ${versesResponse.status}`);
+
             // If primary routes fail (404), try alternative API routes
             if (!strongsResponse.ok || !versesResponse.ok) {
                 console.log('🔄 [MongoDB Test] Primary routes failed, trying alternative API routes...');
                 strongsResponse = await fetch('/api/strongs-data');
                 versesResponse = await fetch('/api/kjv-data');
+                console.log(`📊 [MongoDB Test] Alternative routes status - Strong's: ${strongsResponse.status}, KJV: ${versesResponse.status}`);
             }
 
             if (strongsResponse.ok && versesResponse.ok) {
@@ -62,6 +91,25 @@ class PrimitiveRootsAnalyzer {
                 }
 
             } else {
+                console.error('❌ [MongoDB Test] All API routes failed!');
+                console.error(`🚨 [MongoDB Test] Strong's response: ${strongsResponse.status} ${strongsResponse.statusText}`);
+                console.error(`🚨 [MongoDB Test] KJV response: ${versesResponse.status} ${versesResponse.statusText}`);
+
+                // Try to get error details from responses
+                try {
+                    const strongsError = await strongsResponse.json();
+                    console.error('🚨 [MongoDB Test] Strong\'s error details:', strongsError);
+                } catch (e) {
+                    console.error('🚨 [MongoDB Test] Could not parse Strong\'s error response');
+                }
+
+                try {
+                    const kjvError = await versesResponse.json();
+                    console.error('🚨 [MongoDB Test] KJV error details:', kjvError);
+                } catch (e) {
+                    console.error('🚨 [MongoDB Test] Could not parse KJV error response');
+                }
+
                 throw new Error(`All API routes failed: Primary ${strongsResponse.status}, Alternative ${versesResponse.status}`);
             }
 
@@ -74,7 +122,12 @@ class PrimitiveRootsAnalyzer {
                 const strongsResponse = await fetch('/static/data/strongs_complete.json');
                 const versesResponse = await fetch('/static/data/kjv_verses.json');
 
+                console.log(`📊 [MongoDB Test] Static files status - Strong's: ${strongsResponse.status}, KJV: ${versesResponse.status}`);
+
                 if (!strongsResponse.ok || !versesResponse.ok) {
+                    console.error('❌ [MongoDB Test] Static files also failed!');
+                    console.error(`🚨 [MongoDB Test] Static Strong's: ${strongsResponse.status} ${strongsResponse.statusText}`);
+                    console.error(`🚨 [MongoDB Test] Static KJV: ${versesResponse.status} ${versesResponse.statusText}`);
                     throw new Error('Static files also failed to load');
                 }
 
@@ -91,102 +144,7 @@ class PrimitiveRootsAnalyzer {
 
             } catch (staticError) {
                 console.error('❌ [MongoDB Test] CRITICAL: Both MongoDB and static files failed!');
-                console.error('💥 [MongoDB Test] Error details:', staticError.message);
-
-                // Ultimate fallback to sample data
-                console.log('🆘 [MongoDB Test] Using emergency sample data');
-                this.strongsData = this.getSampleData();
-                this.versesData = [];
-            }
-        }
-
-        console.log('🏁 [MongoDB Test] Data loading process complete');
-        console.log('💡 [MongoDB Test] Ready for search queries!');
-    }
-
-    async loadStrongsData() {
-        console.log('🔍 [MongoDB Test] Starting data loading process...');
-
-        try {
-            // Try primary routes first (original backend routes)
-            console.log('📡 [MongoDB Test] Attempting to load from primary Flask routes...');
-
-            let strongsResponse = await fetch('/backend/data/hebrew_strongs.json');
-            let versesResponse = await fetch('/backend/data/kjv_verses.json');
-
-            // If primary routes fail (404), try alternative API routes
-            if (!strongsResponse.ok || !versesResponse.ok) {
-                console.log('🔄 [MongoDB Test] Primary routes failed, trying alternative API routes...');
-                strongsResponse = await fetch('/api/strongs-data');
-                versesResponse = await fetch('/api/kjv-data');
-            }
-
-            if (strongsResponse.ok && versesResponse.ok) {
-                console.log('✅ [MongoDB Test] API endpoints responded successfully!');
-                console.log(`📊 [MongoDB Test] Strong's response status: ${strongsResponse.status}`);
-                console.log(`📊 [MongoDB Test] KJV response status: ${versesResponse.status}`);
-
-                const strongsData = await strongsResponse.json();
-                const versesData = await versesResponse.json();
-
-                console.log(`🎯 [MongoDB Test] SUCCESS! Loaded ${strongsData.length} Strong's entries from MongoDB`);
-                console.log(`🎯 [MongoDB Test] SUCCESS! Loaded ${versesData.length} KJV verses from MongoDB`);
-                console.log('🚀 [MongoDB Test] Data source: MongoDB Atlas via Flask API');
-
-                // Process and store the data
-                this.strongsData = this.processStrongsData(strongsData);
-                this.versesData = this.processVersesData(versesData);
-
-                console.log(`📈 [MongoDB Test] Processed ${Object.keys(this.strongsData).length} Strong's entries for search`);
-                console.log(`📈 [MongoDB Test] Processed ${this.versesData.length} verses for search`);
-
-                // Show sample data to verify
-                const sampleKeys = Object.keys(this.strongsData).slice(0, 3);
-                console.log('🔍 [MongoDB Test] Sample Strong\'s entries:', sampleKeys.map(key => ({
-                    number: key,
-                    word: this.strongsData[key].word,
-                    language: this.strongsData[key].language
-                })));
-
-                if (this.versesData.length > 0) {
-                    console.log('🔍 [MongoDB Test] Sample KJV verse:', {
-                        reference: `${this.versesData[0].book} ${this.versesData[0].chapter}:${this.versesData[0].verse}`,
-                        text: this.versesData[0].text.substring(0, 50) + '...',
-                        strongsCount: this.versesData[0].strongsNumbers?.length || 0
-                    });
-                }
-
-            } else {
-                throw new Error(`All API routes failed: Primary ${strongsResponse.status}, Alternative ${versesResponse.status}`);
-            }
-
-        } catch (error) {
-            console.error('❌ [MongoDB Test] All API routes failed, falling back to static files:', error.message);
-            console.log('🔄 [MongoDB Test] Attempting fallback to static JSON files...');
-
-            try {
-                // Fallback to static files
-                const strongsResponse = await fetch('/static/data/strongs_complete.json');
-                const versesResponse = await fetch('/static/data/kjv_verses.json');
-
-                if (!strongsResponse.ok || !versesResponse.ok) {
-                    throw new Error('Static files also failed to load');
-                }
-
-                const strongsData = await strongsResponse.json();
-                const versesData = await versesResponse.json();
-
-                console.log(`📁 [MongoDB Test] FALLBACK: Loaded ${strongsData.length} Strong's entries from static files`);
-                console.log(`📁 [MongoDB Test] FALLBACK: Loaded ${versesData.length} KJV verses from static files`);
-                console.log('⚠️ [MongoDB Test] Data source: Static JSON files (MongoDB not available)');
-
-                // Process and store the data
-                this.strongsData = this.processStrongsData(strongsData);
-                this.versesData = this.processVersesData(versesData);
-
-            } catch (staticError) {
-                console.error('❌ [MongoDB Test] CRITICAL: Both MongoDB and static files failed!');
-                console.error('💥 [MongoDB Test] Error details:', staticError.message);
+                console.error('💥 [MongoDB Test] Static error details:', staticError.message);
 
                 // Ultimate fallback to sample data
                 console.log('🆘 [MongoDB Test] Using emergency sample data');
