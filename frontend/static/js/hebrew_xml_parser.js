@@ -1635,8 +1635,7 @@ class EnhancedPrimitiveRootsAnalyzer {
             chain.forEach((entry, index) => {
                 const isSelected = entry.entryNumber === selectedEntry.entryNumber;
                 const isPrimitive = entry.isPrimitive;
-                const colors = ['#ffd700', '#40e0d0', '#ff69b4', '#9370db'];
-                const color = colors[index % colors.length];
+                const isOdd = index % 2 === 0; // 0-based index, so even index = odd item
 
                 // Special styling for primitive roots
                 const primitiveClass = isPrimitive ? 'primitive-root-entry' : '';
@@ -1644,10 +1643,10 @@ class EnhancedPrimitiveRootsAnalyzer {
                 const primitiveAnimation = isPrimitive ? 'animation: primitive-pulse 2s ease-in-out infinite;' : '';
 
                 html += `
-                    <div class="chain-item ${primitiveClass}" style="margin-left: 50px; margin-bottom: 20px; position: relative; ${primitiveGlow} ${primitiveAnimation}">
-                        <div class="timeline-dot" style="position: absolute; left: -35px; top: 5px; width: 12px; height: 12px; background: ${color}; border-radius: 50%; border: 2px solid rgba(0,0,0,0.8);"></div>
-                        <div style="background: rgba(${color === '#ffd700' ? '255,215,0' : color === '#40e0d0' ? '64,224,208' : color === '#ff69b4' ? '255,105,180' : '147,112,219'}, 0.1); border: 1px solid ${color}; border-radius: 6px; padding: 15px;">
-                            <h5 style="color: ${color}; margin-bottom: 10px; margin-top: 0;">
+                    <div class="chain-item ${primitiveClass} ${isOdd ? 'chain-odd' : 'chain-even'}" style="margin-left: 50px; margin-bottom: 20px; position: relative; ${primitiveGlow} ${primitiveAnimation}">
+                        <div class="timeline-dot" style="position: absolute; left: -35px; top: 5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.8);"></div>
+                        <div class="chain-content" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 15px;">
+                            <h5 style="color: #ffd700; margin-bottom: 10px; margin-top: 0;">
                                 ${isSelected ? '🎯 ' : ''}${isPrimitive ? '🌟 ' : ''}${entry.strongsNumber} - ${entry.hebrewWord}
                                 ${isSelected ? '(Selected)' : ''}
                                 ${isPrimitive ? '(Primitive Root)' : `(Depth: ${entry.depth})`}

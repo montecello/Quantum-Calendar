@@ -89,6 +89,25 @@
         .chain-item:nth-child(4) .timeline-dot { background: #9370db; }
         .chain-item:nth-child(5) .timeline-dot { background: #98fb98; }
 
+        /* Alternating color scheme for chain items */
+        .chain-odd .chain-content {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05)) !important;
+            border: 1px solid rgba(255, 215, 0, 0.3) !important;
+        }
+
+        .chain-even .chain-content {
+            background: linear-gradient(135deg, rgba(64, 224, 208, 0.1), rgba(64, 224, 208, 0.05)) !important;
+            border: 1px solid rgba(64, 224, 208, 0.3) !important;
+        }
+
+        .chain-odd .timeline-dot {
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+        }
+
+        .chain-even .timeline-dot {
+            box-shadow: 0 0 10px rgba(64, 224, 208, 0.6);
+        }
+
         /* Enhanced result item styling */
         .result-item {
             transition: all 0.3s ease;
