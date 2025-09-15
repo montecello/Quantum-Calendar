@@ -159,11 +159,27 @@ class PrimitiveRootsAnalyzer {
 
     // New method to process Strong's data into a searchable object
     processStrongsData(data) {
-        const processed = {};
-        data.forEach(entry => {
-            processed[entry.strongsNumber] = entry;
-        });
-        return processed;
+        console.log('🔄 [MongoDB Test] Processing Strong\'s data for search...');
+        console.log(`📊 [MongoDB Test] Raw data type: ${typeof data}, length: ${data.length}`);
+
+        // Handle both array and object formats
+        if (Array.isArray(data)) {
+            console.log('📋 [MongoDB Test] Data is array format, processing...');
+            const processed = {};
+            data.forEach(entry => {
+                if (entry.strongsNumber) {
+                    processed[entry.strongsNumber.toString()] = entry;
+                }
+            });
+            console.log(`✅ [MongoDB Test] Processed ${Object.keys(processed).length} Strong's entries`);
+            return processed;
+        } else if (typeof data === 'object') {
+            console.log('📋 [MongoDB Test] Data is object format, using as-is');
+            return data;
+        } else {
+            console.error('❌ [MongoDB Test] Unexpected data format:', typeof data);
+            return {};
+        }
     }
 
     // New method to process verses data
@@ -303,11 +319,322 @@ class PrimitiveRootsAnalyzer {
                     this.performSearch();
                 }
             });
+
+            // Add autosuggestion functionality
+            searchInput.addEventListener('input', (e) => this.handleInputChange(e));
+            searchInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
+            searchInput.addEventListener('blur', () => setTimeout(() => this.hideSuggestions(), 150));
+            searchInput.addEventListener('focus', () => {
+                if (searchInput.value.trim().length > 0) {
+                    this.showSuggestions(searchInput.value.trim());
+                }
+            });
         }
 
         if (clearButton) {
             clearButton.addEventListener('click', () => this.clearResults());
         }
+
+        // Create suggestions container
+        this.createSuggestionsContainer();
+    }
+
+    // Create the suggestions dropdown container
+    createSuggestionsContainer() {
+        const searchInput = document.getElementById('strongs-search');
+        if (!searchInput) return;
+
+        // Create suggestions container
+        const suggestionsContainer = document.createElement('div');
+        suggestionsContainer.id = 'suggestions-container';
+        suggestionsContainer.className = 'suggestions-container';
+        suggestionsContainer.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.95);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        `;
+
+        // Make search input container relative positioned
+        const inputContainer = searchInput.parentElement;
+        inputContainer.style.position = 'relative';
+        inputContainer.appendChild(suggestionsContainer);
+
+        this.suggestionsContainer = suggestionsContainer;
+        this.selectedSuggestionIndex = -1;
+    }
+
+    // Handle input changes for autosuggestions
+    handleInputChange(event) {
+        const query = event.target.value.trim();
+        console.log(`⌨️ [Autosuggest] Input changed: "${query}"`);
+
+        if (query.length === 0) {
+            this.hideSuggestions();
+            return;
+        }
+
+        if (query.length >= 2) { // Only show suggestions for queries of 2+ characters
+            console.log(`🔍 [Autosuggest] Query length >= 2, showing suggestions for: "${query}"`);
+            this.showSuggestions(query);
+        } else {
+            console.log(`⏳ [Autosuggest] Query too short (${query.length} chars), hiding suggestions`);
+            this.hideSuggestions();
+        }
+    }
+
+    // Handle keyboard navigation in suggestions
+    handleKeyDown(event) {
+        if (!this.suggestionsContainer || this.suggestionsContainer.style.display === 'none') {
+            return;
+        }
+
+        const suggestions = this.suggestionsContainer.querySelectorAll('.suggestion-item');
+
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault();
+                this.selectedSuggestionIndex = Math.min(this.selectedSuggestionIndex + 1, suggestions.length - 1);
+                this.updateSuggestionSelection(suggestions);
+                break;
+            case 'ArrowUp':
+                event.preventDefault();
+                this.selectedSuggestionIndex = Math.max(this.selectedSuggestionIndex - 1, -1);
+                this.updateSuggestionSelection(suggestions);
+                break;
+            case 'Enter':
+                event.preventDefault();
+                if (this.selectedSuggestionIndex >= 0 && suggestions[this.selectedSuggestionIndex]) {
+                    this.selectSuggestion(suggestions[this.selectedSuggestionIndex]);
+                } else {
+                    this.performSearch();
+                }
+                break;
+            case 'Escape':
+                this.hideSuggestions();
+                break;
+        }
+    }
+
+    // Update visual selection of suggestions
+    updateSuggestionSelection(suggestions) {
+        suggestions.forEach((suggestion, index) => {
+            if (index === this.selectedSuggestionIndex) {
+                suggestion.classList.add('selected');
+                suggestion.style.background = 'rgba(255,215,0,0.2)';
+            } else {
+                suggestion.classList.remove('selected');
+                suggestion.style.background = 'transparent';
+            }
+        });
+
+        // Scroll selected item into view
+        if (this.selectedSuggestionIndex >= 0 && suggestions[this.selectedSuggestionIndex]) {
+            suggestions[this.selectedSuggestionIndex].scrollIntoView({
+                block: 'nearest',
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    // Show suggestions dropdown
+    showSuggestions(query) {
+        console.log(`🎯 [Autosuggest] showSuggestions called with query: "${query}"`);
+        console.log(`📊 [Autosuggest] strongsData available: ${!!this.strongsData}`);
+        console.log(`📊 [Autosuggest] strongsData keys: ${this.strongsData ? Object.keys(this.strongsData).length : 0}`);
+
+        if (!this.suggestionsContainer || !this.strongsData) {
+            console.log(`❌ [Autosuggest] Missing requirements - container: ${!!this.suggestionsContainer}, data: ${!!this.strongsData}`);
+            return;
+        }
+
+        const suggestions = this.getSuggestions(query);
+        console.log(`📋 [Autosuggest] Generated ${suggestions.length} suggestions for query: "${query}"`);
+
+        if (suggestions.length === 0) {
+            console.log(`🚫 [Autosuggest] No suggestions found, hiding dropdown`);
+            this.hideSuggestions();
+            return;
+        }
+
+        this.suggestionsContainer.innerHTML = '';
+        this.selectedSuggestionIndex = -1;
+
+        suggestions.forEach((suggestion, index) => {
+            const suggestionElement = document.createElement('div');
+            suggestionElement.className = 'suggestion-item';
+            suggestionElement.style.cssText = `
+                padding: 12px 16px;
+                cursor: pointer;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                transition: background-color 0.2s;
+                font-family: 'HybridFont', 'Pictocrypto', sans-serif;
+                color: #e0e6ed;
+            `;
+
+            suggestionElement.innerHTML = this.formatSuggestion(suggestion);
+            suggestionElement.addEventListener('click', () => this.selectSuggestion(suggestionElement, suggestion));
+            suggestionElement.addEventListener('mouseenter', () => {
+                this.selectedSuggestionIndex = index;
+                this.updateSuggestionSelection(this.suggestionsContainer.querySelectorAll('.suggestion-item'));
+            });
+
+            this.suggestionsContainer.appendChild(suggestionElement);
+        });
+
+        console.log(`✅ [Autosuggest] Showing ${suggestions.length} suggestions`);
+        this.suggestionsContainer.style.display = 'block';
+    }
+
+    // Hide suggestions dropdown
+    hideSuggestions() {
+        if (this.suggestionsContainer) {
+            this.suggestionsContainer.style.display = 'none';
+            this.selectedSuggestionIndex = -1;
+        }
+    }
+
+    // Get suggestions based on query
+    getSuggestions(query) {
+        const suggestions = [];
+        const lowerQuery = query.toLowerCase();
+        const maxSuggestions = 10;
+
+        console.log(`🔎 [Autosuggest] Searching for: "${query}" in ${Object.keys(this.strongsData).length} entries`);
+
+        // Search Strong's entries
+        for (const [num, entry] of Object.entries(this.strongsData)) {
+            if (suggestions.length >= maxSuggestions) break;
+
+            // Check various fields for matches
+            const matches = [];
+
+            // Exact Strong's number match
+            if (num === query || `h${num}` === lowerQuery || `strongs${num}` === lowerQuery) {
+                matches.push({ type: 'exact', field: 'number', value: num });
+            }
+
+            // Strong's number starts with query
+            if (num.startsWith(query)) {
+                matches.push({ type: 'prefix', field: 'number', value: num });
+            }
+
+            // Hebrew word match
+            if (entry.word && entry.word.includes(query)) {
+                matches.push({ type: 'contains', field: 'hebrew', value: entry.word });
+            }
+
+            // Transliteration match
+            if (entry.transliteration && entry.transliteration.toLowerCase().includes(lowerQuery)) {
+                matches.push({ type: 'contains', field: 'transliteration', value: entry.transliteration });
+            }
+
+            // Definition match
+            if (entry.definitions && Array.isArray(entry.definitions) && entry.definitions.some(def => def.toLowerCase().includes(lowerQuery))) {
+                const matchingDef = entry.definitions.find(def => def.toLowerCase().includes(lowerQuery));
+                matches.push({ type: 'contains', field: 'definition', value: matchingDef });
+            }
+
+            if (matches.length > 0) {
+                suggestions.push({
+                    type: 'strongs',
+                    strongsNumber: num,
+                    entry: entry,
+                    matches: matches
+                });
+            }
+        }
+
+        console.log(`✅ [Autosuggest] Found ${suggestions.length} matches for "${query}"`);
+
+        // Sort suggestions by relevance
+        suggestions.sort((a, b) => {
+            const aExact = a.matches.some(m => m.type === 'exact');
+            const bExact = b.matches.some(m => m.type === 'exact');
+            if (aExact && !bExact) return -1;
+            if (!aExact && bExact) return 1;
+
+            const aPrefix = a.matches.some(m => m.type === 'prefix');
+            const bPrefix = b.matches.some(m => m.type === 'prefix');
+            if (aPrefix && !bPrefix) return -1;
+            if (!aPrefix && bPrefix) return 1;
+
+            return a.strongsNumber.localeCompare(b.strongsNumber);
+        });
+
+        return suggestions;
+    }
+
+    // Format suggestion for display
+    formatSuggestion(suggestion) {
+        if (suggestion.type === 'strongs') {
+            const entry = suggestion.entry;
+            const primaryMatch = suggestion.matches[0];
+
+            let displayText = `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+            displayText += `<div style="flex: 1;">`;
+            displayText += `<strong style="color: #ffd700;">H${suggestion.strongsNumber}</strong> `;
+
+            if (entry.word) {
+                displayText += `<span style="color: #40e0d0; font-weight: bold;">${entry.word}</span> `;
+            }
+
+            if (entry.transliteration) {
+                displayText += `<span style="color: #e0e6ed;">(${entry.transliteration})</span>`;
+            }
+
+            displayText += `</div>`;
+
+            // Show match type indicator
+            let matchType = '';
+            switch (primaryMatch.type) {
+                case 'exact':
+                    matchType = '<span style="color: #00ff00; font-size: 12px;">EXACT</span>';
+                    break;
+                case 'prefix':
+                    matchType = '<span style="color: #ffa500; font-size: 12px;">PREFIX</span>';
+                    break;
+                default:
+                    matchType = '<span style="color: #888; font-size: 12px;">MATCH</span>';
+            }
+            displayText += `<div style="margin-left: 10px;">${matchType}</div>`;
+
+            displayText += `</div>`;
+
+            // Show definition preview if available
+            if (entry.definitions && entry.definitions.length > 0) {
+                const def = entry.definitions[0];
+                const truncatedDef = def.length > 60 ? def.substring(0, 60) + '...' : def;
+                displayText += `<div style="color: #888; font-size: 12px; margin-top: 4px;">${truncatedDef}</div>`;
+            }
+
+            return displayText;
+        }
+
+        return '';
+    }
+
+    // Handle suggestion selection
+    selectSuggestion(suggestionElement, suggestion) {
+        const searchInput = document.getElementById('strongs-search');
+
+        if (suggestion.type === 'strongs') {
+            // Set the search input to the Strong's number
+            searchInput.value = suggestion.strongsNumber;
+        }
+
+        this.hideSuggestions();
+
+        // Automatically perform search
+        setTimeout(() => this.performSearch(), 100);
     }
 
     // Perform search for Strong's number or Hebrew word
@@ -356,13 +683,13 @@ class PrimitiveRootsAnalyzer {
     searchStrongsData(query) {
         const results = [];
         const lowerQuery = query.toLowerCase();
-        
+
         // Search Strong's entries
         for (const [num, entry] of Object.entries(this.strongsData)) {
-            if (num.includes(query) || 
-                (entry.word && entry.word.includes(query)) || 
-                (entry.transliteration && entry.transliteration.toLowerCase().includes(lowerQuery)) || 
-                (entry.definitions && entry.definitions.some(def => def.toLowerCase().includes(lowerQuery)))) {
+            if (num.includes(query) ||
+                (entry.word && entry.word.includes(query)) ||
+                (entry.transliteration && entry.transliteration.toLowerCase().includes(lowerQuery)) ||
+                (entry.definitions && Array.isArray(entry.definitions) && entry.definitions.some(def => def.toLowerCase().includes(lowerQuery)))) {
                 results.push({
                     type: 'strongs',
                     strongsNumber: num,
@@ -374,7 +701,7 @@ class PrimitiveRootsAnalyzer {
                 });
             }
         }
-        
+
         // Search verses (basic text search)
         if (this.versesData) {
             this.versesData.forEach(verse => {
@@ -390,7 +717,7 @@ class PrimitiveRootsAnalyzer {
                 }
             });
         }
-        
+
         return results.slice(0, 50); // Limit results for performance
     }
 
@@ -472,6 +799,7 @@ class PrimitiveRootsAnalyzer {
         searchInput.value = '';
         resultsDiv.innerHTML = '';
         resultsContainer.style.display = 'none';
+        this.hideSuggestions();
         this.hideError();
     }
 
@@ -499,5 +827,12 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🔗 [MongoDB Test] Page: primitive_roots.html');
     console.log('📡 [MongoDB Test] Will attempt to connect to MongoDB Atlas via Flask API');
 
-    new PrimitiveRootsAnalyzer();
+    // Check if EnhancedPrimitiveRootsAnalyzer is available (from hebrew_xml_parser.js)
+    if (typeof EnhancedPrimitiveRootsAnalyzer !== 'undefined') {
+        console.log('🎯 [MongoDB Test] Using Enhanced Primitive Roots Analyzer with Tree functionality');
+        new EnhancedPrimitiveRootsAnalyzer();
+    } else {
+        console.log('⚠️ [MongoDB Test] Enhanced analyzer not available, using basic MongoDB analyzer');
+        new PrimitiveRootsAnalyzer();
+    }
 });
