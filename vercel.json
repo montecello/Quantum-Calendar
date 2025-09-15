@@ -14,10 +14,5 @@
   ],
   "env": {
     "PYTHONUNBUFFERED": "1"
-  },
-  "functions": {
-    "app.py": {
-      "runtime": "python3.9"
-    }
   }
 }
