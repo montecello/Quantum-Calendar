@@ -1,18 +1,53 @@
 {
   "version": 2,
+  "name": "quantum-calendar",
   "builds": [
     {
-      "src": "app.py",
+      "src": "frontend/static/**/*",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/**/*.py",
       "use": "@vercel/python",
       "config": {
-        "includeFiles": ["frontend/**"]
+        "runtime": "python3.9",
+        "includeFiles": ["api/requirements.txt"]
       }
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/app.py" }
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))",
+      "dest": "/frontend/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/static/index.html"
+    }
   ],
   "env": {
-    "PYTHONUNBUFFERED": "1"
-  }
+    "PYTHONUNBUFFERED": "1",
+    "GEOAPIFY_API_KEY": "@geoapify_api_key",
+    "MONGODB_URI": "@mongodb_uri",
+    "DATABASE_NAME": "@database_name",
+    "STRONG_COLLECTION": "@strong_collection",
+    "KJV_COLLECTION": "@kjv_collection"
+  },
+  "functions": {
+    "api/**/*.py": {
+      "runtime": "python3.9",
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "regions": ["iad1"],
+  "github": {
+    "silent": true,
+    "autoJobCancel": false
+  },
+  "outputDirectory": "frontend/static"
 }

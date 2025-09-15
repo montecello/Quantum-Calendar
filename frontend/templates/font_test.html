@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Font Character Test</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            padding: 20px;
+        }
+        .font-test {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        .font-name {
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .character-display {
+            font-size: 48px;
+            background: #111;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px solid #444;
+        }
+        .fallback-note {
+            color: #888;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Font Character Test: ל'</h1>
+    <p>Testing the character "ל'" with different fonts to see which one renders it correctly.</p>
+
+    <div class="font-test">
+        <div class="font-name">1. Pictocrypto Font</div>
+        <div class="character-display" style="font-family: 'HybridFont', 'Pictocrypto', sans-serif;">א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת</div>
+        <div class="character-display" style="font-family: 'HybridFont', 'Pictocrypto', sans-serif;">ך ם ן ף ץ</div>
+        <div class="fallback-note">Fallback: sans-serif</div>
+    </div>
+
+    <div class="font-test">
+        <div class="font-name">2. Aurebesh Font</div>
+        <div class="character-display" style="font-family: 'Aurebesh', sans-serif;">א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת</div>
+        <div class="character-display" style="font-family: 'Aurebesh', sans-serif;">ך ם ן ף ץ</div>
+        <div class="fallback-note">Fallback: sans-serif</div>
+    </div>
+
+    <div class="font-test">
+        <div class="font-name">3. System Default (sans-serif)</div>
+        <div class="character-display" style="font-family: sans-serif;">א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת</div>
+        <div class="character-display" style="font-family: sans-serif;">ך ם ן ף ץ</div>
+        <div class="fallback-note">System default sans-serif</div>
+    </div>
+
+    <div class="font-test">
+        <div class="font-name">4. System Default (serif)</div>
+        <div class="character-display" style="font-family: serif;">א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת</div>
+        <div class="character-display" style="font-family: serif;">ך ם ן ף ץ</div>
+        <div class="fallback-note">System default serif</div>
+    </div>
+
+    <div class="font-test">
+        <div class="font-name">5. System Default (monospace)</div>
+        <div class="character-display" style="font-family: monospace;">א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת</div>
+        <div class="character-display" style="font-family: monospace;">ך ם ן ף ץ</div>
+        <div class="fallback-note">System default monospace</div>
+    </div>
+
+    <div class="font-test">
+        <div class="font-name">6. Browser Default</div>
+        <div class="character-display">א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת</div>
+        <div class="character-display">ך ם ן ף ץ</div>
+        <div class="fallback-note">No font-family specified</div>
+    </div>
+
+    <script>
+        // Test complete - fonts should now be loaded from the main CSS
+        console.log('Font test page loaded - check each font rendering of ל\'');
+    </script>
+</body>
+</html>
