@@ -247,13 +247,21 @@ def api_mongodb_test():
         client = current_app.config.get('mongo_client')
         db = current_app.config.get('mongo_db')
 
+        # Lazy initialization of MongoDB connection
+        if client is None:
+            print("🔄 [TEST] MongoDB client not initialized, initializing now...")
+            from app import get_mongo_client
+            client, db = get_mongo_client()
+            current_app.config['mongo_client'] = client
+            current_app.config['mongo_db'] = db
+
         config_status = {
             'client_available': client is not None,
             'db_available': db is not None
         }
         print(f"🔧 [TEST] Flask config status: {config_status}")
 
-        if client is None or db is not None:
+        if client is None or db is None:
             print("⚠️ [TEST] MongoDB not available in Flask config")
 
         # Test connection if available
@@ -332,6 +340,14 @@ def api_strongs_data():
 
         from flask import current_app
         client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
+
+        # Lazy initialization of MongoDB connection
+        if client is None:
+            print("🔄 [API] MongoDB client not initialized, initializing now...")
+            from app import get_mongo_client
+            client, db = get_mongo_client()
+            current_app.config['mongo_client'] = client
+            current_app.config['mongo_db'] = db
 
         print(f"🔧 [API] MongoDB client available: {'Yes' if client else 'No'}")
         print(f"🔧 [API] MongoDB database available: {'Yes' if db else 'No'}")
@@ -413,6 +429,14 @@ def api_kjv_data():
 
         from flask import current_app
         client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
+
+        # Lazy initialization of MongoDB connection
+        if client is None:
+            print("🔄 [API] MongoDB client not initialized, initializing now...")
+            from app import get_mongo_client
+            client, db = get_mongo_client()
+            current_app.config['mongo_client'] = client
+            current_app.config['mongo_db'] = db
 
         print(f"🔧 [API] MongoDB client available: {'Yes' if client else 'No'}")
         print(f"🔧 [API] MongoDB database available: {'Yes' if db else 'No'}")
