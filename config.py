@@ -7,13 +7,12 @@ import logging
 # Set up logging for configuration
 logging.basicConfig(level=logging.INFO)
 
-# ...existing code...
+# Geoapify API Configuration
 GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY")
 if not GEOAPIFY_API_KEY:
     logging.warning("⚠️  GEOAPIFY_API_KEY not set; geocoding proxy will be disabled")
 else:
     logging.info("✅ GEOAPIFY_API_KEY loaded successfully")
-# ...existing code...
 
 # Base URL for external astronomy microservice (astro-service)
 # Defaults to local dev port; set in Vercel to your deployed service URL
