@@ -230,7 +230,7 @@ def serve_kjv_verses():
 def api_mongodb_test():
     """Test endpoint to diagnose MongoDB connection issues"""
     try:
-        logging.info("🧪 [TEST] MongoDB test endpoint called")
+        print("🧪 [TEST] MongoDB test endpoint called")  # Use print instead of logging for Vercel
 
         # Check environment variables
         from config import MONGODB_URI, DATABASE_NAME, STRONG_COLLECTION, KJV_COLLECTION
@@ -240,7 +240,7 @@ def api_mongodb_test():
             'strongs_collection': STRONG_COLLECTION,
             'kjv_collection': KJV_COLLECTION
         }
-        logging.info(f"🔧 [TEST] Environment status: {env_status}")
+        print(f"🔧 [TEST] Environment status: {env_status}")
 
         # Check Flask app config
         from flask import current_app
@@ -251,24 +251,24 @@ def api_mongodb_test():
             'client_available': client is not None,
             'db_available': db is not None
         }
-        logging.info(f"🔧 [TEST] Flask config status: {config_status}")
+        print(f"🔧 [TEST] Flask config status: {config_status}")
 
         if client is None or db is not None:
-            logging.warning("⚠️ [TEST] MongoDB not available in Flask config")
+            print("⚠️ [TEST] MongoDB not available in Flask config")
 
         # Test connection if available
         if client:
             try:
-                logging.info("🔌 [TEST] Testing MongoDB connection...")
+                print("🔌 [TEST] Testing MongoDB connection...")
                 ping_result = client.admin.command('ping')
-                logging.info(f"✅ [TEST] MongoDB ping successful: {ping_result}")
+                print(f"✅ [TEST] MongoDB ping successful: {ping_result}")
 
                 # Test database access
                 db_info = {
                     'database_name': db.name if db else None,
                     'collections': db.list_collection_names() if db else []
                 }
-                logging.info(f"📊 [TEST] Database info: {db_info}")
+                print(f"📊 [TEST] Database info: {db_info}")
 
                 # Test collection access
                 strongs_collection = db[STRONG_COLLECTION] if db else None
@@ -278,7 +278,7 @@ def api_mongodb_test():
                     'strongs_count': strongs_collection.count_documents({}) if strongs_collection else 0,
                     'kjv_count': kjv_collection.count_documents({}) if kjv_collection else 0
                 }
-                logging.info(f"📊 [TEST] Collection status: {collection_status}")
+                print(f"📊 [TEST] Collection status: {collection_status}")
 
                 return jsonify({
                     'status': 'success',
@@ -290,8 +290,8 @@ def api_mongodb_test():
                 })
 
             except Exception as test_error:
-                logging.error(f"❌ [TEST] MongoDB test failed: {test_error}")
-                logging.error(f"❌ [TEST] Error type: {type(test_error).__name__}")
+                print(f"❌ [TEST] MongoDB test failed: {test_error}")
+                print(f"❌ [TEST] Error type: {type(test_error).__name__}")
                 return jsonify({
                     'status': 'error',
                     'message': f'MongoDB test failed: {str(test_error)}',
@@ -300,7 +300,7 @@ def api_mongodb_test():
                     'config_status': config_status
                 }), 500
         else:
-            logging.error("❌ [TEST] MongoDB client not available")
+            print("❌ [TEST] MongoDB client not available")
             return jsonify({
                 'status': 'error',
                 'message': 'MongoDB client not available',
@@ -309,7 +309,8 @@ def api_mongodb_test():
             }), 500
 
     except Exception as e:
-        logging.exception("💥 [TEST] Unexpected error in MongoDB test")
+        print(f"💥 [TEST] Unexpected error in MongoDB test: {e}")
+        print(f"💥 [TEST] Error type: {type(e).__name__}")
         return jsonify({
             'status': 'error',
             'message': f'Unexpected error: {str(e)}',
@@ -321,32 +322,32 @@ def api_mongodb_test():
 @api.route('/api/strongs-data')
 def api_strongs_data():
     try:
-        logging.info("🔍 [API] /api/strongs-data endpoint called")
+        print("🔍 [API] /api/strongs-data endpoint called")
 
         # Log environment and configuration
         from config import MONGODB_URI, DATABASE_NAME, STRONG_COLLECTION
-        logging.info(f"🔧 [API] MongoDB URI configured: {'Yes' if MONGODB_URI else 'No'}")
-        logging.info(f"🔧 [API] Database name: {DATABASE_NAME}")
-        logging.info(f"🔧 [API] Collection name: {STRONG_COLLECTION}")
+        print(f"🔧 [API] MongoDB URI configured: {'Yes' if MONGODB_URI else 'No'}")
+        print(f"🔧 [API] Database name: {DATABASE_NAME}")
+        print(f"🔧 [API] Collection name: {STRONG_COLLECTION}")
 
         from flask import current_app
         client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
 
-        logging.info(f"🔧 [API] MongoDB client available: {'Yes' if client else 'No'}")
-        logging.info(f"🔧 [API] MongoDB database available: {'Yes' if db else 'No'}")
+        print(f"🔧 [API] MongoDB client available: {'Yes' if client else 'No'}")
+        print(f"🔧 [API] MongoDB database available: {'Yes' if db else 'No'}")
 
         if client is None or db is None:
-            logging.error("❌ [API] MongoDB client or database not available, falling back to static file")
+            print("❌ [API] MongoDB client or database not available, falling back to static file")
             return serve_hebrew_strongs()
 
         # Test MongoDB connection
         try:
-            logging.info("🔌 [API] Testing MongoDB connection...")
+            print("🔌 [API] Testing MongoDB connection...")
             client.admin.command('ping')
-            logging.info("✅ [API] MongoDB connection test successful")
+            print("✅ [API] MongoDB connection test successful")
         except Exception as conn_error:
-            logging.error(f"❌ [API] MongoDB connection test failed: {conn_error}")
-            logging.error(f"❌ [API] Connection error type: {type(conn_error).__name__}")
+            print(f"❌ [API] MongoDB connection test failed: {conn_error}")
+            print(f"❌ [API] Connection error type: {type(conn_error).__name__}")
             return serve_hebrew_strongs()
 
         from config import STRONG_COLLECTION
@@ -358,7 +359,7 @@ def api_strongs_data():
         language = request.args.get('language', type=str)
         limit = request.args.get('limit', 100, type=int)
 
-        logging.info(f"🔍 [API] Query parameters: strongs_num={strongs_num}, search='{search}', language='{language}', limit={limit}")
+        print(f"🔍 [API] Query parameters: strongs_num={strongs_num}, search='{search}', language='{language}', limit={limit}")
 
         query = {}
 
@@ -374,26 +375,26 @@ def api_strongs_data():
                 {'definitions': {'$regex': search, '$options': 'i'}}
             ]
 
-        logging.info(f"🔍 [API] MongoDB query: {query}")
+        print(f"🔍 [API] MongoDB query: {query}")
 
         try:
             results = list(collection.find(query, {'_id': 0}).limit(limit))
-            logging.info(f"✅ [API] MongoDB query successful, found {len(results)} results")
+            print(f"✅ [API] MongoDB query successful, found {len(results)} results")
 
             if results:
-                logging.info(f"📊 [API] Sample result: {results[0]}")
+                print(f"📊 [API] Sample result: {results[0]}")
 
             return jsonify(results)
 
         except Exception as query_error:
-            logging.error(f"❌ [API] MongoDB query failed: {query_error}")
-            logging.error(f"❌ [API] Query error type: {type(query_error).__name__}")
+            print(f"❌ [API] MongoDB query failed: {query_error}")
+            print(f"❌ [API] Query error type: {type(query_error).__name__}")
             return serve_hebrew_strongs()
 
     except Exception as e:
-        logging.exception("💥 [API] Unexpected exception in /api/strongs-data")
-        logging.error(f"❌ [API] Exception type: {type(e).__name__}")
-        logging.error(f"❌ [API] Exception message: {str(e)}")
+        print(f"💥 [API] Unexpected exception in /api/strongs-data: {e}")
+        print(f"❌ [API] Exception type: {type(e).__name__}")
+        print(f"❌ [API] Exception message: {str(e)}")
         # Fallback to static file
         return serve_hebrew_strongs()
 
@@ -402,32 +403,32 @@ def api_strongs_data():
 @api.route('/api/kjv-data')
 def api_kjv_data():
     try:
-        logging.info("🔍 [API] /api/kjv-data endpoint called")
+        print("🔍 [API] /api/kjv-data endpoint called")
 
         # Log environment and configuration
         from config import MONGODB_URI, DATABASE_NAME, KJV_COLLECTION
-        logging.info(f"🔧 [API] MongoDB URI configured: {'Yes' if MONGODB_URI else 'No'}")
-        logging.info(f"🔧 [API] Database name: {DATABASE_NAME}")
-        logging.info(f"🔧 [API] Collection name: {KJV_COLLECTION}")
+        print(f"🔧 [API] MongoDB URI configured: {'Yes' if MONGODB_URI else 'No'}")
+        print(f"🔧 [API] Database name: {DATABASE_NAME}")
+        print(f"🔧 [API] Collection name: {KJV_COLLECTION}")
 
         from flask import current_app
         client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
 
-        logging.info(f"🔧 [API] MongoDB client available: {'Yes' if client else 'No'}")
-        logging.info(f"🔧 [API] MongoDB database available: {'Yes' if db else 'No'}")
+        print(f"🔧 [API] MongoDB client available: {'Yes' if client else 'No'}")
+        print(f"🔧 [API] MongoDB database available: {'Yes' if db else 'No'}")
 
         if client is None or db is None:
-            logging.error("❌ [API] MongoDB client or database not available, falling back to static file")
+            print("❌ [API] MongoDB client or database not available, falling back to static file")
             return serve_kjv_verses()
 
         # Test MongoDB connection
         try:
-            logging.info("🔌 [API] Testing MongoDB connection...")
+            print("🔌 [API] Testing MongoDB connection...")
             client.admin.command('ping')
-            logging.info("✅ [API] MongoDB connection test successful")
+            print("✅ [API] MongoDB connection test successful")
         except Exception as conn_error:
-            logging.error(f"❌ [API] MongoDB connection test failed: {conn_error}")
-            logging.error(f"❌ [API] Connection error type: {type(conn_error).__name__}")
+            print(f"❌ [API] MongoDB connection test failed: {conn_error}")
+            print(f"❌ [API] Connection error type: {type(conn_error).__name__}")
             return serve_kjv_verses()
 
         from config import KJV_COLLECTION
@@ -440,7 +441,7 @@ def api_kjv_data():
         search = request.args.get('search', type=str)
         limit = request.args.get('limit', 100, type=int)
 
-        logging.info(f"🔍 [API] Query parameters: book='{book}', chapter={chapter}, verse={verse}, search='{search}', limit={limit}")
+        print(f"🔍 [API] Query parameters: book='{book}', chapter={chapter}, verse={verse}, search='{search}', limit={limit}")
 
         query = {}
 
@@ -454,25 +455,25 @@ def api_kjv_data():
             # Search in text
             query['text'] = {'$regex': search, '$options': 'i'}
 
-        logging.info(f"🔍 [API] MongoDB query: {query}")
+        print(f"🔍 [API] MongoDB query: {query}")
 
         try:
             results = list(collection.find(query, {'_id': 0}).limit(limit))
-            logging.info(f"✅ [API] MongoDB query successful, found {len(results)} results")
+            print(f"✅ [API] MongoDB query successful, found {len(results)} results")
 
             if results:
-                logging.info(f"📊 [API] Sample result: {results[0]}")
+                print(f"📊 [API] Sample result: {results[0]}")
 
             return jsonify(results)
 
         except Exception as query_error:
-            logging.error(f"❌ [API] MongoDB query failed: {query_error}")
-            logging.error(f"❌ [API] Query error type: {type(query_error).__name__}")
+            print(f"❌ [API] MongoDB query failed: {query_error}")
+            print(f"❌ [API] Query error type: {type(query_error).__name__}")
             return serve_kjv_verses()
 
     except Exception as e:
-        logging.exception("💥 [API] Unexpected exception in /api/kjv-data")
-        logging.error(f"❌ [API] Exception type: {type(e).__name__}")
-        logging.error(f"❌ [API] Exception message: {str(e)}")
+        print(f"💥 [API] Unexpected exception in /api/kjv-data: {e}")
+        print(f"❌ [API] Exception type: {type(e).__name__}")
+        print(f"❌ [API] Exception message: {str(e)}")
         # Fallback to static file
         return serve_kjv_verses()

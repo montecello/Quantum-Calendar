@@ -86,6 +86,16 @@ app.config['mongo_client'] = client
 app.config['mongo_db'] = db
 
 
+# Vercel requires the Flask app to be the main export
+# This ensures Vercel can properly import and serve the Flask application
+def create_app():
+    """Factory function to create Flask app for Vercel"""
+    return app
+
+# Export the app for Vercel
+application = app
+
+
 # Load astronomical data at startup
 # Move heavy data loads under __main__ to avoid cold-start costs on Vercel imports
 # load_all_data()
@@ -322,3 +332,9 @@ if __name__ == "__main__":
     print("--- End Multi-Year Calendar ---\n")
     port = int(os.environ.get("PORT", "5001"))
     app.run(debug=True, port=port, host="0.0.0.0")
+
+# Vercel handler - export the Flask app for Vercel
+# This ensures Vercel can properly import and serve the Flask application
+def handler(event, context):
+    """Vercel serverless function handler"""
+    return app
