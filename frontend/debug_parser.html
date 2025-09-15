@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hebrew XML Parser Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #111; color: #fff; }
+        .test-section { background: #222; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196F3; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        input { padding: 8px; margin: 5px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; }
+        #output { background: #000; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Hebrew XML Parser Debug Test</h1>
+
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runBasicTests()">Run Basic Tests</button>
+        <button onclick="testXMLLoading()">Test XML Loading</button>
+        <button onclick="testSearch('sign')">Test Search: "sign"</button>
+        <button onclick="testSearch('226')">Test Search: "226"</button>
+        <button onclick="testSearch('אוֹת')">Test Search: "אוֹת"</button>
+        <input type="text" id="customSearch" placeholder="Custom search term">
+        <button onclick="testSearch(document.getElementById('customSearch').value)">Custom Search</button>
+        <button onclick="clearOutput()">Clear Output</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const coloredMessage = `<span class="${type}">[${timestamp}] ${message}</span>\n`;
+            output.innerHTML += coloredMessage;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+
+        async function runBasicTests() {
+            clearOutput();
+            log('🧪 Starting basic tests...', 'info');
+
+            // Test 1: Check if classes are loaded
+            if (typeof HebrewXMLParser !== 'undefined') {
+                log('✅ HebrewXMLParser class is loaded', 'success');
+            } else {
+                log('❌ HebrewXMLParser class not found', 'error');
+                return;
+            }
+
+            if (typeof HebrewAutosuggest !== 'undefined') {
+                log('✅ HebrewAutosuggest class is loaded', 'success');
+            } else {
+                log('❌ HebrewAutosuggest class not found', 'error');
+            }
+
+            if (typeof EnhancedPrimitiveRootsAnalyzer !== 'undefined') {
+                log('✅ EnhancedPrimitiveRootsAnalyzer class is loaded', 'success');
+            } else {
+                log('❌ EnhancedPrimitiveRootsAnalyzer class not found', 'error');
+            }
+
+            log('🎯 Basic tests complete!', 'success');
+        }
+
+        async function testXMLLoading() {
+            clearOutput();
+            log('🔄 Testing XML loading...', 'info');
+
+            try {
+                // Test fetch request
+                log('📡 Testing fetch request to /static/data/Hebrew.xml...');
+                const response = await fetch('/static/data/Hebrew.xml');
+
+                if (!response.ok) {
+                    log(`❌ Fetch failed: ${response.status} ${response.statusText}`, 'error');
+                    return;
+                }
+
+                log(`✅ Fetch successful: ${response.status}`, 'success');
+
+                const xmlText = await response.text();
+                log(`📄 XML loaded: ${xmlText.length} characters`, 'success');
+
+                if (xmlText.length < 1000) {
+                    log('⚠️ XML file seems too small, might be truncated', 'warning');
+                }
+
+                // Test XML parsing
+                log('🔧 Testing XML parsing...');
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+
+                const parseErrors = xmlDoc.getElementsByTagName('parsererror');
+                if (parseErrors.length > 0) {
+                    log(`❌ XML parsing errors: ${parseErrors.length}`, 'error');
+                    for (let i = 0; i < parseErrors.length; i++) {
+                        log(`Parse error: ${parseErrors[i].textContent}`, 'error');
+                    }
+                    return;
+                }
+
+                log('✅ XML parsed successfully', 'success');
+
+                // Count entries
+                const entries = xmlDoc.querySelectorAll('div[type="entry"]');
+                log(`📊 Found ${entries.length} entries in XML`, 'success');
+
+                if (entries.length === 0) {
+                    log('❌ No entries found - XML structure issue', 'error');
+                }
+
+                // Test specific entry
+                const entry226 = xmlDoc.querySelector('div[type="entry"][n="226"]');
+                if (entry226) {
+                    log('✅ Entry 226 found', 'success');
+
+                    const hebrewWord = entry226.querySelector('w');
+                    if (hebrewWord) {
+                        log(`📖 Hebrew word: ${hebrewWord.textContent}`, 'success');
+                    }
+
+                    const listElement = entry226.querySelector('list');
+                    if (listElement) {
+                        const items = listElement.querySelectorAll('item');
+                        log(`📋 Found ${items.length} meaning items`, 'success');
+                        items.forEach((item, index) => {
+                            if (index < 3) { // Show first 3 meanings
+                                log(`   ${index + 1}: ${item.textContent}`, 'info');
+                            }
+                        });
+                    }
+                } else {
+                    log('❌ Entry 226 not found', 'error');
+                }
+
+            } catch (error) {
+                log(`❌ XML loading test failed: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        async function testSearch(query) {
+            if (!query || query.trim() === '') {
+                log('❌ Please enter a search term', 'error');
+                return;
+            }
+
+            clearOutput();
+            log(`🔍 Testing search for: "${query}"`, 'info');
+
+            try {
+                // Test fetch request
+                const response = await fetch('/static/data/Hebrew.xml');
+                if (!response.ok) {
+                    log(`❌ Fetch failed: ${response.status}`, 'error');
+                    return;
+                }
+
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+
+                // Remove namespace
+                function removeDefaultNamespace(element) {
+                    if (element.nodeType === Node.ELEMENT_NODE) {
+                        element.removeAttribute('xmlns');
+                        const attributes = element.attributes;
+                        for (let i = attributes.length - 1; i >= 0; i--) {
+                            const attr = attributes[i];
+                            if (attr.name.startsWith('xmlns:')) {
+                                element.removeAttribute(attr.name);
+                            }
+                        }
+                    }
+                    const children = element.childNodes;
+                    for (let i = 0; i < children.length; i++) {
+                        const child = children[i];
+                        if (child.nodeType === Node.ELEMENT_NODE) {
+                            removeDefaultNamespace(child);
+                        }
+                    }
+                }
+
+                removeDefaultNamespace(xmlDoc.documentElement);
+
+                // Get all entries
+                const entries = xmlDoc.querySelectorAll('div[type="entry"]');
+                log(`📊 Searching through ${entries.length} entries...`, 'info');
+
+                let matches = [];
+                let directMatch = null;
+
+                // Direct Strong's number search
+                if (/^h?\d+$/i.test(query)) {
+                    const strongsNum = query.replace(/^h/i, '');
+                    const directEntry = xmlDoc.querySelector(`div[type="entry"][n="${strongsNum}"]`);
+                    if (directEntry) {
+                        directMatch = {
+                            entryNumber: strongsNum,
+                            hebrewWord: directEntry.querySelector('w')?.textContent || '',
+                            meanings: Array.from(directEntry.querySelectorAll('item')).map(item => item.textContent)
+                        };
+                        log(`✅ Found direct Strong's number match: ${strongsNum}`, 'success');
+                    }
+                }
+
+                // Search through meanings
+                entries.forEach(entry => {
+                    const listElement = entry.querySelector('list');
+                    if (listElement) {
+                        const items = listElement.querySelectorAll('item');
+                        items.forEach(item => {
+                            const meaning = item.textContent.toLowerCase();
+                            const searchTerm = query.toLowerCase();
+
+                            if (meaning.includes(searchTerm) || searchTerm.includes(meaning)) {
+                                const hebrewWord = entry.querySelector('w')?.textContent || '';
+                                const entryNumber = entry.getAttribute('n');
+
+                                matches.push({
+                                    entryNumber,
+                                    hebrewWord,
+                                    meaning: item.textContent,
+                                    relevance: meaning.includes(searchTerm) ? 'high' : 'medium'
+                                });
+                            }
+                        });
+                    }
+                });
+
+                if (directMatch) {
+                    log(`🎯 Direct match found:`, 'success');
+                    log(`   Entry: ${directMatch.entryNumber}`, 'info');
+                    log(`   Hebrew: ${directMatch.hebrewWord}`, 'info');
+                    log(`   Meanings: ${directMatch.meanings.slice(0, 3).join(', ')}`, 'info');
+                }
+
+                if (matches.length > 0) {
+                    log(`📋 Found ${matches.length} meaning matches:`, 'success');
+                    matches.slice(0, 5).forEach((match, index) => {
+                        log(`   ${index + 1}. Entry ${match.entryNumber}: ${match.hebrewWord} - ${match.meaning}`, 'info');
+                    });
+
+                    if (matches.length > 5) {
+                        log(`   ... and ${matches.length - 5} more matches`, 'info');
+                    }
+                } else if (!directMatch) {
+                    log('❌ No matches found', 'error');
+                }
+
+            } catch (error) {
+                log(`❌ Search test failed: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(runBasicTests, 1000);
+        });
+    </script>
+</body>
+</html>

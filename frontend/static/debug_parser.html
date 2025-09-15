@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hebrew XML Parser Debug Test</title>
+</head>
+<body>
+    <h1>Hebrew XML Parser Debug Test</h1>
+    <div id="output"></div>
+
+    <script>
+        // Simple test to debug the parser
+        function removeDefaultNamespace(element) {
+            if (element.nodeType === Node.ELEMENT_NODE) {
+                element.removeAttribute('xmlns');
+            }
+
+            // Recursively process child elements
+            const children = element.childNodes;
+            for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    removeDefaultNamespace(child);
+                }
+            }
+        }
+
+        function cleanMalformedXML(xmlText) {
+            let cleaned = xmlText;
+            // Fix malformed tags where closing tag is split: </tag\n>
+            cleaned = cleaned.replace(/<\/w\n>/gm, '</w>');
+            cleaned = cleaned.replace(/<\/note\n>/gm, '</note>');
+            cleaned = cleaned.replace(/<\/item\n>/gm, '</item>');
+            cleaned = cleaned.replace(/<\/list\n>/gm, '</list>');
+            cleaned = cleaned.replace(/<\/div\n>/gm, '</div>');
+            cleaned = cleaned.replace(/<\/foreign\n>/gm, '</foreign>');
+            // Fix any other malformed closing tags
+            cleaned = cleaned.replace(/<\/(\w+)\n>/gm, '</$1>');
+            return cleaned;
+        }
+
+        async function testParser() {
+            const output = document.getElementById('output');
+
+            try {
+                // Load the XML file
+                output.innerHTML += '<p>Loading XML...</p>';
+                const response = await fetch('/static/data/Hebrew.xml');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const xmlText = await response.text();
+                output.innerHTML += '<p>XML loaded successfully</p>';
+
+                // Clean up malformed XML
+                const cleanedXmlText = cleanMalformedXML(xmlText);
+                output.innerHTML += '<p>XML cleaned</p>';
+
+                // Parse XML
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(cleanedXmlText, 'text/xml');
+                console.log('XML parse errors:', xmlDoc.getElementsByTagName('parsererror'));
+
+                // Check if parsing failed
+                const parseErrors = xmlDoc.getElementsByTagName('parsererror');
+                if (parseErrors.length > 0) {
+                    output.innerHTML += '<p style="color: red;">❌ XML parsing failed!</p>';
+                    output.innerHTML += '<p>Parse errors: ' + parseErrors.length + '</p>';
+                    return;
+                }
+
+                // Remove default namespace to make querySelector work
+                removeDefaultNamespace(xmlDoc.documentElement);
+
+                output.innerHTML += '<p>XML parsed successfully</p>';
+                console.log('Parsed document element:', xmlDoc.documentElement.tagName);
+
+                // Find entry 226 (אוֹת)
+                const totalEntries = xmlDoc.querySelectorAll('div[type="entry"]');
+                output.innerHTML += '<p>Total entries found: ' + totalEntries.length + '</p>';
+                console.log('Total entries found:', totalEntries.length);
+
+                const entry226 = xmlDoc.querySelector('div[type="entry"][n="226"]');
+                if (entry226) {
+                    output.innerHTML += '<p>Found entry 226</p>';
+                    console.log('Entry 226 found:', entry226);
+
+                    // Get the Hebrew word
+                    const hebrewWord = entry226.querySelector('w[xml\\:lang="heb"]');
+                    if (hebrewWord) {
+                        output.innerHTML += `<p>Hebrew word: ${hebrewWord.textContent}</p>`;
+                    }
+
+                    // Get meanings
+                    const listElement = entry226.querySelector('list');
+                    if (listElement) {
+                        output.innerHTML += '<p>Found list element</p>';
+                        const items = listElement.querySelectorAll('item');
+                        output.innerHTML += `<p>Found ${items.length} items</p>`;
+
+                        items.forEach((item, index) => {
+                            output.innerHTML += `<p>Item ${index + 1}: ${item.textContent}</p>`;
+                        });
+                    } else {
+                        output.innerHTML += '<p>No list element found</p>';
+                    }
+                } else {
+                    output.innerHTML += '<p>Entry 226 not found</p>';
+                }
+
+                // Test search for "sign"
+                const allEntries = xmlDoc.querySelectorAll('div[type="entry"]');
+                output.innerHTML += `<p>Total entries: ${allEntries.length}</p>`;
+
+                let signEntries = [];
+                allEntries.forEach(entry => {
+                    const listElement = entry.querySelector('list');
+                    if (listElement) {
+                        const items = listElement.querySelectorAll('item');
+                        items.forEach(item => {
+                            if (item.textContent.toLowerCase().includes('sign')) {
+                                const hebrewWord = entry.querySelector('w[xml\\:lang="heb"]');
+                                signEntries.push({
+                                    entry: entry.getAttribute('n'),
+                                    hebrew: hebrewWord ? hebrewWord.textContent : 'unknown',
+                                    meaning: item.textContent
+                                });
+                            }
+                        });
+                    }
+                });
+
+                output.innerHTML += `<p>Found ${signEntries.length} entries with "sign" in meanings:</p>`;
+                signEntries.forEach(entry => {
+                    output.innerHTML += `<p>Entry ${entry.entry} (${entry.hebrew}): ${entry.meaning}</p>`;
+                });
+
+            } catch (error) {
+                output.innerHTML += `<p>Error: ${error.message}</p>`;
+                console.error(error);
+            }
+        }
+
+        // Run the test
+        testParser();
+    </script>
+</body>
+</html>
