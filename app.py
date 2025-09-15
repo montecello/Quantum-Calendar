@@ -81,77 +81,93 @@ def get_mongo_client():
 
 
 # Initialize MongoDB connection and store in app config
-# Move this to lazy initialization to avoid import-time failures
-client, db = None, None
-app.config['mongo_client'] = client
-app.config['mongo_db'] = db
+# Use lazy initialization to avoid import-time failures on Vercel
+try:
+    client, db = None, None
+    app.config['mongo_client'] = client
+    app.config['mongo_db'] = db
+except Exception as e:
+    print(f"⚠️ [INIT] MongoDB config initialization failed: {e}")
+    # Don't let this crash the app
+    app.config['mongo_client'] = None
+    app.config['mongo_db'] = None
 
 
 def log_startup_status():
     """Log startup status for MongoDB and data loading (non-blocking)"""
-    print("\n" + "="*60)
-    print("🚀 QUANTUM CALENDAR STARTUP STATUS")
-    print("="*60)
-
-    # Log MongoDB status (try to connect but don't fail if it doesn't work)
-    print("\n🔧 [STARTUP] Checking MongoDB connection...")
     try:
-        from config import MONGODB_URI, DATABASE_NAME
-        if MONGODB_URI:
-            print(f"🔧 [STARTUP] MongoDB URI configured: Yes")
-            print(f"🔧 [STARTUP] Database name: {DATABASE_NAME}")
+        print("\n" + "="*60)
+        print("🚀 QUANTUM CALENDAR STARTUP STATUS")
+        print("="*60)
 
-            # Try to connect (but don't store in app config yet)
-            from pymongo import MongoClient
-            test_client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
-            test_db = test_client[DATABASE_NAME]
+        # Log MongoDB status (try to connect but don't fail if it doesn't work)
+        print("\n🔧 [STARTUP] Checking MongoDB connection...")
+        try:
+            from config import MONGODB_URI, DATABASE_NAME
+            if MONGODB_URI:
+                print(f"🔧 [STARTUP] MongoDB URI configured: Yes")
+                print(f"🔧 [STARTUP] Database name: {DATABASE_NAME}")
 
-            # Test connection
-            test_client.admin.command('ping')
-            print("✅ [STARTUP] MongoDB connection successful")
+                # Try to connect (but don't store in app config yet)
+                from pymongo import MongoClient
+                test_client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=3000)
+                test_db = test_client[DATABASE_NAME]
 
-            # Log server info
-            server_info = test_client.server_info()
-            print(f"✅ [STARTUP] MongoDB version: {server_info.get('version', 'Unknown')}")
+                # Test connection
+                test_client.admin.command('ping')
+                print("✅ [STARTUP] MongoDB connection successful")
 
-            # Test collections
-            collections = test_db.list_collection_names()
-            print(f"✅ [STARTUP] Available collections: {collections}")
+                # Log server info
+                server_info = test_client.server_info()
+                print(f"✅ [STARTUP] MongoDB version: {server_info.get('version', 'Unknown')}")
 
-            test_client.close()
+                # Test collections
+                collections = test_db.list_collection_names()
+                print(f"✅ [STARTUP] Available collections: {collections}")
 
-        else:
-            print("⚠️ [STARTUP] MongoDB URI not configured")
+                test_client.close()
+
+            else:
+                print("⚠️ [STARTUP] MongoDB URI not configured")
+
+        except Exception as e:
+            print(f"❌ [STARTUP] MongoDB connection failed: {e}")
+            print("⚠️ [STARTUP] App will use fallback static files for MongoDB data")
+
+        # Log data loading status
+        print("\n📊 [STARTUP] Checking astronomical data loading...")
+        try:
+            from backend.data import load_all_data
+            print("📊 [STARTUP] Astronomical data module available")
+            print("📊 [STARTUP] Data will be loaded on first request (lazy loading)")
+        except Exception as e:
+            print(f"❌ [STARTUP] Data loading module error: {e}")
+
+        print("\n🎯 [STARTUP] Flask app ready!")
+        print("="*60 + "\n")
 
     except Exception as e:
-        print(f"❌ [STARTUP] MongoDB connection failed: {e}")
-        print("⚠️ [STARTUP] App will use fallback static files for MongoDB data")
-
-    # Log data loading status
-    print("\n📊 [STARTUP] Checking astronomical data loading...")
-    try:
-        from backend.data import load_all_data
-        print("📊 [STARTUP] Astronomical data module available")
-        print("📊 [STARTUP] Data will be loaded on first request (lazy loading)")
-    except Exception as e:
-        print(f"❌ [STARTUP] Data loading module error: {e}")
-
-    print("\n🎯 [STARTUP] Flask app ready!")
-    print("="*60 + "\n")
+        print(f"⚠️ [STARTUP] Startup logging failed: {e}")
+        # Don't let startup logging failures crash the app
 
 
-# Call startup logging
-log_startup_status()
+# Call startup logging (skip on Vercel to avoid import-time issues)
+# Temporarily disabled to fix Vercel deployment issue
+# if os.environ.get("VERCEL") != "1":
+#     log_startup_status()
 
 
 # Vercel requires the Flask app to be the main export
-# This ensures Vercel can properly import and serve the Flask application
-def create_app():
-    """Factory function to create Flask app for Vercel"""
-    return app
-
-# Export the app for Vercel
+# Export both app and application for maximum compatibility
 application = app
+
+
+@app.route("/api/health")
+def api_health():
+    return {
+        "ok": True,
+        "astro": os.environ.get("ASTRO_API_BASE", ""),
+    }
 
 
 if __name__ == "__main__":
