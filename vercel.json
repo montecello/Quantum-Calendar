@@ -5,11 +5,13 @@
       "src": "app.py",
       "use": "@vercel/python",
       "config": {
-        "includeFiles": ["frontend/**"]
+        "includeFiles": ["frontend/**", "backend/**"]
       }
     }
   ],
   "routes": [
+    { "src": "/api/(.*)", "dest": "/app.py" },
+    { "src": "/backend/(.*)", "dest": "/app.py" },
     { "src": "/(.*)", "dest": "/app.py" }
   ],
   "env": {

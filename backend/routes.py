@@ -17,6 +17,9 @@ except ImportError:
     MONGODB_AVAILABLE = False
     logging.warning("MongoDB not available - using static file fallback")
 
+# Add datetime import
+from datetime import datetime
+
 api = Blueprint('api', __name__)
 
 # MongoDB client (lazy initialization)
@@ -309,3 +312,44 @@ def test_mongodb():
             'message': str(e),
             'fallback': 'static files'
         }), 500
+
+
+# Alternative routes for Vercel compatibility
+@api.route('/api/strongs-data')
+def api_strongs_data():
+    """Alternative endpoint for Strong's data"""
+    try:
+        db = get_mongo_client()
+        if db is not None:
+            collection = db[STRONG_COLLECTION]
+            data = list(collection.find({}, {'_id': 0}))
+            logging.info(f"API: Served {len(data)} Strong's entries from MongoDB")
+            return jsonify(data)
+
+        # Fallback
+        logging.warning("API: MongoDB not available, using static fallback")
+        data_dir = os.path.join(os.path.dirname(__file__), 'data')
+        return send_from_directory(data_dir, 'hebrew_strongs.json', mimetype='application/json')
+    except Exception as e:
+        logging.exception("Exception in /api/strongs-data")
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/api/kjv-data')
+def api_kjv_data():
+    """Alternative endpoint for KJV data"""
+    try:
+        db = get_mongo_client()
+        if db is not None:
+            collection = db[KJV_COLLECTION]
+            data = list(collection.find({}, {'_id': 0}))
+            logging.info(f"API: Served {len(data)} KJV verses from MongoDB")
+            return jsonify(data)
+
+        # Fallback
+        logging.warning("API: MongoDB not available, using static fallback")
+        data_dir = os.path.join(os.path.dirname(__file__), 'data')
+        return send_from_directory(data_dir, 'kjv_verses.json', mimetype='application/json')
+    except Exception as e:
+        logging.exception("Exception in /api/kjv-data")
+        return jsonify({"error": str(e)}), 500
