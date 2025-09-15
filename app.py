@@ -1,3 +1,14 @@
+import os
+import logging
+
+# Load .env for local development FIRST (before ANY imports that use config)
+try:
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv()
+    print("✅ .env file loaded successfully")
+except Exception as e:
+    print(f"⚠️  Could not load .env file: {e}")
+
 from flask import Flask, render_template, request, jsonify, send_from_directory
 
 from backend.geolocation import parse_coordinates, get_timezone
@@ -11,15 +22,8 @@ from backend.astronomy.moon import print_today_moon_events
 from backend.astronomy.years import print_multi_year_calendar
 from backend.astronomy.year import print_yearly_events
 
-import os
-import logging
-
-# Load .env for local development (safe on Vercel; ignored if no .env)
-try:
-    from dotenv import load_dotenv  # type: ignore
-    load_dotenv()
-except Exception:
-    pass
+# Now import config after .env is loaded
+from config import GEOAPIFY_API_KEY, ASTRO_API_BASE
 
 # Add CORS support
 try:
@@ -28,8 +32,6 @@ try:
 except ImportError:
     CORS_ENABLED = False
     print("⚠️  flask-cors not installed. Install with: pip install flask-cors")
-
-GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
