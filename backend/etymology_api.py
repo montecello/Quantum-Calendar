@@ -13,8 +13,16 @@ def get_strongs_data_from_db(strongs_num: str):
         from app import mongo_db
         if mongo_db is not None:
             collection = mongo_db["strongs"]
-            # Search for exact Strong's number match
-            result = collection.find_one({"strongsNumber": strongs_num}, {'_id': 0})
+            
+            # Extract numeric part for database query
+            if strongs_num.startswith('H'):
+                numeric_part = int(strongs_num[1:])
+            else:
+                numeric_part = int(strongs_num)
+            
+            # Search for exact Strong's number match using integer
+            result = collection.find_one({"strongsNumber": numeric_part}, {'_id': 0})
+            print(f"MongoDB query for strongsNumber: {numeric_part}, found: {result is not None}")
             return result
     except Exception as e:
         print(f"Error fetching {strongs_num} from MongoDB: {e}")
