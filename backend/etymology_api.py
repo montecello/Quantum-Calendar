@@ -5,8 +5,20 @@ Builds complete etymological trees from Strong's numbers back to primitive roots
 """
 
 from flask import request, jsonify
-import requests
 from typing import List, Dict, Optional, Any
+
+def get_strongs_data_from_db(strongs_num: str):
+    """Get Strong's data directly from MongoDB instead of HTTP call"""
+    try:
+        from app import mongo_db
+        if mongo_db is not None:
+            collection = mongo_db["strongs"]
+            # Search for exact Strong's number match
+            result = collection.find_one({"strongsNumber": strongs_num}, {'_id': 0})
+            return result
+    except Exception as e:
+        print(f"Error fetching {strongs_num} from MongoDB: {e}")
+    return None
 
 def build_etymology_chain(start_num: int, max_depth: int = 10) -> List[Dict[str, Any]]:
     """
@@ -18,17 +30,16 @@ def build_etymology_chain(start_num: int, max_depth: int = 10) -> List[Dict[str,
     depth = 0
     
     while current_num and depth < max_depth:
-        # Get Strong's data from our existing API
+        # Get Strong's data from MongoDB directly instead of HTTP call
         try:
-            response = requests.get(f'http://localhost:5001/api/strongs-data?query=H{current_num}')
-            if response.status_code != 200:
+            strongs_key = f'H{current_num}'
+            entry = get_strongs_data_from_db(strongs_key)
+            
+            if not entry:
+                print(f"No data found for {strongs_key}")
                 break
                 
-            data = response.json()
-            if not data or len(data) == 0:
-                break
-                
-            entry = data[0]  # API returns a list directly
+            print(f"Found data for {strongs_key}: {entry.get('word', 'unknown')}")
         except Exception as e:
             print(f"Error fetching H{current_num}: {e}")
             break
