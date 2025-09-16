@@ -219,25 +219,39 @@ def serve_hebrew_strongs():
 # Serve KJV verses data
 @api.route('/backend/data/kjv_verses.json')
 def serve_kjv_verses():
-    """Fallback JSON implementation with frequency counting support"""
+    """Enhanced fallback JSON implementation with production error handling"""
     try:
         import json
         import os
         
-        print("📁 DATA SOURCE: Loading KJV verses from JSON file (FALLBACK MODE)")
+        print("📁 FALLBACK: Loading KJV verses from JSON file")
         
         # Get query parameters for JSON fallback
         query_text = request.args.get('query', '').strip()
         limit = request.args.get('limit', 100, type=int)
         
-        # Load JSON data
+        # Try to load JSON data
         data_dir = os.path.join(os.path.dirname(__file__), 'data')
         verses_file = os.path.join(data_dir, 'verses.json')
+        
+        print(f"📁 FALLBACK: Looking for file: {verses_file}")
+        
+        if not os.path.exists(verses_file):
+            print(f"❌ FALLBACK: File not found: {verses_file}")
+            print("📁 FALLBACK: This is expected in production deployment")
+            
+            # Return empty results for production
+            return jsonify({
+                'verses': [],
+                'strongsFrequency': [],
+                'totalVerses': 0,
+                'message': 'Data source unavailable in production environment'
+            })
         
         with open(verses_file, 'r') as f:
             all_data = json.load(f)
         
-        print(f"INFO: JSON loaded with {len(all_data)} verses (fallback)")
+        print(f"📊 FALLBACK: JSON loaded with {len(all_data)} verses")
         
         if query_text:
             # Filter JSON data by text content
@@ -258,10 +272,10 @@ def serve_kjv_verses():
             
             # Sort Strong's numbers by frequency (descending)
             sorted_strongs = sorted(strongs_freq.items(), key=lambda x: x[1], reverse=True)
-            print(f"INFO: JSON search for '{query_text}' found {len(filtered)} verses")
-            print(f"INFO: Found {len(sorted_strongs)} unique Strong's numbers")
+            print(f"📊 FALLBACK: Search for '{query_text}' found {len(filtered)} verses")
+            print(f"📊 FALLBACK: Found {len(sorted_strongs)} unique Strong's numbers")
             if sorted_strongs:
-                print(f"INFO: Top 5 Strong's by frequency: {sorted_strongs[:5]}")
+                print(f"📊 FALLBACK: Top 5 Strong's by frequency: {sorted_strongs[:5]}")
             
             return jsonify({
                 'verses': filtered,
@@ -269,13 +283,33 @@ def serve_kjv_verses():
                 'totalVerses': len(filtered)
             })
         else:
-            # No query - return first 'limit' verses
-            data = all_data[:limit]
-            return jsonify({'verses': data, 'strongsFrequency': [], 'totalVerses': len(data)})
-            
+            # Return first 'limit' entries
+            limited_data = all_data[:limit]
+            print(f"📊 FALLBACK: Returning {len(limited_data)} verses (no query)")
+            return jsonify({
+                'verses': limited_data,
+                'strongsFrequency': [],
+                'totalVerses': len(limited_data)
+            })
+    
+    except FileNotFoundError as e:
+        print(f"❌ FALLBACK: File not found - {e}")
+        return jsonify({
+            'error': f'Data file not found',
+            'verses': [],
+            'strongsFrequency': [],
+            'totalVerses': 0
+        }), 200  # Return 200 instead of 500 for graceful degradation
+    
     except Exception as e:
-        logging.exception("Exception serving kjv verses with frequency counting")
-        return jsonify({"error": str(e)}), 500
+        print(f"💥 FALLBACK: Unexpected error - {e}")
+        logging.exception("Error in serve_kjv_verses fallback")
+        return jsonify({
+            'error': f'Fallback error: {str(e)}',
+            'verses': [],
+            'strongsFrequency': [],
+            'totalVerses': 0
+        }), 200  # Return 200 instead of 500 for graceful degradation
 
 
 # MongoDB API endpoints for Strong's data
@@ -449,56 +483,81 @@ def api_kjv_data():
         query_text = request.args.get('query', '').strip()
         limit = request.args.get('limit', 100, type=int)
         
-        print(f"INFO: Routes /api/kjv-data called with query='{query_text}', limit={limit}")
+        print(f"📥 API: /api/kjv-data called with query='{query_text}', limit={limit}")
         
         client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
 
+        # Enhanced MongoDB connection debugging
+        print(f"🔍 MONGODB: Client object: {type(client).__name__ if client else 'None'}")
+        print(f"🔍 MONGODB: Database object: {type(db).__name__ if db else 'None'}")
+        
         if client is not None and db is not None:
-            print("✓ DATA SOURCE: Using MongoDB Atlas for KJV verse data (PRIMARY)")
-            print(f"✓ MongoDB client status: Connected")
-            print(f"✓ Database: {db.name if hasattr(db, 'name') else 'quantum-calendar'}")
-            from config import KJV_COLLECTION
-            collection = db[KJV_COLLECTION]
-            
-            if query_text:
-                # Search verses by text content
-                regex = {"$regex": query_text, "$options": "i"}
-                print(f"DEBUG: Searching with regex: {regex}")
-                matched_verses = list(collection.find({
-                    "text": regex
-                }, {'_id': 0}).limit(limit))
-                print(f"INFO: MongoDB search for '{query_text}' found {len(matched_verses)} verses")
+            try:
+                # Test MongoDB connection with ping
+                client.admin.command('ping')
+                print("✅ MONGODB: Connection test successful")
+                print(f"📊 MONGODB: Using database '{db.name if hasattr(db, 'name') else 'quantum-calendar'}'")
                 
-                # Count Strong's number frequencies across matched verses
-                strongs_freq = {}
-                for verse in matched_verses:
-                    strongs_list = verse.get('strongsNumbers', [])
-                    for strongs_num in strongs_list:
-                        strongs_freq[strongs_num] = strongs_freq.get(strongs_num, 0) + 1
+                from config import KJV_COLLECTION
+                collection = db[KJV_COLLECTION]
                 
-                # Sort Strong's numbers by frequency (descending)
-                sorted_strongs = sorted(strongs_freq.items(), key=lambda x: x[1], reverse=True)
-                print(f"INFO: Found {len(sorted_strongs)} unique Strong's numbers")
-                if sorted_strongs:
-                    print(f"INFO: Top 5 Strong's by frequency: {sorted_strongs[:5]}")
+                # Test collection access
+                collection_count = collection.estimated_document_count()
+                print(f"📊 MONGODB: Collection '{KJV_COLLECTION}' has ~{collection_count} documents")
                 
-                # Return verses with frequency-sorted Strong's numbers
-                return jsonify({
-                    'verses': matched_verses,
-                    'strongsFrequency': sorted_strongs,
-                    'totalVerses': len(matched_verses)
-                })
-            else:
-                data = list(collection.find({}, {'_id': 0}).limit(limit))
-                print(f"INFO: Retrieved {len(data)} verses from MongoDB (no query)")
-                return jsonify({'verses': data, 'strongsFrequency': [], 'totalVerses': len(data)})
+                if query_text:
+                    # Search verses by text content
+                    regex = {"$regex": query_text, "$options": "i"}
+                    print(f"🔍 MONGODB: Searching with regex: {regex}")
+                    
+                    matched_verses = list(collection.find({
+                        "text": regex
+                    }, {'_id': 0}).limit(limit))
+                    
+                    print(f"📊 MONGODB: Search for '{query_text}' found {len(matched_verses)} verses")
+                    
+                    # Count Strong's number frequencies across matched verses
+                    strongs_freq = {}
+                    for verse in matched_verses:
+                        strongs_list = verse.get('strongsNumbers', [])
+                        for strongs_num in strongs_list:
+                            strongs_freq[strongs_num] = strongs_freq.get(strongs_num, 0) + 1
+                    
+                    # Sort Strong's numbers by frequency (descending)
+                    sorted_strongs = sorted(strongs_freq.items(), key=lambda x: x[1], reverse=True)
+                    print(f"📊 MONGODB: Found {len(sorted_strongs)} unique Strong's numbers")
+                    if sorted_strongs:
+                        print(f"📊 MONGODB: Top 5 Strong's by frequency: {sorted_strongs[:5]}")
+                    
+                    # Return verses with frequency-sorted Strong's numbers
+                    return jsonify({
+                        'verses': matched_verses,
+                        'strongsFrequency': sorted_strongs,
+                        'totalVerses': len(matched_verses)
+                    })
+                else:
+                    data = list(collection.find({}, {'_id': 0}).limit(limit))
+                    print(f"📊 MONGODB: Retrieved {len(data)} verses (no query)")
+                    return jsonify({'verses': data, 'strongsFrequency': [], 'totalVerses': len(data)})
+                    
+            except Exception as mongo_error:
+                print(f"❌ MONGODB: Operation failed - {mongo_error}")
+                print(f"❌ MONGODB: Error type: {type(mongo_error).__name__}")
+                print("⬇️  MONGODB: Falling back to JSON file...")
+                
+        else:
+            print("❌ MONGODB: Client or database not available")
+            print(f"❌ MONGODB: Client configured: {client is not None}")
+            print(f"❌ MONGODB: Database configured: {db is not None}")
+            print("⬇️  MONGODB: Falling back to JSON file...")
         
         # Fallback to JSON
-        print("⚠️  DATA SOURCE: Using JSON file fallback for KJV verse data (SECONDARY)")
-        print("⚠️  Reason: MongoDB not available or connection failed")
+        print("📁 FALLBACK: Using JSON file for KJV verse data")
         return serve_kjv_verses()
 
     except Exception as e:
+        print(f"💥 API ERROR: /api/kjv-data failed - {e}")
+        print(f"💥 API ERROR: Error type: {type(e).__name__}")
         logging.exception("Exception in /api/kjv-data")
         # Fallback to static file
         return serve_kjv_verses()

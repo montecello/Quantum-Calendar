@@ -47,16 +47,47 @@ def get_mongo_client():
     if mongo_client is None:
         try:
             from pymongo import MongoClient
+            from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
             from config import MONGODB_URI, DATABASE_NAME
+            import time
+            
             if MONGODB_URI:
-                mongo_client = MongoClient(MONGODB_URI)
+                print("🔄 MONGODB: Attempting connection to Atlas...")
+                start_time = time.time()
+                
+                # Create client with production-friendly settings
+                mongo_client = MongoClient(
+                    MONGODB_URI,
+                    serverSelectionTimeoutMS=10000,  # 10 second timeout
+                    connectTimeoutMS=10000,
+                    socketTimeoutMS=10000,
+                    maxPoolSize=10,
+                    retryWrites=True
+                )
+                
+                # Test the connection with ping
+                mongo_client.admin.command('ping')
                 mongo_db = mongo_client[DATABASE_NAME]
+                
+                connection_time = time.time() - start_time
+                print(f"✅ MONGODB: Successfully connected to Atlas in {connection_time:.2f}s")
+                print(f"📊 MONGODB: Using database '{DATABASE_NAME}'")
                 logging.info("Connected to MongoDB Atlas")
             else:
+                print("❌ MONGODB: MONGODB_URI not configured")
                 logging.warning("MONGODB_URI not configured")
+                
+        except ConnectionFailure as e:
+            print(f"❌ MONGODB: Connection failed - {e}")
+            logging.error(f"MongoDB connection failed: {e}")
+        except ServerSelectionTimeoutError as e:
+            print(f"⏰ MONGODB: Server selection timeout - {e}")
+            logging.error(f"MongoDB timeout: {e}")
         except ImportError:
+            print("❌ MONGODB: PyMongo not installed")
             logging.warning("PyMongo not installed")
         except Exception as e:
+            print(f"💥 MONGODB: Unexpected error - {e}")
             logging.error(f"Failed to connect to MongoDB: {e}")
     return mongo_client, mongo_db
 
