@@ -490,6 +490,9 @@ def api_kjv_data():
         # Enhanced MongoDB connection debugging
         print(f"🔍 MONGODB: Client object: {type(client).__name__ if client else 'None'}")
         print(f"🔍 MONGODB: Database object: {type(db).__name__ if db else 'None'}")
+        print(f"🔍 MONGODB: Client is None: {client is None}")
+        print(f"🔍 MONGODB: Database is None: {db is None}")
+        print(f"🔍 MONGODB: Flask config keys: {list(current_app.config.keys())}")
         
         if client is not None and db is not None:
             try:
