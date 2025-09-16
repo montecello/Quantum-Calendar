@@ -472,8 +472,9 @@ def api_hebrew_search():
 
 
 # MongoDB API endpoints for KJV verses data with frequency counting
-@api.route('/api/kjv-data')
-def api_kjv_data():
+# Temporarily disabled - duplicate of working endpoint in app.py
+# @api.route('/api/kjv-data')
+def api_kjv_data_disabled():
     try:
         import os
         import json
@@ -493,6 +494,9 @@ def api_kjv_data():
         # Enhanced MongoDB connection debugging
         print(f"🔍 MONGODB: Client object: {type(client).__name__ if client else 'None'}")
         print(f"🔍 MONGODB: Database object: {type(db).__name__ if db else 'None'}")
+        print(f"🔍 MONGODB: Flask config has mongo_client: {'mongo_client' in current_app.config}")
+        print(f"🔍 MONGODB: Flask config has mongo_db: {'mongo_db' in current_app.config}")
+        print(f"🔍 MONGODB: Flask config keys: {sorted([k for k in current_app.config.keys() if 'mongo' in k.lower()])}")
         
         if client is not None and db is not None:
             try:
