@@ -567,3 +567,80 @@ def api_kjv_data():
 def api_etymology_chain():
     """Build complete etymological chain from a Strong's number to its primitive root"""
     return etymology_chain_handler()
+
+# Debug endpoint to compare MongoDB state between local and production
+@api.route('/api/debug-mongodb')
+def debug_mongodb():
+    """Debug endpoint to see MongoDB state in production vs local"""
+    import os
+    from flask import current_app
+    
+    debug_info = {
+        "environment": "production" if os.getenv("VERCEL") else "local",
+        "mongodb_uri_configured": bool(current_app.config.get('mongo_client')),
+        "database_name": current_app.config.get('DATABASE_NAME', 'unknown'),
+        "kjv_collection_name": None,
+        "strong_collection_name": None,
+    }
+    
+    try:
+        from config import DATABASE_NAME, KJV_COLLECTION, STRONG_COLLECTION
+        debug_info.update({
+            "database_name_config": DATABASE_NAME,
+            "kjv_collection_name": KJV_COLLECTION,
+            "strong_collection_name": STRONG_COLLECTION,
+        })
+        
+        client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
+        
+        if client is not None and db is not None:
+            # Test connection
+            client.admin.command('ping')
+            
+            # Get collection stats
+            kjv_collection = db[KJV_COLLECTION]
+            strong_collection = db[STRONG_COLLECTION]
+            
+            debug_info.update({
+                "mongodb_connected": True,
+                "database_name_actual": db.name if hasattr(db, 'name') else 'unknown',
+                "collections_in_db": db.list_collection_names(),
+                "kjv_collection_count": kjv_collection.estimated_document_count(),
+                "strong_collection_count": strong_collection.estimated_document_count(),
+            })
+            
+            # Test specific searches
+            egypt_results = list(kjv_collection.find({"text": {"$regex": "egypt", "$options": "i"}}, {'_id': 0}).limit(5))
+            mizraim_results = list(kjv_collection.find({"text": {"$regex": "mizraim", "$options": "i"}}, {'_id': 0}).limit(5))
+            h4714_results = list(kjv_collection.find({"strongsNumbers": "H4714"}, {'_id': 0}).limit(5))
+            
+            debug_info.update({
+                "egypt_search_count": len(egypt_results),
+                "mizraim_search_count": len(mizraim_results),
+                "h4714_search_count": len(h4714_results),
+                "sample_verse": h4714_results[0] if h4714_results else None,
+            })
+            
+            # Check sample document structure
+            sample_doc = kjv_collection.find_one({}, {'_id': 0})  # Exclude ObjectId
+            if sample_doc:
+                debug_info["sample_doc_keys"] = list(sample_doc.keys())
+                debug_info["sample_text"] = sample_doc.get('text', '')[:100]
+                debug_info["sample_strongs"] = sample_doc.get('strongsNumbers', [])[:5]
+            
+        else:
+            debug_info.update({
+                "mongodb_connected": False,
+                "client_available": client is not None,
+                "db_available": db is not None,
+                "error": "MongoDB client or database not available"
+            })
+            
+    except Exception as e:
+        debug_info.update({
+            "mongodb_connected": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        })
+    
+    return jsonify(debug_info)
