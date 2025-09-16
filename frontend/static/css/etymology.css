@@ -1,0 +1,381 @@
+/* Etymology Analysis Chain Styles */
+.etymology-analysis {
+    background: #173f5f;
+    border: 2px solid #3caea3;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 1200px;
+    box-shadow: 0 4px 24px rgba(60, 174, 163, 0.2);
+    position: relative;
+    z-index: 100;
+}
+
+.etymology-title {
+    color: #ffd700;
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 16px;
+    text-align: center;
+    text-shadow: 0 0 4px rgba(255, 215, 0, 0.5);
+}
+
+.etymology-chain {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    position: relative;
+}
+
+.etymology-entry {
+    background: rgba(60, 174, 163, 0.1);
+    border: 1px solid rgba(60, 174, 163, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    /* Ensure elements are visible by default */
+    opacity: 1;
+    transform: translateY(0);
+    
+    /* Animation for entrance effect */
+    animation: slideOut 0.6s ease-out forwards;
+}
+
+/* Staggered animation delays for sliding effect */
+.etymology-entry:nth-child(1) { animation-delay: 0.1s; }
+.etymology-entry:nth-child(3) { animation-delay: 0.3s; } /* Skip arrows (2, 4, 6) */
+.etymology-entry:nth-child(5) { animation-delay: 0.5s; }
+.etymology-entry:nth-child(7) { animation-delay: 0.7s; }
+.etymology-entry:nth-child(9) { animation-delay: 0.9s; }
+
+@keyframes slideOut {
+    0% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    50% {
+        opacity: 0.7;
+        transform: translateY(-10px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Different background colors for each level in the chain */
+.etymology-entry:nth-child(1) {
+    background: rgba(60, 174, 163, 0.15);
+    border-color: rgba(60, 174, 163, 0.5);
+}
+
+.etymology-entry:nth-child(3) {
+    background: rgba(255, 140, 0, 0.1);
+    border-color: rgba(255, 140, 0, 0.4);
+}
+
+.etymology-entry:nth-child(5) {
+    background: rgba(138, 43, 226, 0.1);
+    border-color: rgba(138, 43, 226, 0.4);
+}
+
+.etymology-entry:nth-child(7) {
+    background: rgba(255, 69, 0, 0.1);
+    border-color: rgba(255, 69, 0, 0.4);
+}
+
+.etymology-entry:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(60, 174, 163, 0.3);
+}
+
+/* Primitive root gets the pulse animation */
+.etymology-entry.primitive-root {
+    border-color: #ffd700 !important;
+    background: rgba(255, 215, 0, 0.1) !important;
+    animation: slideOut 0.6s ease-out forwards, etymology-pulse 1s ease-in-out infinite 1s !important;
+}
+
+@keyframes etymology-pulse {
+    0% { 
+        box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 1), 0 0 12px 2px rgba(255, 215, 0, 0.6);
+        border-color: #ffd700;
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 0.3), 0 0 20px 4px rgba(255, 215, 0, 0.8);
+        border-color: rgba(255, 215, 0, 0.8);
+        transform: scale(1.02);
+    }
+    100% { 
+        box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 1), 0 0 12px 2px rgba(255, 215, 0, 0.6);
+        border-color: #ffd700;
+        transform: scale(1);
+    }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .etymology-entry.primitive-root {
+        animation: none;
+        box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 1), 0 0 12px 2px rgba(255, 215, 0, 0.6);
+        border-color: #ffd700;
+    }
+}
+
+.etymology-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.etymology-strongs {
+    color: #3caea3;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.etymology-type {
+    background: rgba(60, 174, 163, 0.2);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.etymology-morphology {
+    background: rgba(138, 43, 226, 0.3);
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.etymology-type.primitive {
+    background: rgba(255, 215, 0, 0.8);
+    color: #173f5f;
+}
+
+.etymology-type.derived {
+    background: rgba(255, 140, 0, 0.8);
+    color: #fff;
+}
+
+.etymology-type.corresponding {
+    background: rgba(138, 43, 226, 0.8);
+    color: #fff;
+}
+
+.etymology-words {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.etymology-hebrew {
+    color: #fff;
+    font-size: 1.6rem;
+    font-weight: bold;
+    direction: rtl;
+}
+
+.etymology-transliteration {
+    color: #e0e6ed;
+    font-style: italic;
+    font-size: 1.1rem;
+}
+
+.etymology-pos {
+    color: #ffd700;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.etymology-explanation {
+    color: #40e0d0;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.etymology-description {
+    color: #cfe0f2;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.etymology-references {
+    color: #ff69b4;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+.etymology-definitions {
+    margin-bottom: 8px;
+}
+
+.definition-item {
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.definition-item.primary {
+    color: #ffd700;
+    font-size: 0.95rem;
+    background: rgba(255, 215, 0, 0.1);
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 3px solid #ffd700;
+}
+
+.definition-item.secondary {
+    color: #e0e6ed;
+    font-size: 0.85rem;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 3px;
+    margin-left: 8px;
+}
+
+.greek-references {
+    color: #98fb98;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+}
+
+.etymology-meaning {
+    color: #ffd700;
+    font-size: 0.9rem;
+    background: rgba(255, 215, 0, 0.1);
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 3px solid #ffd700;
+}
+
+.etymology-arrow {
+    color: #3caea3;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 8px 0;
+    text-align: center;
+    opacity: 0;
+    animation: fadeInArrow 0.4s ease-out forwards;
+}
+
+/* Staggered animation for arrows */
+.etymology-arrow:nth-child(2) { animation-delay: 0.2s; }
+.etymology-arrow:nth-child(4) { animation-delay: 0.4s; }
+.etymology-arrow:nth-child(6) { animation-delay: 0.6s; }
+.etymology-arrow:nth-child(8) { animation-delay: 0.8s; }
+
+@keyframes fadeInArrow {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    100% {
+        opacity: 0.7;
+        transform: scale(1);
+    }
+}
+
+.etymology-summary {
+    background: rgba(60, 174, 163, 0.1);
+    border: 1px solid rgba(60, 174, 163, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 16px;
+    text-align: center;
+}
+
+.etymology-summary-text {
+    color: #e0e6ed;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.etymology-count {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.etymology-primitive-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.etymology-primitive-badge::before {
+    content: "🌱";
+    font-size: 1rem;
+}
+
+/* Loading states */
+.etymology-loading {
+    text-align: center;
+    padding: 40px;
+    color: #3caea3;
+}
+
+.etymology-loading-spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(60, 174, 163, 0.3);
+    border-top: 3px solid #3caea3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+}
+
+.etymology-error {
+    background: rgba(214, 38, 96, 0.1);
+    border: 1px solid rgba(214, 38, 96, 0.3);
+    color: #d6266040;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .etymology-analysis {
+        padding: 16px;
+        margin: 16px 0;
+    }
+    
+    .etymology-words {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .etymology-hebrew {
+        font-size: 1.4rem;
+    }
+    
+    .etymology-transliteration {
+        font-size: 1rem;
+    }
+}

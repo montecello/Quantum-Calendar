@@ -34,6 +34,7 @@
     <link rel="stylesheet" href="/static/css/navbar.css">
     <link rel="stylesheet" href="/static/css/calendar_grid.css">
     <link rel="stylesheet" href="/static/css/side_panel.css">
+    <link rel="stylesheet" href="/static/css/etymology.css">
 
     <style>
         /* Primitive Root Tree Visualization Styles */
@@ -201,6 +202,7 @@
             overflow-y: auto;
             z-index: 1000;
             display: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
         .autosuggest-item {
@@ -208,13 +210,76 @@
             cursor: pointer;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             transition: background-color 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            color: #e0e6ed;
         }
 
         .autosuggest-item:hover {
             background-color: rgba(64, 224, 208, 0.2);
+        }
+
+        .autosuggest-item:last-child {
+            border-bottom: none;
+        }
+
+        .autosuggest-main {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .autosuggest-hebrew {
+            font-size: 1.2rem;
+            color: #40e0d0;
+            font-weight: bold;
+        }
+
+        .autosuggest-number {
+            color: #ffd700;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .autosuggest-english {
+            color: #e0e6ed;
+            font-style: italic;
+            margin-right: 8px;
+        }
+
+        .autosuggest-dash {
+            color: #888;
+            margin-right: 8px;
+        }
+
+        .autosuggest-primitive {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .primitive-chain {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .chain-level-1 {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .chain-arrow {
+            color: #888;
+            margin: 0 8px;
+        }
+
+        .chain-level-2 {
+            color: #40e0d0;
+            font-weight: bold;
+        }
+
+        .primitive-meaning {
+            color: #e0e6ed;
+            font-size: 0.85rem;
         }
 
         /* Combined results styling */
@@ -299,9 +364,10 @@
                 <h2 style="color: #ffd700; margin-bottom: 20px;">🔍 Word Analysis Tool</h2>
 
                 <div class="search-inputs" style="margin-bottom: 20px;">
-                    <div class="input-group">
+                    <div class="input-group" style="position: relative;">
                         <label for="strongs-search" style="color: #40e0d0; display: block; margin-bottom: 8px; font-weight: bold;">Search Hebrew Words & Strong's Numbers</label>
                         <input type="text" id="strongs-search" placeholder="Type Hebrew word, Strong's number (H1, H120), or English meaning..." style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #e0e6ed; font-size: 16px; font-family: 'HybridFont', 'Pictocrypto', sans-serif;">
+                        <div id="autosuggest-container" class="autosuggest-container"></div>
                         <small style="color: #888; display: block; margin-top: 5px;">Start typing to see autosuggestions from the complete Strong's Hebrew concordance</small>
                     </div>
                 </div>
@@ -409,13 +475,10 @@
     <script src="/static/js/side_panel.js"></script>
     <script src="/static/js/accordion.js"></script>
     <script src="/static/js/matrix_rain.js"></script>
+    <script src="/static/js/etymology.js"></script>
 
     <!-- Hebrew XML Parser and Enhanced Primitive Roots JavaScript -->
-    <script src="/static/js/hebrew_xml_parser.js"></script>
     <script src="/static/js/primitive_roots.js"></script>
-
-    <!-- Test script for development (remove in production) -->
-    <script src="/static/js/test_hebrew_integration.js"></script>
 
     <!-- Footer -->
     {% include 'footer.html' %}

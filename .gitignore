@@ -18,6 +18,11 @@ venv/
 
 .vscode/
 
-#
+# Large data files (keep local only)
 kjv_verses.json
 strongs_complete.json
+
+
+Hebrew.xml
+hebrew_enhanced.json
+verses.json

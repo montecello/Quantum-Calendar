@@ -6,6 +6,7 @@ from config import GEOAPIFY_API_KEY
 from cachetools import TTLCache
 from backend.calendar import get_calendar_for_year
 from backend.astronomy.years import get_multi_year_calendar_data
+from backend.etymology_api import etymology_chain_handler
 from config import ASTRO_API_BASE
 
 api = Blueprint('api', __name__)
@@ -218,11 +219,62 @@ def serve_hebrew_strongs():
 # Serve KJV verses data
 @api.route('/backend/data/kjv_verses.json')
 def serve_kjv_verses():
+    """Fallback JSON implementation with frequency counting support"""
     try:
+        import json
+        import os
+        
+        print("📁 DATA SOURCE: Loading KJV verses from JSON file (FALLBACK MODE)")
+        
+        # Get query parameters for JSON fallback
+        query_text = request.args.get('query', '').strip()
+        limit = request.args.get('limit', 100, type=int)
+        
+        # Load JSON data
         data_dir = os.path.join(os.path.dirname(__file__), 'data')
-        return send_from_directory(data_dir, 'kjv_verses.json', mimetype='application/json')
+        verses_file = os.path.join(data_dir, 'verses.json')
+        
+        with open(verses_file, 'r') as f:
+            all_data = json.load(f)
+        
+        print(f"INFO: JSON loaded with {len(all_data)} verses (fallback)")
+        
+        if query_text:
+            # Filter JSON data by text content
+            filtered = []
+            for entry in all_data:
+                text = entry.get('text', '').lower()
+                if query_text.lower() in text:
+                    filtered.append(entry)
+                    if len(filtered) >= limit:
+                        break
+            
+            # Count Strong's number frequencies
+            strongs_freq = {}
+            for verse in filtered:
+                strongs_list = verse.get('strongsNumbers', [])
+                for strongs_num in strongs_list:
+                    strongs_freq[strongs_num] = strongs_freq.get(strongs_num, 0) + 1
+            
+            # Sort Strong's numbers by frequency (descending)
+            sorted_strongs = sorted(strongs_freq.items(), key=lambda x: x[1], reverse=True)
+            print(f"INFO: JSON search for '{query_text}' found {len(filtered)} verses")
+            print(f"INFO: Found {len(sorted_strongs)} unique Strong's numbers")
+            if sorted_strongs:
+                print(f"INFO: Top 5 Strong's by frequency: {sorted_strongs[:5]}")
+            
+            return jsonify({
+                'verses': filtered,
+                'strongsFrequency': sorted_strongs,
+                'totalVerses': len(filtered)
+            })
+        else:
+            # No query - return first 'limit' verses
+            data = all_data[:limit]
+            return jsonify({'verses': data, 'strongsFrequency': [], 'totalVerses': len(data)})
+            
     except Exception as e:
-        logging.exception("Exception serving kjv_verses.json")
+        logging.exception("Exception serving kjv verses with frequency counting")
         return jsonify({"error": str(e)}), 500
 
 
@@ -233,79 +285,226 @@ def api_strongs_data():
         from flask import current_app
         client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
 
-        if client is None or db is None:
-            # Fallback to static file if MongoDB not available
-            return serve_hebrew_strongs()
-
-        from config import STRONG_COLLECTION
-        collection = db[STRONG_COLLECTION]
+        if client is not None and db is not None:
+            print("✓ DATA SOURCE: Using MongoDB Atlas for Strong's data (PRIMARY)")
+            from config import STRONG_COLLECTION
+            collection = db[STRONG_COLLECTION]
 
         # Get query parameters
         strongs_num = request.args.get('strongs_num', type=int)
         search = request.args.get('search', type=str)
+        query_param = request.args.get('query', type=str)  # Add support for 'query' parameter
         language = request.args.get('language', type=str)
         limit = request.args.get('limit', 100, type=int)
 
         query = {}
 
-        if strongs_num:
+        # Handle 'query' parameter (e.g., 'H4714' or '4714')
+        if query_param:
+            # Extract number from query like 'H4714' or '4714'
+            if query_param.startswith('H'):
+                try:
+                    num = int(query_param[1:])
+                    query['strongsNumber'] = num
+                    print(f"DEBUG: Searching for Strong's number {num} from query '{query_param}'")
+                except ValueError:
+                    # If not a number, treat as text search
+                    query['$or'] = [
+                        {'word': {'$regex': query_param, '$options': 'i'}},
+                        {'transliteration': {'$regex': query_param, '$options': 'i'}},
+                        {'definitions': {'$regex': query_param, '$options': 'i'}}
+                    ]
+                    print(f"DEBUG: Text searching for '{query_param}'")
+            else:
+                try:
+                    num = int(query_param)
+                    query['strongsNumber'] = num
+                    print(f"DEBUG: Searching for Strong's number {num} from query '{query_param}'")
+                except ValueError:
+                    # If not a number, treat as text search
+                    query['$or'] = [
+                        {'word': {'$regex': query_param, '$options': 'i'}},
+                        {'transliteration': {'$regex': query_param, '$options': 'i'}},
+                        {'definitions': {'$regex': query_param, '$options': 'i'}}
+                    ]
+                    print(f"DEBUG: Text searching for '{query_param}'")
+        elif strongs_num:
             query['strongsNumber'] = strongs_num
-        if language:
-            query['language'] = language
-        if search:
+        elif search:
             # Search in word, transliteration, or definitions
             query['$or'] = [
                 {'word': {'$regex': search, '$options': 'i'}},
                 {'transliteration': {'$regex': search, '$options': 'i'}},
                 {'definitions': {'$regex': search, '$options': 'i'}}
             ]
+        
+        if language:
+            query['language'] = language
 
         results = list(collection.find(query, {'_id': 0}).limit(limit))
         return jsonify(results)
 
     except Exception as e:
         logging.exception("Exception in /api/strongs-data")
+        print("⚠️  DATA SOURCE: Using JSON file fallback for Strong's data (SECONDARY)")
+        print(f"⚠️  Reason: MongoDB error - {e}")
         # Fallback to static file
         return serve_hebrew_strongs()
 
 
-# MongoDB API endpoints for KJV verses data
+# Hebrew word search endpoint - search Strong's data by Hebrew word
+@api.route('/api/hebrew-search')
+def api_hebrew_search():
+    try:
+        from flask import current_app
+        import re
+        
+        # Get query parameters
+        hebrew_query = request.args.get('query', '').strip()
+        limit = request.args.get('limit', 20, type=int)
+        
+        print(f"INFO: Hebrew search called with query='{hebrew_query}', limit={limit}")
+        
+        if not hebrew_query:
+            return jsonify([])
+        
+        client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
+
+        if client is not None and db is not None:
+            print("✓ DATA SOURCE: Using MongoDB Atlas for Hebrew word search (PRIMARY)")
+            from config import STRONG_COLLECTION
+            collection = db[STRONG_COLLECTION]
+            
+            # Search for Hebrew words that contain the query
+            # Try both exact match and regex match
+            query = {
+                '$or': [
+                    {'word': hebrew_query},  # Exact match first
+                    {'word': {'$regex': hebrew_query, '$options': 'i'}}  # Then regex match
+                ]
+            }
+            
+            print(f"DEBUG: Hebrew search query: {query}")
+            results = list(collection.find(query, {'_id': 0}).limit(limit))
+            print(f"INFO: Hebrew search found {len(results)} matches")
+            
+            if results:
+                print(f"DEBUG: First Hebrew match: H{results[0].get('strongsNumber')} - {results[0].get('word')} ({results[0].get('transliteration')})")
+                print(f"DEBUG: Language codes in results: {set(r.get('language') for r in results[:5])}")
+            else:
+                # Debug: Try to find any entries with Hebrew characters
+                debug_query = {'word': {'$regex': '[\u0590-\u05FF]'}}  # Hebrew Unicode range
+                debug_results = list(collection.find(debug_query, {'_id': 0}).limit(3))
+                print(f"DEBUG: Found {len(debug_results)} entries with Hebrew characters")
+                if debug_results:
+                    for r in debug_results:
+                        print(f"DEBUG: H{r.get('strongsNumber')} - {repr(r.get('word'))} ({r.get('transliteration')})")
+            
+            return jsonify(results)
+        
+        # Fallback to JSON file
+        print("⚠️  DATA SOURCE: Using JSON file fallback for Hebrew word search (SECONDARY)")
+        print("⚠️  Reason: MongoDB not available")
+        try:
+            import json
+            import os
+            
+            data_dir = os.path.join(os.path.dirname(__file__), 'data')
+            strongs_file = os.path.join(data_dir, 'strongs.json')
+            
+            with open(strongs_file, 'r') as f:
+                all_data = json.load(f)
+            
+            # Filter for Hebrew entries that match the query
+            filtered = []
+            for entry in all_data:
+                if (entry.get('language') == 'heb' and 
+                    entry.get('word') and 
+                    hebrew_query in entry.get('word', '')):
+                    filtered.append(entry)
+                    if len(filtered) >= limit:
+                        break
+            
+            print(f"INFO: JSON Hebrew search found {len(filtered)} matches")
+            return jsonify(filtered)
+            
+        except Exception as e:
+            print(f"ERROR: JSON fallback failed: {e}")
+            return jsonify([])
+
+    except Exception as e:
+        logging.exception("Exception in /api/hebrew-search")
+        return jsonify([])
+
+
+# MongoDB API endpoints for KJV verses data with frequency counting
 @api.route('/api/kjv-data')
 def api_kjv_data():
     try:
         from flask import current_app
+        import os
+        import json
+        
+        # Get query parameters - simplified to match app.py implementation
+        query_text = request.args.get('query', '').strip()
+        limit = request.args.get('limit', 100, type=int)
+        
+        print(f"INFO: Routes /api/kjv-data called with query='{query_text}', limit={limit}")
+        
         client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
 
-        if client is None or db is None:
-            # Fallback to static file if MongoDB not available
-            return serve_kjv_verses()
-
-        from config import KJV_COLLECTION
-        collection = db[KJV_COLLECTION]
-
-        # Get query parameters
-        book = request.args.get('book', type=str)
-        chapter = request.args.get('chapter', type=int)
-        verse = request.args.get('verse', type=int)
-        search = request.args.get('search', type=str)
-        limit = request.args.get('limit', 100, type=int)
-
-        query = {}
-
-        if book:
-            query['book'] = {'$regex': f'^{book}$', '$options': 'i'}
-        if chapter:
-            query['chapter'] = chapter
-        if verse:
-            query['verse'] = verse
-        if search:
-            # Search in text
-            query['text'] = {'$regex': search, '$options': 'i'}
-
-        results = list(collection.find(query, {'_id': 0}).limit(limit))
-        return jsonify(results)
+        if client is not None and db is not None:
+            print("✓ DATA SOURCE: Using MongoDB Atlas for KJV verse data (PRIMARY)")
+            print(f"✓ MongoDB client status: Connected")
+            print(f"✓ Database: {db.name if hasattr(db, 'name') else 'quantum-calendar'}")
+            from config import KJV_COLLECTION
+            collection = db[KJV_COLLECTION]
+            
+            if query_text:
+                # Search verses by text content
+                regex = {"$regex": query_text, "$options": "i"}
+                print(f"DEBUG: Searching with regex: {regex}")
+                matched_verses = list(collection.find({
+                    "text": regex
+                }, {'_id': 0}).limit(limit))
+                print(f"INFO: MongoDB search for '{query_text}' found {len(matched_verses)} verses")
+                
+                # Count Strong's number frequencies across matched verses
+                strongs_freq = {}
+                for verse in matched_verses:
+                    strongs_list = verse.get('strongsNumbers', [])
+                    for strongs_num in strongs_list:
+                        strongs_freq[strongs_num] = strongs_freq.get(strongs_num, 0) + 1
+                
+                # Sort Strong's numbers by frequency (descending)
+                sorted_strongs = sorted(strongs_freq.items(), key=lambda x: x[1], reverse=True)
+                print(f"INFO: Found {len(sorted_strongs)} unique Strong's numbers")
+                if sorted_strongs:
+                    print(f"INFO: Top 5 Strong's by frequency: {sorted_strongs[:5]}")
+                
+                # Return verses with frequency-sorted Strong's numbers
+                return jsonify({
+                    'verses': matched_verses,
+                    'strongsFrequency': sorted_strongs,
+                    'totalVerses': len(matched_verses)
+                })
+            else:
+                data = list(collection.find({}, {'_id': 0}).limit(limit))
+                print(f"INFO: Retrieved {len(data)} verses from MongoDB (no query)")
+                return jsonify({'verses': data, 'strongsFrequency': [], 'totalVerses': len(data)})
+        
+        # Fallback to JSON
+        print("⚠️  DATA SOURCE: Using JSON file fallback for KJV verse data (SECONDARY)")
+        print("⚠️  Reason: MongoDB not available or connection failed")
+        return serve_kjv_verses()
 
     except Exception as e:
         logging.exception("Exception in /api/kjv-data")
         # Fallback to static file
         return serve_kjv_verses()
+
+# Etymology chain endpoint for building word trees
+@api.route('/api/etymology-chain')
+def api_etymology_chain():
+    """Build complete etymological chain from a Strong's number to its primitive root"""
+    return etymology_chain_handler()

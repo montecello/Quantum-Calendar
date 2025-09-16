@@ -7,3 +7,4 @@ astral
 cachetools
 python-dotenv
 pymongo
+colorama

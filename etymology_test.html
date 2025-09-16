@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Etymology Analysis Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/etymology.css">
+    <style>
+        body {
+            background: #0a2342;
+            color: #e0e6ed;
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #173f5f;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #3caea3;
+        }
+        .test-button {
+            background: #3caea3;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px;
+            transition: background 0.2s;
+        }
+        .test-button:hover {
+            background: #2a8a7e;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🌳 Etymology Analysis Test</h1>
+        <p>Click the buttons below to test the etymology analysis for different Hebrew words:</p>
+        
+        <button class="test-button" onclick="testEtymology('H4714', 'Egypt/Mitsrayim')">
+            Test H4714 (Egypt/Mitsrayim)
+        </button>
+        
+        <button class="test-button" onclick="testEtymology('H1', 'Father/אב')">
+            Test H1 (Father/אב)
+        </button>
+        
+        <button class="test-button" onclick="testEtymology('H120', 'Man/אדם')">
+            Test H120 (Man/אדם)
+        </button>
+        
+        <button class="test-button" onclick="testEtymology('H430', 'God/אלהים')">
+            Test H430 (God/אלהים)
+        </button>
+        
+        <div id="etymology-container"></div>
+    </div>
+
+    <script src="/static/js/etymology.js"></script>
+    <script>
+        function testEtymology(strongsNumber, selectedWord) {
+            console.log('Testing etymology for:', strongsNumber, selectedWord);
+            if (window.EtymologyAnalysis) {
+                window.EtymologyAnalysis.showAnalysis(strongsNumber, selectedWord);
+            } else {
+                console.error('EtymologyAnalysis not found');
+            }
+        }
+        
+        // Test the API directly
+        async function testAPI() {
+            try {
+                const response = await fetch('/api/etymology-chain?strongs=H4714');
+                const data = await response.json();
+                console.log('API Test Result:', data);
+            } catch (error) {
+                console.error('API Test Failed:', error);
+            }
+        }
+        
+        // Run API test on page load
+        testAPI();
+    </script>
+</body>
+</html>

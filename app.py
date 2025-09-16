@@ -13,13 +13,13 @@ from backend.astronomy.year import print_yearly_events
 
 import os
 import logging
+from colorama import Fore, Style
+import json
 
 # Load .env for local development (safe on Vercel; ignored if no .env)
-try:
-    from dotenv import load_dotenv  # type: ignore
-    load_dotenv()
-except Exception:
-    pass
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
+print(f"Debug: MONGODB_URI = {os.getenv('MONGODB_URI')}")
 
 GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY")
 
@@ -65,6 +65,35 @@ def get_mongo_client():
 client, db = get_mongo_client()
 app.config['mongo_client'] = client
 app.config['mongo_db'] = db
+
+
+def check_mongo_connection():
+    """Check MongoDB connection and database access with colored logs."""
+    try:
+        from config import STRONG_COLLECTION, KJV_COLLECTION
+        client, db = get_mongo_client()
+        if client is None or db is None:
+            print(Fore.RED + "✗ MongoDB connection failed: Client or database not initialized" + Style.RESET_ALL)
+            return False
+        
+        # Try to ping the database
+        client.admin.command('ping')
+        
+        # Try to access collections
+        strong_count = db[STRONG_COLLECTION].count_documents({})
+        kjv_count = db[KJV_COLLECTION].count_documents({})
+        
+        print(Fore.GREEN + f"✓ MongoDB connected successfully" + Style.RESET_ALL)
+        print(Fore.GREEN + f"✓ Database '{db.name}' accessible" + Style.RESET_ALL)
+        print(Fore.GREEN + f"✓ Collection '{STRONG_COLLECTION}' has {strong_count} documents" + Style.RESET_ALL)
+        print(Fore.GREEN + f"✓ Collection '{KJV_COLLECTION}' has {kjv_count} documents" + Style.RESET_ALL)
+        return True
+    except ImportError as e:
+        print(Fore.RED + f"✗ MongoDB check failed: Missing dependency - {e}" + Style.RESET_ALL)
+        return False
+    except Exception as e:
+        print(Fore.RED + f"✗ MongoDB connection or access failed: {e}" + Style.RESET_ALL)
+        return False
 
 
 # Load astronomical data at startup
@@ -140,9 +169,9 @@ def select_location():
     print(f"Selected location: {name} | {lat}, {lon} | Timezone: {tz_name} | Year: {year}")
 
     # Sun events summary (console)
-    print(f"\n--- Sun Events for Today ({name}, lat={lat}, lon={lon}, tz={tz_name}) ---")
-    print_today_sun_events(lat, lon, tz_name)
-    print("--- End Sun Events ---\n")
+    # print(f"\n--- Sun Events for Today ({name}, lat={lat}, lon={lon}, tz={tz_name}) ---")
+    # print_today_sun_events(lat, lon, tz_name)
+    # print("--- End Sun Events ---\n")
 
     # Moon/month calculations
     now_utc = datetime.utcnow().replace(tzinfo=pytz.UTC)
@@ -188,20 +217,16 @@ def select_location():
     if month_num is None:
         month_num = 1 if (dawn_after_prev and now_local < dawn_after_prev) else len(moons)
 
-    print_today_moon_events(lat, lon, tz_name, location_name=name)
+    # print_today_moon_events(lat, lon, tz_name, location_name=name)
     if year:
         anchor_year = int(year)
         _ = pytz.UTC.localize(datetime(anchor_year, 1, 1))  # keep simple; yearly decides anchors
-        print_yearly_events(lat, lon, tz_name, location_name=name)
-    else:
-        print_yearly_events(lat, lon, tz_name, location_name=name)
+        # print_yearly_events(lat, lon, tz_name, location_name=name)
 
     # Multi-year calendar summary
-    from backend.astronomy.years import print_multi_year_calendar
-    now = datetime.now(pytz.UTC)
-    print(f"\n--- Multi-Year Calendar ({name}, {now.year-1}-{str(now.year+1)[-2:]}) ---")
-    print_multi_year_calendar(now.year - 1, now.year + 1, lat, lon, tz_name)
-    print("--- End Multi-Year Calendar ---\n")
+    # print(f"\n--- Multi-Year Calendar ({name}, {now.year-1}-{str(now.year+1)[-2:]}) ---")
+    # print_multi_year_calendar(now.year - 1, now.year + 1, lat, lon, tz_name)
+    # print("--- End Multi-Year Calendar ---\n")
 
     # Build monthsInYear list
     months_in_year = []
@@ -284,22 +309,214 @@ def generate_heatmaps():
             'message': str(e)
         }), 500
 
+@app.route('/api/strongs-data')
+def get_strongs_data():
+    limit = int(request.args.get('limit', 100))
+    query = request.args.get('query', '').strip()
+    print(f"INFO: API /api/strongs-data called with query='{query}', limit={limit}")
+    
+    try:
+        if mongo_db:
+            print("INFO: Using MongoDB for Strong's data")
+            collection = mongo_db["strongs"]
+            
+            if query:
+                # Search with regex - case insensitive
+                regex = {"$regex": query, "$options": "i"}
+                data = list(collection.find({
+                    "$or": [
+                        {"hebrew": regex},
+                        {"english": regex},
+                        {"strongsNumber": {"$regex": query}}
+                    ]
+                }).limit(limit))
+                print(f"INFO: MongoDB search for '{query}' found {len(data)} documents")
+                
+                # Log first few results for debugging
+                for i, result in enumerate(data[:3]):
+                    strongs_num = result.get('strongsNumber', 'N/A')
+                    english = result.get('english', 'N/A')
+                    hebrew = result.get('hebrew', 'N/A')
+                    print(f"INFO: MongoDB result {i+1}: H{strongs_num} - {english} - {hebrew}")
+            else:
+                data = list(collection.find({}, {'_id': 0}).limit(limit))
+                print(f"INFO: Retrieved {len(data)} documents from MongoDB (no query)")
+            
+            if data:
+                return jsonify(data)
+            else:
+                print(f"INFO: No MongoDB results for '{query}', falling back to JSON")
+        
+        # Fallback to JSON
+        print("INFO: MongoDB not available, falling back to JSON")
+        try:
+            with open(os.path.join(BASE_DIR, 'backend', 'data', 'strongs.json'), 'r') as f:
+                all_data = json.load(f)
+            
+            print(f"INFO: JSON loaded with {len(all_data)} entries")
+            
+            if query:
+                # Filter JSON data with better matching
+                filtered = []
+                for entry in all_data:
+                    hebrew = entry.get('hebrew', '').lower()
+                    english = entry.get('english', '').lower()
+                    strongs_num = str(entry.get('strongsNumber', '')).lower()
+                    
+                    if (query.lower() in hebrew or 
+                        query.lower() in english or 
+                        query.lower() in strongs_num):
+                        filtered.append(entry)
+                        if len(filtered) >= limit:
+                            break
+                data = filtered
+                print(f"INFO: JSON search for '{query}' found {len(data)} entries")
+                
+                # Log first few results for debugging
+                for i, result in enumerate(data[:3]):
+                    strongs_num = result.get('strongsNumber', 'N/A')
+                    english = result.get('english', 'N/A')
+                    hebrew = result.get('hebrew', 'N/A')
+                    print(f"INFO: JSON result {i+1}: H{strongs_num} - {english} - {hebrew}")
+            else:
+                data = all_data[:limit]
+                print(f"INFO: Loaded {len(data)} entries from JSON (no query)")
+            
+            return jsonify(data)
+        except Exception as e:
+            print(f"ERROR: Failed to load strongs.json: {e}")
+            return jsonify([])
+    except Exception as e:
+        print(f"ERROR: Error in get_strongs_data: {e}")
+        return jsonify([])
+
+@app.route('/api/kjv-data')
+def get_kjv_data():
+    limit = int(request.args.get('limit', 100))
+    query = request.args.get('query', '').strip()
+    print(f"INFO: API /api/kjv-data called with query='{query}', limit={limit}")
+    
+    try:
+        # Try MongoDB first
+        if mongo_db is not None:
+            print("INFO: Using MongoDB for KJV data")
+            collection = mongo_db["verses"]
+            
+            if query:
+                # Search verses by text content
+                regex = {"$regex": query, "$options": "i"}
+                print(f"DEBUG: Searching with regex: {regex}")
+                matched_verses = list(collection.find({
+                    "text": regex
+                }).limit(limit))
+                print(f"INFO: MongoDB search for '{query}' found {len(matched_verses)} verses")
+                
+                # Debug: Print first match if any
+                if matched_verses:
+                    print(f"DEBUG: First match text: {matched_verses[0].get('text', '')[:100]}")
+                
+                if len(matched_verses) == 0:
+                    # Try a direct test search
+                    test_egypt = list(collection.find({"text": {"$regex": "Egypt", "$options": "i"}}).limit(2))
+                    print(f"DEBUG: Direct Egypt search found {len(test_egypt)} verses")
+                    if test_egypt:
+                        print(f"DEBUG: Direct search result: {test_egypt[0].get('text', '')[:100]}")
+                
+                # Count Strong's number frequencies across matched verses
+                strongs_freq = {}
+                for verse in matched_verses:
+                    strongs_list = verse.get('strongsNumbers', [])
+                    for strongs_num in strongs_list:
+                        strongs_freq[strongs_num] = strongs_freq.get(strongs_num, 0) + 1
+                
+                # Sort Strong's numbers by frequency (descending)
+                sorted_strongs = sorted(strongs_freq.items(), key=lambda x: x[1], reverse=True)
+                print(f"INFO: Found {len(sorted_strongs)} unique Strong's numbers")
+                if sorted_strongs:
+                    print(f"INFO: Top 5 Strong's by frequency: {sorted_strongs[:5]}")
+                
+                # Return verses with frequency-sorted Strong's numbers
+                return jsonify({
+                    'verses': matched_verses,
+                    'strongsFrequency': sorted_strongs,
+                    'totalVerses': len(matched_verses)
+                })
+            else:
+                data = list(collection.find({}, {'_id': 0}).limit(limit))
+                print(f"INFO: Retrieved {len(data)} verses from MongoDB (no query)")
+                return jsonify({'verses': data, 'strongsFrequency': [], 'totalVerses': len(data)})
+        
+        # Fallback to JSON
+        print("INFO: Using JSON fallback for KJV data")
+        try:
+            with open(os.path.join(BASE_DIR, 'backend', 'data', 'verses.json'), 'r') as f:
+                all_data = json.load(f)
+            
+            print(f"INFO: JSON loaded with {len(all_data)} verses")
+            
+            if query:
+                # Filter JSON data by text content
+                filtered = []
+                for entry in all_data:
+                    text = entry.get('text', '').lower()
+                    if query.lower() in text:
+                        filtered.append(entry)
+                        if len(filtered) >= limit:
+                            break
+                
+                # Count Strong's number frequencies
+                strongs_freq = {}
+                for verse in filtered:
+                    strongs_list = verse.get('strongsNumbers', [])
+                    for strongs_num in strongs_list:
+                        strongs_freq[strongs_num] = strongs_freq.get(strongs_num, 0) + 1
+                
+                # Sort Strong's numbers by frequency (descending)
+                sorted_strongs = sorted(strongs_freq.items(), key=lambda x: x[1], reverse=True)
+                print(f"INFO: JSON search for '{query}' found {len(filtered)} verses")
+                print(f"INFO: Found {len(sorted_strongs)} unique Strong's numbers")
+                if sorted_strongs:
+                    print(f"INFO: Top 5 Strong's by frequency: {sorted_strongs[:5]}")
+                
+                return jsonify({
+                    'verses': filtered,
+                    'strongsFrequency': sorted_strongs,
+                    'totalVerses': len(filtered)
+                })
+            else:
+                return jsonify({'verses': all_data[:limit], 'strongsFrequency': [], 'totalVerses': len(all_data[:limit])})
+            
+        except Exception as e:
+            print(f"ERROR: Failed to load verses.json: {e}")
+            return jsonify({'verses': [], 'strongsFrequency': [], 'totalVerses': 0})
+    except Exception as e:
+        print(f"ERROR: Error in get_kjv_data: {e}")
+        return jsonify({'verses': [], 'strongsFrequency': [], 'totalVerses': 0})
+
 if __name__ == "__main__":
     # Load data only for local dev to keep Vercel cold starts fast
     load_all_data()
 
-    # Demo prints for local run
-    print("\n--- Sun Events for Today (Demo: Greenwich, UTC, lat=51.48, lon=0.0) ---")
-    print_today_sun_events(51.48, 0.0, 'UTC')
-    print("--- End Sun Events ---\n")
+    # Only print startup checks in the main process (not reloader)
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        # Check MongoDB connection
+        print("\n--- MongoDB Connection Check ---")
+        check_mongo_connection()
+        print("--- End MongoDB Check ---\n")
 
-    print_today_moon_events(51.48, 0.0, 'UTC', location_name="Greenwich, UK")
+        # Demo prints for local run
+        print("\n--- Sun Events for Today (Demo: Greenwich, UTC, lat=51.48, lon=0.0) ---")
+        print_today_sun_events(51.48, 0.0, 'UTC')
+        print("--- End Sun Events ---\n")
 
-    print_yearly_events(51.5074, -0.1278, 'Europe/London', location_name="London, ENG, United Kingdom")
+        print_today_moon_events(51.48, 0.0, 'UTC', location_name="Greenwich, UK")
 
-    # Print multi-year calendar data for demo (Greenwich, 2024-2026) at the end
-    print("\n--- Multi-Year Calendar (Greenwich, 2024-2026) ---")
-    print_multi_year_calendar(2024, 2026, 51.48, 0.0, 'Europe/London')
-    print("--- End Multi-Year Calendar ---\n")
+        print_yearly_events(51.5074, -0.1278, 'Europe/London', location_name="London, ENG, United Kingdom")
+
+        # Print multi-year calendar data for demo (Greenwich, 2024-2026) at the end
+        print("\n--- Multi-Year Calendar (Greenwich, 2024-2026) ---")
+        print_multi_year_calendar(2024, 2026, 51.48, 0.0, 'Europe/London')
+        print("--- End Multi-Year Calendar ---\n")
+    
     port = int(os.environ.get("PORT", "5001"))
     app.run(debug=True, port=port, host="0.0.0.0")
