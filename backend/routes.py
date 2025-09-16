@@ -484,23 +484,28 @@ def api_kjv_data():
         
         print(f"📥 API: /api/kjv-data called with query='{query_text}', limit={limit}")
         
-        # Import MongoDB connection from app.py - same pattern as working endpoints
-        from app import mongo_db
+        # Import MongoDB connection from Flask config - same as working debug endpoint
+        from flask import current_app
         from config import KJV_COLLECTION
         
+        client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
+
         # Enhanced MongoDB connection debugging
-        print(f"🔍 MONGODB: Database object: {type(mongo_db).__name__ if mongo_db else 'None'}")
-        print(f"🔍 MONGODB: Database is None: {mongo_db is None}")
+        print(f"🔍 MONGODB: Client object: {type(client).__name__ if client else 'None'}")
+        print(f"🔍 MONGODB: Database object: {type(db).__name__ if db else 'None'}")
         
-        if mongo_db is not None:
+        if client is not None and db is not None:
             try:
+                # Test MongoDB connection with ping
+                client.admin.command('ping')
+                
                 # Get collection using the corrected collection name
-                collection = mongo_db[KJV_COLLECTION]
+                collection = db[KJV_COLLECTION]
                 
                 # Test collection access
                 collection_count = collection.estimated_document_count()
                 print(f"✅ MONGODB: Connection successful")
-                print(f"📊 MONGODB: Using database '{mongo_db.name if hasattr(mongo_db, 'name') else 'quantum-calendar'}'")
+                print(f"📊 MONGODB: Using database '{db.name if hasattr(db, 'name') else 'quantum-calendar'}'")
                 print(f"📊 MONGODB: Collection '{KJV_COLLECTION}' has ~{collection_count} documents")
                 
                 if query_text:
@@ -545,7 +550,8 @@ def api_kjv_data():
                 
         else:
             print("❌ MONGODB: Database not available")
-            print(f"❌ MONGODB: Database configured: {mongo_db is not None}")
+            print(f"❌ MONGODB: Client configured: {client is not None}")
+            print(f"❌ MONGODB: Database configured: {db is not None}")
             print("⬇️  MONGODB: Falling back to JSON file...")
         
         # Fallback to JSON
