@@ -475,7 +475,6 @@ def api_hebrew_search():
 @api.route('/api/kjv-data')
 def api_kjv_data():
     try:
-        from flask import current_app
         import os
         import json
         
@@ -485,27 +484,23 @@ def api_kjv_data():
         
         print(f"📥 API: /api/kjv-data called with query='{query_text}', limit={limit}")
         
-        client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
-
-        # Enhanced MongoDB connection debugging
-        print(f"🔍 MONGODB: Client object: {type(client).__name__ if client else 'None'}")
-        print(f"🔍 MONGODB: Database object: {type(db).__name__ if db else 'None'}")
-        print(f"🔍 MONGODB: Client is None: {client is None}")
-        print(f"🔍 MONGODB: Database is None: {db is None}")
-        print(f"🔍 MONGODB: Flask config keys: {list(current_app.config.keys())}")
+        # Import MongoDB connection from app.py - same pattern as working endpoints
+        from app import mongo_db
+        from config import KJV_COLLECTION
         
-        if client is not None and db is not None:
+        # Enhanced MongoDB connection debugging
+        print(f"🔍 MONGODB: Database object: {type(mongo_db).__name__ if mongo_db else 'None'}")
+        print(f"🔍 MONGODB: Database is None: {mongo_db is None}")
+        
+        if mongo_db is not None:
             try:
-                # Test MongoDB connection with ping
-                client.admin.command('ping')
-                print("✅ MONGODB: Connection test successful")
-                print(f"📊 MONGODB: Using database '{db.name if hasattr(db, 'name') else 'quantum-calendar'}'")
-                
-                from config import KJV_COLLECTION
-                collection = db[KJV_COLLECTION]
+                # Get collection using the corrected collection name
+                collection = mongo_db[KJV_COLLECTION]
                 
                 # Test collection access
                 collection_count = collection.estimated_document_count()
+                print(f"✅ MONGODB: Connection successful")
+                print(f"📊 MONGODB: Using database '{mongo_db.name if hasattr(mongo_db, 'name') else 'quantum-calendar'}'")
                 print(f"📊 MONGODB: Collection '{KJV_COLLECTION}' has ~{collection_count} documents")
                 
                 if query_text:
@@ -549,9 +544,8 @@ def api_kjv_data():
                 print("⬇️  MONGODB: Falling back to JSON file...")
                 
         else:
-            print("❌ MONGODB: Client or database not available")
-            print(f"❌ MONGODB: Client configured: {client is not None}")
-            print(f"❌ MONGODB: Database configured: {db is not None}")
+            print("❌ MONGODB: Database not available")
+            print(f"❌ MONGODB: Database configured: {mongo_db is not None}")
             print("⬇️  MONGODB: Falling back to JSON file...")
         
         # Fallback to JSON
