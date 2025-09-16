@@ -449,12 +449,11 @@ def get_kjv_data():
             collection = mongo_db["verses"]
             
             if query:
-                # Search verses by text content
-                regex = {"$regex": query, "$options": "i"}
-                print(f"DEBUG: Searching with regex: {regex}")
+                # Search verses by text content - Fixed regex query structure
+                print(f"DEBUG: Searching for '{query}' in text field")
                 matched_verses = list(collection.find({
-                    "text": regex
-                }).limit(limit))
+                    "text": {"$regex": query, "$options": "i"}
+                }, {'_id': 0}).limit(limit))
                 print(f"INFO: MongoDB search for '{query}' found {len(matched_verses)} verses")
                 
                 # Debug: Print first match if any
