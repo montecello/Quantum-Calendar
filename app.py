@@ -16,6 +16,22 @@ import logging
 from colorama import Fore, Style
 import json
 
+# Enhanced PyMongo imports with error handling
+try:
+    import pymongo
+    from pymongo import MongoClient
+    from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError, OperationFailure
+    PYMONGO_AVAILABLE = True
+    print(f"✅ PyMongo v{pymongo.__version__} imported successfully")
+except ImportError as e:
+    print(f"⚠️ PyMongo not available: {e}")
+    print("🔄 MongoDB features will be disabled, using fallback mode")
+    PYMONGO_AVAILABLE = False
+    MongoClient = None
+    ConnectionFailure = Exception
+    ServerSelectionTimeoutError = Exception
+    OperationFailure = Exception
+
 # Load .env for local development (safe on Vercel; ignored if no .env)
 from dotenv import load_dotenv
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -46,8 +62,10 @@ def get_mongo_client():
     global mongo_client, mongo_db
     if mongo_client is None:
         try:
-            from pymongo import MongoClient
-            from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+            if not PYMONGO_AVAILABLE:
+                print("❌ MONGODB: PyMongo not available")
+                return None, None
+                
             from config import MONGODB_URI, DATABASE_NAME
             import time
             
@@ -83,9 +101,6 @@ def get_mongo_client():
         except ServerSelectionTimeoutError as e:
             print(f"⏰ MONGODB: Server selection timeout - {e}")
             logging.error(f"MongoDB timeout: {e}")
-        except ImportError:
-            print("❌ MONGODB: PyMongo not installed")
-            logging.warning("PyMongo not installed")
         except Exception as e:
             print(f"💥 MONGODB: Unexpected error - {e}")
             logging.error(f"Failed to connect to MongoDB: {e}")
@@ -347,7 +362,7 @@ def get_strongs_data():
     print(f"INFO: API /api/strongs-data called with query='{query}', limit={limit}")
     
     try:
-        if mongo_db:
+        if mongo_db is not None:
             print("INFO: Using MongoDB for Strong's data")
             collection = mongo_db["strongs"]
             

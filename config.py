@@ -53,4 +53,4 @@ MONGODB_URI = Config.MONGODB_URI
 
 DATABASE_NAME = os.getenv("DATABASE_NAME", "quantum-calendar")
 STRONG_COLLECTION = os.getenv("STRONG_COLLECTION", "strongs")
-KJV_COLLECTION = os.getenv("KJV_COLLECTION", "kjv_verses")
+KJV_COLLECTION = os.getenv("KJV_COLLECTION", "verses")  # Changed from "kjv_verses" to "verses"
