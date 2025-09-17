@@ -1131,6 +1131,11 @@ function renderCalendarForState() {
         }
 
         target.innerHTML = '';
+        
+        // Remove any existing heatmap containers to prevent duplicates when switching modes
+        const existingHeatmaps = document.querySelectorAll('.heatmap-container');
+        existingHeatmaps.forEach(heatmap => heatmap.remove());
+        
         const ns = window.navState || (window.navState = {});
 
         // Ensure yearsData is loaded for mapping
@@ -1291,6 +1296,8 @@ function renderCalendarForState() {
         // Trigger animation after render completes
         setTimeout(() => {
             wrapper.style.opacity = '1';
+            // Dispatch gregorian:rendered event after animation
+            document.dispatchEvent(new Event('gregorian:rendered'));
         }, 10);
     } else {
         // Custom mode
@@ -1302,6 +1309,10 @@ function renderCalendarForState() {
         if (typeof updateMultiYearCalendarUI === 'function') {
             updateMultiYearCalendarUI();
             // Animation is handled by updateMultiYearCalendarUI's navigation handlers
+            // Dispatch calendar:rendered event after custom mode rendering
+            setTimeout(() => {
+                document.dispatchEvent(new Event('calendar:rendered'));
+            }, 10);
         }
     }
 }
@@ -1910,6 +1921,11 @@ function updateMultiYearCalendarUI() {
                 </div>
             </div>
         </div>`;
+        
+        // Remove any existing heatmap containers to prevent duplicates when switching modes
+        const existingHeatmaps = document.querySelectorAll('.heatmap-container');
+        existingHeatmaps.forEach(heatmap => heatmap.remove());
+        
         root.innerHTML = navBtns + `<div class="calendar-columns" id="calendar-columns"><div id="calendar-grid-anim">${gridHtml}</div>${sidePanelHtml}</div>` + heatmapHtml + monthsHtml;
         
         // Add initial animation for custom mode
@@ -2261,7 +2277,14 @@ if (!window.__calendarGlobalClickBound) {
                         yearRange = year;
                     }
                     const dateStr = `${yyyy}-${mm}-${dd}`;
-                    window.openSidePanel(panel, cols, { month, day: customMapping?.dayNum || gregDate.getDate(), yearRange, gregorianStr, dateStr });
+                    window.openSidePanel(panel, cols, { 
+                        month, 
+                        day: customMapping?.dayNum || gregDate.getDate(), 
+                        yearRange, 
+                        gregorianStr, 
+                        dateStr,
+                        clickedCell: cell 
+                    });
                 } catch (error) {
                     console.error('Error mapping Gregorian date:', error);
                     // Fallback to Gregorian if mapping fails
@@ -2269,7 +2292,14 @@ if (!window.__calendarGlobalClickBound) {
                     const year = gregDate.getFullYear();
                     const yearRange = year;
                     const dateStr = `${yyyy}-${mm}-${dd}`;
-                    window.openSidePanel(panel, cols, { month, day: gregDate.getDate(), yearRange, gregorianStr, dateStr });
+                    window.openSidePanel(panel, cols, { 
+                        month, 
+                        day: gregDate.getDate(), 
+                        yearRange, 
+                        gregorianStr, 
+                        dateStr,
+                        clickedCell: cell 
+                    });
                 }
             })();
         }
@@ -2642,9 +2672,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 500);
 
                 renderCalendarForState();
-                if (window.CalendarMode && window.CalendarMode.mode === 'gregorian') {
-                    document.dispatchEvent(new Event('gregorian:rendered'));
-                }
 
                 // Recalculate all month-dependent calculations for new location
                 recalculateMonthCalculations();

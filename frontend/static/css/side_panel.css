@@ -2,11 +2,102 @@
   white-space: pre-wrap;
   margin: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: clamp(12px, 1.6vw, 14px);
+  font-size: clamp(18px, 2.4vw, 21px);
   color: #173f5f;
   line-height: 1.5;
 }
 .secondary-tag {
   color: #ff7f0e; /* orange */
   font-weight: 700; /* bold */
+}
+
+/* Special day information styling for side panel */
+.special-day-info {
+  margin: 24px 0;
+  padding: 18px 24px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.special-day-text {
+  color: #fff !important;
+  font-weight: bold;
+  font-size: 1.8rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  display: block;
+  animation: special-day-pulse 1s ease-in-out infinite;
+  z-index: 2;
+  position: relative;
+}
+
+/* Pulsing animation for special day text - matches current day pulse */
+@keyframes special-day-pulse {
+  0%   { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 0 rgba(255, 255, 255, 0); }
+  50%  { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 12px rgba(255, 255, 255, 0.8); }
+  100% { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+/* Bronze counter text styling within special day info */
+.bronze-counter-text {
+  color: #cd7f32 !important;
+  font-weight: bold;
+  text-shadow: 0 0 2px #cd7f3288, 0 0 8px #cd7f32aa;
+  animation: bronze-counter-pulse 1s ease-in-out infinite;
+}
+
+/* Silver counter text styling within special day info */
+.silver-counter-text {
+  color: #888a8a !important;
+  font-weight: bold;
+  text-shadow: 0 0 2px #888a8a88, 0 0 8px #888a8aaa;
+  animation: silver-counter-pulse 1s ease-in-out infinite;
+}
+
+/* Silver-only element styling */
+.silver-only .silver-counter-text {
+  color: #fff !important;
+  font-size: 1.8rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  animation: special-day-pulse 1s ease-in-out infinite;
+}
+
+/* Pulsing animation for bronze counter text */
+@keyframes bronze-counter-pulse {
+  0%   { text-shadow: 0 0 2px #cd7f3288, 0 0 0 #cd7f32; }
+  50%  { text-shadow: 0 0 2px #cd7f3288, 0 0 12px #cd7f32; }
+  100% { text-shadow: 0 0 2px #cd7f3288, 0 0 0 #cd7f32; }
+}
+
+/* Pulsing animation for silver counter text */
+@keyframes silver-counter-pulse {
+  0%   { text-shadow: 0 0 2px #888a8a88, 0 0 0 #888a8a; }
+  50%  { text-shadow: 0 0 2px #888a8a88, 0 0 12px #888a8a; }
+  100% { text-shadow: 0 0 2px #888a8a88, 0 0 0 #888a8a; }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .special-day-text {
+    animation: none;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 255, 255, 0.4);
+  }
+  
+  .bronze-counter-text {
+    animation: none;
+    text-shadow: 0 0 2px #cd7f3288, 0 0 6px #cd7f32aa;
+  }
+  
+  .silver-counter-text {
+    animation: none;
+    text-shadow: 0 0 2px #888a8a88, 0 0 6px #888a8aaa;
+  }
+  
+  .silver-only .silver-counter-text {
+    animation: none;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 255, 255, 0.4);
+  }
 }

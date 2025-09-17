@@ -84,9 +84,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to update heatmaps using navState data
     function updateHeatmapsWithData() {
-        console.log('Updating heatmaps for current calendar view...');
+        console.log('=== updateHeatmapsWithData called ===');
+        console.log('Current navState:', window.navState);
+        console.log('Current mode:', window.CalendarMode?.mode);
+        
+        if (window.navState) {
+            console.log('navState.currentYearIdx:', window.navState.currentYearIdx);
+            console.log('navState.currentMonthIdx:', window.navState.currentMonthIdx);
+            console.log('navState.yearsData length:', window.navState.yearsData?.length);
+        }
 
         const heatmapFilename = findHeatmapForCurrentMonth();
+        console.log('Found heatmap filename:', heatmapFilename);
+        
         if (!heatmapFilename) {
             console.log('No heatmap found, showing fallback message');
             showHeatmapFallback();
@@ -94,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const imagePath = `/static/img/map/${heatmapFilename}`;
+        console.log('Trying to load heatmap from:', imagePath);
 
         // Update current month display
         const currentGregorianDate = document.getElementById('current-gregorian-date');
@@ -140,7 +151,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (heatmapContainer) {
                 currentContainer = document.createElement('div');
                 currentContainer.id = 'current-heatmap';
+                currentContainer.className = 'heatmap-placeholder';
                 heatmapContainer.appendChild(currentContainer);
+                console.log('Created current-heatmap container');
+            } else {
+                console.log('heatmap-container not found, will retry in 100ms');
+                // Retry after a short delay to allow container creation
+                setTimeout(() => {
+                    console.log('Retrying heatmap update...');
+                    updateHeatmapsWithData();
+                }, 100);
+                return;
             }
         }
 
@@ -407,15 +428,63 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Also listen for calendar render events
     document.addEventListener('calendar:rendered', function() {
-        console.log('Calendar rendered, clearing searched locations and updating heatmap...');
+        console.log('=== calendar:rendered event fired ===');
+        
+        // Add a delay to ensure DOM is fully constructed
+        setTimeout(() => {
+            console.log('Processing calendar:rendered after delay...');
+            console.log('Current navState:', window.navState);
 
-        // Clear searched locations but keep Greenwich and current location
-        searchedLocations = [defaultLocation];
-        if (currentLocation) {
-            searchedLocations.push(currentLocation);
-        }
+            // Clear searched locations but keep Greenwich and current location
+            searchedLocations = [defaultLocation];
+            if (currentLocation) {
+                searchedLocations.push(currentLocation);
+            }
 
-        updateHeatmapsWithData();
+            console.log('Calling updateHeatmapsWithData from calendar:rendered...');
+            updateHeatmapsWithData();
+        }, 200); // Give DOM time to be constructed
+    });
+
+    // Listen for Gregorian mode render events
+    document.addEventListener('gregorian:rendered', function() {
+        console.log('=== gregorian:rendered event fired ===');
+        
+        // Add a delay to ensure DOM is fully constructed
+        setTimeout(() => {
+            console.log('Processing gregorian:rendered after delay...');
+            console.log('Current navState before sync:', window.navState);
+
+            // When Gregorian mode is rendered, ensure custom calendar state reflects current date
+            // for proper heatmap display (since heatmap uses custom calendar indices)
+            if (window.navState && window.navState.yearsData && window.navState.yearsData.length) {
+                const today = new Date();
+                console.log('Finding quantum index for today:', today);
+                
+                const foundIdx = window.findQuantumIndexForDate ? window.findQuantumIndexForDate(today, window.navState.yearsData) : null;
+                console.log('Found quantum index:', foundIdx);
+                
+                if (foundIdx) {
+                    console.log('Updating custom calendar indices for current date:', foundIdx);
+                    window.navState.currentYearIdx = foundIdx.yearIdx;
+                    window.navState.currentMonthIdx = foundIdx.monthIdx;
+                    console.log('Updated navState:', window.navState);
+                } else {
+                    console.log('Failed to find quantum index for today');
+                }
+            } else {
+                console.log('navState or yearsData not available');
+            }
+
+            // Clear searched locations but keep Greenwich and current location
+            searchedLocations = [defaultLocation];
+            if (currentLocation) {
+                searchedLocations.push(currentLocation);
+            }
+
+            console.log('Calling updateHeatmapsWithData...');
+            updateHeatmapsWithData();
+        }, 200); // Give DOM time to be constructed
     });
 
     // Listen for location changes to add new pins

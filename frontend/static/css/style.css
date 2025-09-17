@@ -282,13 +282,20 @@ body.the-letters-page * {
   padding: 12px 8px 10px 8px;
   box-shadow: 0 2px 12px #0002;
 }
-.month-label {
+.month-label,
+.calendar-grid .month-label,
+.calendar-grid th.month-label,
+.calendar-grid thead th.month-label {
   font-weight: bold;
-  color: #ffe066;
-  font-size: 1.08rem;
+  color: #20639b;
+  font-size: 2.1rem !important; /* Desktop: 150% larger - force override */
   margin-bottom: 4px;
   letter-spacing: 1px;
   font-family: 'HybridFont', 'Pictocrypto', sans-serif;
+  text-align: center;
+  padding: 18px;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border-bottom: 2px solid #ffd700;
 }
 .month-col img {
   width: 256px;
@@ -577,16 +584,18 @@ body.the-letters-page * {
 
 /* Toggle button containers need backgrounds to prevent matrix rain from obscuring text */
 .calendar-mode-toggle {
-  display: inline-flex;
-  gap: 8px;
-  background: #0a2342;
-  border: 2px solid #3caea3;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px #0001;
-  padding: 8px 12px;
-  margin: 8px 0;
-  position: relative;
-  z-index: 10;
+  display: inline-flex !important;
+  gap: 8px !important;
+  background: #0a2342 !important;
+  border: 2px solid #3caea3 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 12px #0001 !important;
+  padding: 5px !important;
+  margin: 4px auto !important;
+  position: relative !important;
+  z-index: 10 !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
 }
 
 /* Harmonize grid transition effect for Gregorian/Quantum grids.
@@ -646,7 +655,7 @@ body.the-letters-page * {
 
 /* Heatmap Container Styles */
 .heatmap-container {
-    margin: 20px 0;
+    margin: 20px auto;
     padding: 15px;
     background: #173f5f;
     border: 2px solid #284b63;
@@ -654,6 +663,9 @@ body.the-letters-page * {
     box-shadow: 0 4px 24px #0006;
     text-align: center;
     color: #e0e6ed;
+    width: 100%;
+    max-width: 720px !important; /* Force max-width with !important to override any inheritance */
+    box-sizing: border-box;
 }
 
 .heatmap-container img {
@@ -1171,6 +1183,15 @@ body.the-letters-page * {
 
     .transcript-content {
         width: 100%;
-        max-width: 400px;
+        max-width: 500px;
+    }
+
+    /* Month header - Mobile: standard size */
+    .month-label,
+    .calendar-grid .month-label,
+    .calendar-grid th.month-label,
+    .calendar-grid thead th.month-label {
+        font-size: 1.4rem !important;
+        padding: 12px;
     }
 }
