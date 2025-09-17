@@ -390,48 +390,9 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
 function renderYearMonths(months, activeMonth, currentMonth, onMonthClick, yearRange, isCurrentYear) {
     // Debug: log months being rendered and compare to canonical navState months
     // renderYearMonths
-    let html = '<div class="year-months-list accordion">';
-    html += '<div class="accordion-item">';
-    html += `<button class="accordion-header year-months-title" type="button" aria-expanded="true">`;
-    html += `<span class="accordion-icon">▼</span>`;
-    html += `<span>Schedule for ${yearRange || ''}</span>`;
-    html += `</button>`;
-    html += '<div class="accordion-panel" style="display: block;">';
-    html += `<h3 class="year-months-title">${navState.locationName || 'Unknown Location'}</h3>`;
-    html += '<h4 class="year-months-title">Days in the month may change by location because current lunation is not exactly 30 days.</h4>';
-    html += '<ul class="year-months-ul accordion-content">';
-     // Fix: add missing class
-    months.forEach((m, i) => {
-        const isActive = (i+1) === activeMonth;
-        // Only highlight current month if we're in the current year
-        const isCurrent = isCurrentYear && (i+1) === currentMonth;
-        html += `<li class="year-months-li">`;
-        html += `<a href="#" class="year-months-link${isActive ? ' active' : ''}${isCurrent ? ' current' : ''}" data-month="${i+1}">${i+1}th Month</a> <span class="year-months-days">${m.days} days</span>`;
-        html += `</li>`;
-    });
-    html += '</ul></div></div></div>';
+    let html = '';
     setTimeout(() => {
-        // Add accordion toggle functionality
-        const header = document.querySelector('.year-months-title.accordion-header');
-        const panel = document.querySelector('.accordion-panel');
-        const icon = document.querySelector('.accordion-icon');
-
-        if (header && panel && icon) {
-            header.addEventListener('click', function() {
-                const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                this.setAttribute('aria-expanded', !isExpanded);
-                panel.style.display = isExpanded ? 'none' : 'block';
-                icon.textContent = isExpanded ? '▶' : '▼';
-            });
-        }
-
-        document.querySelectorAll('.year-months-link').forEach(link => {
-            link.onclick = function(e) {
-                e.preventDefault();
-                const monthNum = parseInt(this.getAttribute('data-month'));
-                if (onMonthClick) onMonthClick(monthNum);
-            };
-        });
+        // No accordion or month list elements to set up
     }, 0);
     return html;
 }
@@ -1229,28 +1190,25 @@ function renderCalendarForState() {
         heatmapContainer.className = 'heatmap-container';
         heatmapContainer.innerHTML = `
             <div class="heatmap-section" style="margin: 20px 0; text-align: center;">
-                <h1 style="color: #ffd700; margin-bottom: 15px; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">Monthly Dateline</h1>
+                <h1 style="color: #ffd700; margin: 0 0 5px 0; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif; font-size: 2rem !important;">Monthly Dateline</h1>
 
-                <div id="heatmap-loading" style="display: none; margin: 10px 0;">
+                <div id="heatmap-loading" style="display: none;">
                     <div style="display: inline-block; width: 300px; height: 6px; background: #f0f0f0; border-radius: 3px; margin-bottom: 8px;">
                         <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); border-radius: 3px; transition: width 0.3s ease;"></div>
                     </div>
                     <p style="margin: 5px 0; color: #666; font-size: 14px; font-weight: 500;">Loading lunar month heatmaps...</p>
                 </div>
-                <div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
-                    <div class="heatmap-item">
-                        <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">${navState.currentMonthIdx + 1}th Month ${navState.yearsData[navState.currentYearIdx].year}-${String(navState.yearsData[navState.currentYearIdx].year + 1).slice(-2)}</h4>
-                        <p style="font-size: 12px; color: #666; margin: 5px 0;">
-                            <span id="current-gregorian-date"></span>
-                        </p>
+                <div class="heatmap-item" style="text-align: center;">
+                    <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif; margin: 0 0 15px 0; text-align: center;">${navState.currentMonthIdx + 1}th Month ${navState.yearsData[navState.currentYearIdx].year}-${String(navState.yearsData[navState.currentYearIdx].year + 1).slice(-2)} (<span id="current-gregorian-date"></span>)</h4>
                         <div id="current-heatmap" class="heatmap-placeholder">
                             <p>Loading current lunar month heatmap...</p>
                         </div>
                     </div>
                 </div>                <!-- Shared Color Legend for both heatmaps -->
-                <div class="shared-heatmap-legend" style="margin-top: 20px; text-align: center; font-size: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    <p style="margin: 10px 0; color: #ffd700; font-weight: bold; text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);">Color Key - Lunar Month Lengths</p>
-                    <div style="display: flex; flex-direction: row; gap: 20px; justify-content: center; align-items: flex-start;">
+                <div class="shared-heatmap-legend" style="margin-top: 20px; font-size: 12px; max-width: 900px; margin-left: auto; margin-right: auto;">
+                    <p style="margin: 10px 0; color: #ffd700; font-weight: bold; text-shadow: 0 0 4px rgba(255, 215, 0, 0.3); text-align: center; font-size: 2rem;">Color Key - Lunar Month Lengths</p>
+                    <!-- Color Key on top -->
+                    <div style="display: flex; flex-direction: row; gap: 20px; justify-content: center; align-items: flex-start; margin-bottom: 20px;">
                         <div style="display: flex; flex-direction: column; gap: 6px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="width: 35px; height: 35px; background: rgba(255, 0, 0, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
@@ -1260,12 +1218,7 @@ function renderCalendarForState() {
                                 <div style="width: 35px; height: 35px; background: rgba(255, 192, 203, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
                                 <span style="text-align: left; font-size: 16px; font-weight: bold; position: relative;">
                                     30 Days 
-                                    <span style="cursor: help; color: #3caea3; font-size: 14px; margin-left: 4px;" 
-                                          title="Secondary indicators were used when no dawn could be found:
--Nautical/Civil twilight or sunrise
-- When those couldn't be found, we moved 1 degree towards the equator to find:
-• dawn (extreme winter) or
-• sunrise (extreme summer)">ℹ️</span>
+                                    <span class="info-icon-clickable" data-info-id="secondary-indicators">ℹ️</span>
                                 </span>
                             </div>
                         </div>
@@ -1278,20 +1231,61 @@ function renderCalendarForState() {
                                 <div style="width: 35px; height: 35px; background: rgba(135, 206, 235, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
                                 <span style="text-align: left; font-size: 16px; font-weight: bold; position: relative;">
                                     29 Days 
-                                    <span style="cursor: help; color: #3caea3; font-size: 14px; margin-left: 4px;" 
-                                          title="Secondary indicators were used when no dawn could be found:
--Nautical/Civil twilight or sunrise
-- When those couldn't be found, we moved 1 degree towards the equator to find:
-• dawn (extreme winter) or
-• sunrise (extreme summer)">ℹ️</span>
+                                    <span class="info-icon-clickable" data-info-id="secondary-indicators">ℹ️</span>
                                 </span>
                             </div>
                         </div>
+                    </div>
+                    <!-- Explanatory text on bottom -->
+                    <div style="text-align: left; color: #e0e6ed; font-size: 14px; line-height: 1.5; max-width: 800px; margin: 0 auto;">
+                        <p style="margin: 0 0 10px 0;">"New Moon Day" begins where dawn strikes after the full moon. Going clockwise where <span style="color: #0066ff;">blue</span> meets <span style="color: #ff0000;">red</span> is where dawn after full moon occurs on the earth first at that time. Therefore that curve will spend the longest time counting days between months there month must be 30 days long.</p>
+                        <p style="margin: 0 0 10px 0;">Continuing clockwise where <span style="color: #ff0000;">red</span> meets <span style="color: #0066ff;">blue</span> is where it happens again at the following full moon. It happens in different places on earth because the lunation is not currently exactly 30 days long. In fact it can oscillate between 29.8 and 29.2 at extremes.</p>
+                        <p style="margin: 0 0 10px 0;">The decimal remainder will correspond to what portion of the earth will have a 30-day month. So if the month is 29.53 days long, 53% of the earth will be shaded <span style="color: #ff0000;">red</span>.</p>
+                        <p style="margin: 0 0 10px 0;">You can search different locations and see the calendar month length for that month match the location on the map too!</p>
+                        <p style="margin: 0;">That is what makes this clock "<span style="color: #40e0d0; text-shadow: 0 0 8px rgba(64, 224, 208, 0.6); font-weight: bold;">Quantum</span>" because a month can have different lengths at the same time.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Info Popup Modal -->
+            <div id="info-popup-overlay" class="info-popup-overlay">
+                <div class="info-popup">
+                    <div class="info-popup-header">
+                        <h3 class="info-popup-title">Secondary Indicators</h3>
+                        <button class="info-popup-close" onclick="closeInfoPopup()">&times;</button>
+                    </div>
+                    <div class="info-popup-content">
+Secondary indicators were used when no dawn could be found:
+- Nautical/Civil twilight or sunrise
+- When those couldn't be found, we moved 1 degree towards the equator to find:
+  • dawn (extreme winter) or
+  • sunrise (extreme summer)
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day Info Popup Modal -->
+            <div id="day-info-popup-overlay" class="day-info-popup-overlay">
+                <div class="day-info-popup">
+                    <div class="day-info-popup-header">
+                        <div>
+                            <h3 class="day-info-popup-title" id="day-info-title">Day Information</h3>
+                            <h3 class="day-info-popup-subtitle" id="day-info-subtitle"></h3>
+                        </div>
+                        <button class="day-info-popup-close" onclick="closeDayInfoPopup()">&times;</button>
+                    </div>
+                    <div class="day-info-popup-content" id="day-info-content">
+                        Loading day information...
                     </div>
                 </div>
             </div>
         `;
         target.appendChild(heatmapContainer);
+
+        // Set up info popup functionality
+        setTimeout(() => {
+            setupInfoPopupHandlers();
+        }, 100);
 
         // Trigger animation after render completes
         setTimeout(() => {
@@ -1765,14 +1759,15 @@ function recalculateMonthCalculations() {
     }
 }
 
-function renderNavButtons() {
+function renderNavButtons(suffix = '') {
+    const idSuffix = suffix ? `-${suffix}` : '';
     return `
     <div class="calendar-nav-btns" role="group" aria-label="Calendar navigation">
-        <button id="prev-year-btn" aria-label="Previous year"><span class="icon"><<</span> </button>
-        <button id="prev-month-btn" aria-label="Previous month"><span class="icon"><</span> </button>
-        <button id="home-month-btn" class="home-btn" aria-label="Current month"><span class="icon">NOW</span></button>
-        <button id="next-month-btn" aria-label="Next month"><span class="icon">></span> </button>
-        <button id="next-year-btn" aria-label="Next year"><span class="icon">>></span> </button>
+        <button id="prev-year-btn${idSuffix}" class="nav-btn prev-year" aria-label="Previous year"><span class="icon"><<</span> </button>
+        <button id="prev-month-btn${idSuffix}" class="nav-btn prev-month" aria-label="Previous month"><span class="icon"><</span> </button>
+        <button id="home-month-btn${idSuffix}" class="nav-btn home-btn" aria-label="Current month"><span class="icon">NOW</span></button>
+        <button id="next-month-btn${idSuffix}" class="nav-btn next-month" aria-label="Next month"><span class="icon">></span> </button>
+        <button id="next-year-btn${idSuffix}" class="nav-btn next-year" aria-label="Next year"><span class="icon">>></span> </button>
     </div>
     `;
 }
@@ -1852,25 +1847,19 @@ function updateMultiYearCalendarUI() {
             isCurrentYear
         );
         let navBtns = renderNavButtons();
-        // Insert side panel between grid and months list
-        let sidePanelHtml = `<div id="side-panel" class="side-panel"></div>`;
         // Add heatmap container below the calendar grid and above the months list
         let heatmapHtml = `<div id="heatmap-container" class="heatmap-container">
             <div class="heatmap-section" style="margin: 20px 0; text-align: center;">
-                <h1 style="color: #ffd700; margin-bottom: 15px; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">Monthly Dateline</h1>
+                <h1 style="color: #ffd700; margin: 0 0 5px 0; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif; font-size: 2rem !important;">Monthly Dateline</h1>
 
-                <div id="heatmap-loading" style="display: none; margin: 10px 0;">
+                <div id="heatmap-loading" style="display: none;">
                     <div style="display: inline-block; width: 300px; height: 6px; background: #f0f0f0; border-radius: 3px; margin-bottom: 8px;">
                         <div id="loading-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); border-radius: 3px; transition: width 0.3s ease;"></div>
                     </div>
                     <p style="margin: 5px 0; color: #666; font-size: 14px; font-weight: 500;">Loading lunar month heatmaps...</p>
                 </div>
-                <div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
-                    <div class="heatmap-item">
-                        <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif;">${navState.currentMonthIdx + 1}th Month ${yearObj.year}-${String(yearObj.year + 1).slice(-2)}</h4>
-                        <p style="font-size: 12px; color: #666; margin: 5px 0;">
-                            <span id="current-gregorian-date"></span>
-                        </p>
+                <div class="heatmap-item" style="text-align: center;">
+                    <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif; margin: 0 0 15px 0; text-align: center;">${navState.currentMonthIdx + 1}th Month ${yearObj.year}-${String(yearObj.year + 1).slice(-2)} (<span id="current-gregorian-date"></span>)</h4>
                         <div id="current-heatmap" class="heatmap-placeholder">
                             <p>Loading current lunar month heatmap...</p>
                         </div>
@@ -1878,9 +1867,10 @@ function updateMultiYearCalendarUI() {
                 </div>
 
                 <!-- Shared Color Legend for both heatmaps -->
-                <div class="shared-heatmap-legend" style="margin-top: 20px; text-align: center; font-size: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    <p style="margin: 10px 0; color: #ffd700; font-weight: bold; text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);">Color Key - Lunar Month Lengths</p>
-                    <div style="display: flex; flex-direction: row; gap: 20px; justify-content: center; align-items: flex-start;">
+                <div class="shared-heatmap-legend" style="margin-top: 20px; font-size: 12px; max-width: 900px; margin-left: auto; margin-right: auto;">
+                    <p style="margin: 10px 0; color: #ffd700; font-weight: bold; text-shadow: 0 0 4px rgba(255, 215, 0, 0.3); text-align: center; font-size: 2rem;">Color Key - Lunar Month Lengths</p>
+                    <!-- Color Key on top -->
+                    <div style="display: flex; flex-direction: row; gap: 20px; justify-content: center; align-items: flex-start; margin-bottom: 20px;">
                         <div style="display: flex; flex-direction: column; gap: 6px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <div style="width: 35px; height: 35px; background: rgba(255, 0, 0, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
@@ -1890,12 +1880,7 @@ function updateMultiYearCalendarUI() {
                                 <div style="width: 35px; height: 35px; background: rgba(255, 192, 203, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
                                 <span style="text-align: left; font-size: 16px; font-weight: bold; position: relative;">
                                     30 Days 
-                                    <span style="cursor: help; color: #3caea3; font-size: 14px; margin-left: 4px;" 
-                                          title="Secondary indicators were used when no dawn could be found:
--Nautical/Civil twilight or sunrise
-- When those couldn't be found, we moved 1 degree towards the equator to find:
-• dawn (extreme winter) or
-• sunrise (extreme summer)">ℹ️</span>
+                                    <span class="info-icon-clickable" data-info-id="secondary-indicators">ℹ️</span>
                                 </span>
                             </div>
                         </div>
@@ -1908,15 +1893,51 @@ function updateMultiYearCalendarUI() {
                                 <div style="width: 35px; height: 35px; background: rgba(135, 206, 235, 0.7); border-radius: 2px; flex-shrink: 0;"></div>
                                 <span style="text-align: left; font-size: 16px; font-weight: bold; position: relative;">
                                     29 Days 
-                                    <span style="cursor: help; color: #3caea3; font-size: 14px; margin-left: 4px;" 
-                                          title="Secondary indicators were used when no dawn could be found:
--Nautical/Civil twilight or sunrise
-- When those couldn't be found, we moved 1 degree towards the equator to find:
-• dawn (extreme winter) or
-• sunrise (extreme summer)">ℹ️</span>
+                                    <span class="info-icon-clickable" data-info-id="secondary-indicators">ℹ️</span>
                                 </span>
                             </div>
                         </div>
+                    </div>
+                    <!-- Explanatory text on bottom -->
+                    <div style="text-align: left; color: #e0e6ed; font-size: 14px; line-height: 1.5; max-width: 800px; margin: 0 auto;">
+                        <p style="margin: 0 0 10px 0;">"New Moon Day" begins where dawn strikes after the full moon. Going clockwise where <span style="color: #0066ff;">blue</span> meets <span style="color: #ff0000;">red</span> is where dawn after full moon occurs on the earth first at that time. Therefore that curve will spend the longest time counting days between months there month must be 30 days long.</p>
+                        <p style="margin: 0 0 10px 0;">Continuing clockwise where <span style="color: #ff0000;">red</span> meets <span style="color: #0066ff;">blue</span> is where it happens again at the following full moon. It happens in different places on earth because the lunation is not currently exactly 30 days long. In fact it can oscillate between 29.8 and 29.2 at extremes.</p>
+                        <p style="margin: 0 0 10px 0;">The decimal remainder will correspond to what portion of the earth will have a 30-day month. So if the month is 29.53 days long, 53% of the earth will be shaded <span style="color: #ff0000;">red</span>.</p>
+                        <p style="margin: 0 0 10px 0;">You can search different locations and see the calendar month length for that month match the location on the map too!</p>
+                        <p style="margin: 0;">That is what makes this clock "<span style="color: #40e0d0; text-shadow: 0 0 8px rgba(64, 224, 208, 0.6); font-weight: bold;">Quantum</span>" because a month can have different lengths at the same time.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Info Popup Modal -->
+            <div id="info-popup-overlay" class="info-popup-overlay">
+                <div class="info-popup">
+                    <div class="info-popup-header">
+                        <h3 class="info-popup-title">Secondary Indicators</h3>
+                        <button class="info-popup-close" onclick="closeInfoPopup()">&times;</button>
+                    </div>
+                    <div class="info-popup-content">
+Secondary indicators were used when no dawn could be found:
+- Nautical/Civil twilight or sunrise
+- When those couldn't be found, we moved 1 degree towards the equator to find:
+  • dawn (extreme winter) or
+  • sunrise (extreme summer)
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day Info Popup Modal -->
+            <div id="day-info-popup-overlay" class="day-info-popup-overlay">
+                <div class="day-info-popup">
+                    <div class="day-info-popup-header">
+                        <div>
+                            <h3 class="day-info-popup-title" id="day-info-title">Day Information</h3>
+                            <h3 class="day-info-popup-subtitle" id="day-info-subtitle"></h3>
+                        </div>
+                        <button class="day-info-popup-close" onclick="closeDayInfoPopup()">&times;</button>
+                    </div>
+                    <div class="day-info-popup-content" id="day-info-content">
+                        Loading day information...
                     </div>
                 </div>
             </div>
@@ -1926,7 +1947,22 @@ function updateMultiYearCalendarUI() {
         const existingHeatmaps = document.querySelectorAll('.heatmap-container');
         existingHeatmaps.forEach(heatmap => heatmap.remove());
         
-        root.innerHTML = navBtns + `<div class="calendar-columns" id="calendar-columns"><div id="calendar-grid-anim">${gridHtml}</div>${sidePanelHtml}</div>` + heatmapHtml + monthsHtml;
+        root.innerHTML = navBtns + `<div class="calendar-columns" id="calendar-columns"><div id="calendar-grid-anim">${gridHtml}</div></div>` + renderNavButtons('bottom') + heatmapHtml + monthsHtml;
+
+        // Set up info popup functionality
+        setTimeout(() => {
+            setupInfoPopupHandlers();
+        }, 100);
+        
+        // Force Monthly Dateline font size update to 2rem (double size)
+        setTimeout(() => {
+            const monthlyDatelineElements = document.querySelectorAll('.heatmap-section h1');
+            monthlyDatelineElements.forEach(element => {
+                if (element.textContent.includes('Monthly Dateline')) {
+                    element.style.setProperty('font-size', '2rem', 'important');
+                }
+            });
+        }, 100);
         
         // Add initial animation for custom mode
         animateGridTransition();
@@ -2100,9 +2136,9 @@ function updateMultiYearCalendarUI() {
                     const day = this.getAttribute('data-day');
                     const month = navState.currentMonthIdx + 1;
                     const year = navState.yearsData[navState.currentYearIdx].year;
-                    const panel = document.getElementById('side-panel');
-                    if (panel) {
-                        if (cols) cols.classList.add('two-col');
+                    const panel = null; // No longer using side panel element
+                    if (true) { // Always proceed with popup
+                        if (cols) cols.classList.remove('two-col'); // Remove any existing layout classes
                         // Try to get the start date of the current month
                         let gregorianStr = '';
                         let gregDate = null;
@@ -2144,12 +2180,49 @@ function updateMultiYearCalendarUI() {
                 cell.style.animation = 'current-pulse 1s ease-in-out infinite';
             });
         }, 0);
+
+        // Setup duplicate navigation buttons (bottom set)
+        setupDuplicateNavigation();
     };
 
     if (currentHighlightPromise && typeof currentHighlightPromise.then === 'function') {
         currentHighlightPromise.then(renderUI);
     } else {
         renderUI(currentHighlightPromise);
+    }
+}
+
+// Helper function to setup duplicate navigation buttons
+function setupDuplicateNavigation() {
+    // Get the original buttons to copy their functionality
+    const origPrevYear = document.getElementById('prev-year-btn');
+    const origNextYear = document.getElementById('next-year-btn');
+    const origPrevMonth = document.getElementById('prev-month-btn');
+    const origNextMonth = document.getElementById('next-month-btn');
+    const origHome = document.getElementById('home-month-btn');
+
+    // Get the bottom navigation buttons
+    const bottomPrevYear = document.getElementById('prev-year-btn-bottom');
+    const bottomNextYear = document.getElementById('next-year-btn-bottom');
+    const bottomPrevMonth = document.getElementById('prev-month-btn-bottom');
+    const bottomNextMonth = document.getElementById('next-month-btn-bottom');
+    const bottomHome = document.getElementById('home-month-btn-bottom');
+
+    // Copy functionality from original buttons to bottom buttons
+    if (origPrevYear && bottomPrevYear) {
+        bottomPrevYear.onclick = origPrevYear.onclick;
+    }
+    if (origNextYear && bottomNextYear) {
+        bottomNextYear.onclick = origNextYear.onclick;
+    }
+    if (origPrevMonth && bottomPrevMonth) {
+        bottomPrevMonth.onclick = origPrevMonth.onclick;
+    }
+    if (origNextMonth && bottomNextMonth) {
+        bottomNextMonth.onclick = origNextMonth.onclick;
+    }
+    if (origHome && bottomHome) {
+        bottomHome.onclick = origHome.onclick;
     }
 }// Helper functions for smooth transitions
 function showLoadingIndicator() {
@@ -2252,9 +2325,9 @@ if (!window.__calendarGlobalClickBound) {
 
             // Inline fallback behavior (kept consistent with previous implementation)
             const cols = document.getElementById('calendar-columns');
-            const panel = document.getElementById('side-panel');
-            if (!panel) return;
-            if (cols) cols.classList.add('two-col');
+            const panel = null; // No longer using side panel element
+            // Always proceed with popup
+            if (cols) cols.classList.remove('two-col'); // Remove any existing layout classes
             const yyyy = gregDate.getFullYear();
             const mm = String(gregDate.getMonth() + 1).padStart(2, '0');
             const dd = String(gregDate.getDate()).padStart(2, '0');
@@ -2675,6 +2748,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Recalculate all month-dependent calculations for new location
                 recalculateMonthCalculations();
+
+                // Dispatch event to notify heatmap that calendar data has been loaded for new location
+                document.dispatchEvent(new CustomEvent('calendar:data-loaded', { detail: { yearsData: navState.yearsData } }));
             }
         });
     });
@@ -2682,6 +2758,78 @@ document.addEventListener('DOMContentLoaded', function() {
 
 document.addEventListener('gregorian:rendered', () => { if (window.CalendarMode.mode === 'gregorian') rebindNavForGregorian(); });
 // Also after custom renders, ensure nav works when switching
+
+// Info Popup Functions for Color Key
+function setupInfoPopupHandlers() {
+    // Remove any existing listeners to prevent duplicates
+    document.removeEventListener('click', handleInfoIconClick);
+    document.removeEventListener('click', handlePopupOverlayClick);
+    
+    // Add event listeners
+    document.addEventListener('click', handleInfoIconClick);
+    document.addEventListener('click', handlePopupOverlayClick);
+}
+
+function handleInfoIconClick(event) {
+    if (event.target.classList.contains('info-icon-clickable')) {
+        event.preventDefault();
+        event.stopPropagation();
+        openInfoPopup();
+    }
+}
+
+function handlePopupOverlayClick(event) {
+    const infoOverlay = document.getElementById('info-popup-overlay');
+    const dayInfoOverlay = document.getElementById('day-info-popup-overlay');
+    
+    if (event.target === infoOverlay) {
+        closeInfoPopup();
+    } else if (event.target === dayInfoOverlay) {
+        closeDayInfoPopup();
+    }
+}
+
+function openInfoPopup() {
+    const overlay = document.getElementById('info-popup-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        // Prevent body scroll when popup is open
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeInfoPopup() {
+    const overlay = document.getElementById('info-popup-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        // Restore body scroll
+        document.body.style.overflow = '';
+    }
+}
+
+// Day Info Popup Functions
+function closeDayInfoPopup() {
+    const overlay = document.getElementById('day-info-popup-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        // Restore body scroll
+        document.body.style.overflow = '';
+    }
+}
+
+// Add keyboard support for popups
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const infoOverlay = document.getElementById('info-popup-overlay');
+        const dayInfoOverlay = document.getElementById('day-info-popup-overlay');
+        
+        if (infoOverlay && infoOverlay.style.display === 'flex') {
+            closeInfoPopup();
+        } else if (dayInfoOverlay && dayInfoOverlay.style.display === 'flex') {
+            closeDayInfoPopup();
+        }
+    }
+});
 document.addEventListener('calendar:rendered', () => { if (window.CalendarMode.mode === 'gregorian') rebindNavForGregorian(); });
 
 // Expose functions globally for calendar access

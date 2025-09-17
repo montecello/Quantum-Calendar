@@ -275,13 +275,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const pin = document.createElement('div');
             pin.className = 'location-pin';
+            
+            // Determine pin type and styling
+            const isDefault = location === defaultLocation;
+            const isCurrent = location === currentLocation && currentLocation !== null;
+            
+            if (isDefault && !currentLocation) {
+                // Only show default pin when no current location is set
+                pin.classList.add('default');
+                pin.style.backgroundColor = '#FFD700'; // Gold for Greenwich
+            } else if (isCurrent) {
+                // Current location pin with pulsing effect
+                pin.classList.add('current');
+                pin.style.backgroundColor = '#FF4444'; // Red for current location
+            } else if (isDefault && currentLocation) {
+                // Skip default pin when current location exists
+                return;
+            }
+            
             pin.style.position = 'absolute';
             pin.style.left = `${pixel.x}px`;
             pin.style.top = `${pixel.y}px`;
             pin.style.transform = 'translate(-50%, -100%)';
             pin.style.width = '8px';
             pin.style.height = '8px';
-            pin.style.backgroundColor = location === defaultLocation ? '#FFD700' : '#FF4444'; // Gold for Greenwich, red for current location
             pin.style.border = '2px solid white';
             pin.style.borderRadius = '50%';
             pin.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
@@ -409,12 +426,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Listen for calendar navigation events
     document.addEventListener('calendar:navigation', function() {
-        console.log('Calendar navigation detected, clearing searched locations and updating heatmap...');
+        console.log('Calendar navigation detected, updating heatmap...');
 
-        // Clear searched locations but keep Greenwich and current location
-        searchedLocations = [defaultLocation];
+        // NEW PIN LOGIC: Maintain current pin state during navigation
+        // If user has set a custom location, keep only that pin
+        // If no custom location, show only Greenwich
         if (currentLocation) {
-            searchedLocations.push(currentLocation);
+            searchedLocations = [currentLocation];
+        } else {
+            searchedLocations = [defaultLocation];
         }
 
         updateHeatmapsWithData();
@@ -435,10 +455,13 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Processing calendar:rendered after delay...');
             console.log('Current navState:', window.navState);
 
-            // Clear searched locations but keep Greenwich and current location
-            searchedLocations = [defaultLocation];
+            // NEW PIN LOGIC: Maintain current pin state after rendering
+            // If user has set a custom location, keep only that pin
+            // If no custom location, show only Greenwich
             if (currentLocation) {
-                searchedLocations.push(currentLocation);
+                searchedLocations = [currentLocation];
+            } else {
+                searchedLocations = [defaultLocation];
             }
 
             console.log('Calling updateHeatmapsWithData from calendar:rendered...');
@@ -476,10 +499,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('navState or yearsData not available');
             }
 
-            // Clear searched locations but keep Greenwich and current location
-            searchedLocations = [defaultLocation];
+            // NEW PIN LOGIC: Maintain current pin state after gregorian rendering
+            // If user has set a custom location, keep only that pin
+            // If no custom location, show only Greenwich
             if (currentLocation) {
-                searchedLocations.push(currentLocation);
+                searchedLocations = [currentLocation];
+            } else {
+                searchedLocations = [defaultLocation];
             }
 
             console.log('Calling updateHeatmapsWithData...');
@@ -499,13 +525,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Set this as the current location (replaces any previous current location)
             currentLocation = newLocation;
 
-            // Update searched locations to include current location
-            searchedLocations = [defaultLocation];
-            if (currentLocation) {
-                searchedLocations.push(currentLocation);
-            }
+            // NEW PIN LOGIC: When user changes location, show only the current location pin
+            // Greenwich is no longer shown when a custom location is selected
+            searchedLocations = [currentLocation];
 
-            console.log('Updated current location pin:', newLocation);
+            console.log('Updated current location pin (only showing current location):', newLocation);
 
             // Re-render pins if heatmap is currently displayed
             let currentContainer = document.getElementById('current-heatmap');
@@ -554,7 +578,7 @@ function clearLocationPins() {
 function addTestLocation(lat, lon, name) {
     const testLocation = { lat, lon, name };
     currentLocation = testLocation; // Set as current location
-    searchedLocations = [defaultLocation, testLocation]; // Update searched locations
+    searchedLocations = [testLocation]; // NEW PIN LOGIC: Show only current location
     console.log(`Added test location: ${name} (${lat}, ${lon})`);
     renderLocationPins();
 }

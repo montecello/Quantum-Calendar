@@ -666,6 +666,7 @@ body.the-letters-page * {
     width: 100%;
     max-width: 720px !important; /* Force max-width with !important to override any inheritance */
     box-sizing: border-box;
+    overflow: hidden; /* Prevent any content from overflowing */
 }
 
 .heatmap-container img {
@@ -675,6 +676,9 @@ body.the-letters-page * {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     display: block;
     margin: 0 auto;
+    position: relative; /* Ensure proper positioning context */
+    left: 50%; /* Move to center */
+    transform: translateX(-50%); /* Center using transform */
 }
 
 .heatmap-container .location-pins-overlay {
@@ -703,18 +707,58 @@ body.the-letters-page * {
 
 .heatmap-container .location-pin.default {
     background-color: #FFD700;
+    animation: current-pulse 1s ease-in-out infinite;
+}
+
+/* Pulsing effect for current location pin */
+.heatmap-container .location-pin.current {
+    background-color: #FF4444;
+    animation: current-pulse 1s ease-in-out infinite;
 }
 
 /* Mobile responsive for heatmap container */
 @media (max-width: 768px) {
     .heatmap-container {
-        margin: 15px 0;
-        padding: 10px;
+        margin: 10px 0; /* Reduce margin for mobile */
+        padding: 8px;   /* Reduce padding for mobile */
+        max-width: 100% !important; /* Use full width on mobile */
+        border-radius: 8px; /* Smaller border radius */
     }
 
     .heatmap-container img {
-        max-width: 95%;
+        max-width: 100%; /* Use full container width */
+        border-radius: 6px; /* Smaller border radius for mobile */
     }
+
+    /* Mobile heatmap section optimization */
+    .heatmap-section {
+        margin: 15px 0; /* Reduce margins */
+        padding: 10px;  /* Reduce padding */
+        width: 100%; /* Ensure full width */
+        box-sizing: border-box; /* Include padding in width */
+    }
+
+    /* Monthly Dateline - adjust size for mobile */
+    .heatmap-section h1 {
+        font-size: 1.5rem !important; /* Smaller on mobile */
+        margin: 0 0 8px 0; /* Reduce bottom margin */
+        line-height: 1.2;
+    }
+
+    /* Month info text - better mobile sizing */
+    .heatmap-item h4 {
+        font-size: 1rem; /* Slightly smaller on mobile */
+        margin: 0 0 12px 0; /* Adjust margins */
+        line-height: 1.3;
+        padding: 0 5px; /* Add padding for text breathing room */
+    }
+}
+
+.heatmap-section h1,
+.heatmap-container .heatmap-section h1,
+#heatmap-container .heatmap-section h1,
+div.heatmap-section h1 {
+    font-size: 2rem !important;
 }
 
 .heatmap-section h3 {
@@ -730,8 +774,11 @@ body.the-letters-page * {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     min-width: 300px;
-    max-width: 400px;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .heatmap-item h4 {
@@ -743,8 +790,10 @@ body.the-letters-page * {
 }
 
 .heatmap-placeholder {
-    width: 350px;
-    height: 350px;
+    width: 100%; /* Use full width instead of fixed 600px */
+    max-width: 600px; /* Limit maximum size */
+    height: auto; /* Auto height to maintain aspect ratio */
+    min-height: 400px; /* Minimum height for loading state */
     border: 2px solid #284b63;
     border-radius: 8px;
     display: flex;
@@ -754,6 +803,8 @@ body.the-letters-page * {
     transition: all 0.3s ease;
     position: relative;
     color: #e0e6ed;
+    margin: 0 auto; /* Center the placeholder */
+    box-sizing: border-box; /* Include border in width calculation */
 }
 
 .heatmap-placeholder img {
@@ -762,23 +813,101 @@ body.the-letters-page * {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     display: block;
+    margin: 0 auto; /* Center the image */
+    position: relative; /* Ensure proper positioning context */
+    left: 50%; /* Move to center */
+    transform: translateX(-50%); /* Center using transform */
 }
 
 @media (max-width: 768px) {
     .heatmap-section {
-        width: 95vw;
-        padding: 15px;
+        width: 100%; /* Use full width instead of 95vw */
+        padding: 10px; /* Reduce padding */
+        margin: 0 auto; /* Center the section */
     }
 
     .heatmap-item {
-        min-width: 250px;
-        max-width: 300px;
+        min-width: 100%; /* Use full width */
+        max-width: 100%; /* Use full width */
+        margin: 0 auto; /* Center the item */
+        padding: 0 5px; /* Add small horizontal padding */
+        display: flex; /* Use flexbox for centering */
+        flex-direction: column; /* Stack vertically */
+        align-items: center; /* Center horizontally */
+        justify-content: center; /* Center vertically */
     }
 
     .heatmap-placeholder,
     .heatmap-image {
-        width: 280px;
-        height: 280px;
+        width: 100%; /* Use full width instead of fixed 480px */
+        height: auto; /* Auto height to maintain aspect ratio */
+        max-width: 480px; /* Limit maximum size */
+        margin: 0 auto; /* Center the image */
+        display: block; /* Ensure block display for proper centering */
+    }
+
+    .heatmap-placeholder img,
+    .heatmap-image img {
+        width: 100%;
+        height: auto;
+        margin: 0 auto;
+        display: block;
+        position: relative;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: none; /* Remove any max-width constraints */
+    }
+
+    /* Force centering for all heatmap images */
+    #current-heatmap img,
+    .heatmap-container #current-heatmap img {
+        position: relative !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        margin: 0 !important;
+        display: block !important;
+    }
+
+    /* Optimize shared legend for mobile */
+    .shared-heatmap-legend {
+        margin: 15px 5px; /* Reduce margins and add side margins */
+        padding: 15px; /* Reduce padding */
+        border-radius: 8px; /* Smaller border radius */
+        font-size: 12px; /* Smaller base font size */
+    }
+
+    .shared-heatmap-legend p {
+        font-size: 1.2rem; /* Adjust title size for mobile */
+        margin-bottom: 12px; /* Reduce margin */
+    }
+
+    /* Mobile location pins optimization */
+    .heatmap-container .location-pin {
+        width: 10px; /* Slightly larger for mobile touch */
+        height: 10px;
+        border: 2px solid white; /* Keep border visible */
+    }
+
+    /* Mobile navigation buttons optimization */
+    .calendar-nav-btns {
+        margin: 15px 0; /* Reduce margin but maintain spacing */
+        padding: 8px; /* Reduce padding */
+    }
+
+    /* Specific spacing for duplicate navigation on mobile */
+    .calendar-columns + .calendar-nav-btns {
+        margin-top: 15px;  /* Space from calendar grid */
+        margin-bottom: 15px; /* Space to heatmap */
+    }
+
+    .calendar-nav-btns button {
+        font-size: 0.85rem; /* Slightly smaller text */
+        padding: 8px; /* Comfortable touch target */
+        margin: 0 3px; /* Adequate spacing between buttons */
+    }
+
+    .calendar-nav-btns .home-btn {
+        min-width: 45px; /* Ensure adequate width for "NOW" text */
     }
 }
 
@@ -1193,5 +1322,371 @@ body.the-letters-page * {
     .calendar-grid thead th.month-label {
         font-size: 1.4rem !important;
         padding: 12px;
+    }
+}
+
+/* High priority Monthly Dateline font size override */
+.heatmap-container .heatmap-section h1,
+#heatmap-container .heatmap-section h1,
+div#heatmap-container div.heatmap-section h1 {
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+}
+
+/* Navigation buttons spacing - ensure equal spacing around duplicate nav */
+.calendar-nav-btns {
+    margin: 20px 0; /* Equal spacing above and below navigation */
+}
+
+/* Specific spacing for duplicate navigation between grid and heatmap */
+.calendar-columns + .calendar-nav-btns {
+    margin-top: 20px;  /* Space from calendar grid */
+    margin-bottom: 20px; /* Space to heatmap */
+}
+
+/* Additional mobile optimization for smaller screens */
+@media (max-width: 480px) {
+    .heatmap-container {
+        margin: 8px 0;
+        padding: 6px;
+        border-radius: 6px;
+    }
+
+    /* Smaller Monthly Dateline for very small screens */
+    .heatmap-section h1 {
+        font-size: 1.3rem !important;
+        margin: 0 0 6px 0;
+    }
+
+    /* Optimize month info for small screens */
+    .heatmap-item h4 {
+        font-size: 0.9rem;
+        margin: 0 0 10px 0;
+        padding: 0 8px;
+    }
+
+    /* Compact shared legend for small screens */
+    .shared-heatmap-legend {
+        margin: 10px 2px;
+        padding: 12px;
+        font-size: 11px;
+    }
+
+    .shared-heatmap-legend p {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    /* Smaller navigation buttons for small screens */
+    .calendar-nav-btns {
+        margin: 12px 0; /* Maintain proportional spacing */
+        padding: 6px;
+    }
+
+    /* Specific spacing for duplicate navigation on small screens */
+    .calendar-columns + .calendar-nav-btns {
+        margin-top: 12px;  /* Space from calendar grid */
+        margin-bottom: 12px; /* Space to heatmap */
+    }
+
+    .calendar-nav-btns button {
+        font-size: 0.8rem;
+        padding: 6px;
+        margin: 0 2px;
+        min-width: 36px;
+        height: 36px;
+    }
+
+    .calendar-nav-btns .home-btn {
+        min-width: 40px;
+    }
+}
+
+/* Extra small screens optimization */
+@media (max-width: 360px) {
+    .heatmap-container {
+        margin: 5px 0;
+        padding: 4px;
+    }
+
+    .heatmap-section h1 {
+        font-size: 1.2rem !important;
+    }
+
+    .heatmap-item h4 {
+        font-size: 0.85rem;
+        padding: 0 5px;
+    }
+
+    .shared-heatmap-legend {
+        margin: 8px 1px;
+        padding: 10px;
+    }
+
+    .calendar-nav-btns button {
+        font-size: 0.75rem;
+        padding: 5px;
+        margin: 0 1px;
+        min-width: 32px;
+        height: 32px;
+    }
+
+    .calendar-nav-btns .home-btn {
+        min-width: 36px;
+    }
+}
+
+/* Info Popup Modal for Color Key */
+.info-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.info-popup {
+    background: #1a1a1a;
+    border: 2px solid #3caea3;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    color: #e0e6ed;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.info-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #3caea3;
+}
+
+.info-popup-title {
+    color: #3caea3;
+    font-weight: bold;
+    font-size: 16px;
+    margin: 0;
+}
+
+.info-popup-close {
+    background: #3caea3;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.info-popup-close:hover {
+    background: #40e0d0;
+}
+
+.info-popup-content {
+    white-space: pre-line;
+}
+
+.info-icon-clickable {
+    cursor: pointer;
+    color: #3caea3;
+    font-size: 14px;
+    margin-left: 4px;
+    transition: color 0.2s;
+    user-select: none;
+}
+
+.info-icon-clickable:hover {
+    color: #40e0d0;
+}
+
+/* Mobile optimization for popup */
+@media (max-width: 480px) {
+    .info-popup {
+        padding: 15px;
+        font-size: 13px;
+        max-width: 95%;
+        margin: 10px;
+    }
+    
+    .info-popup-title {
+        font-size: 15px;
+    }
+}
+
+/* Day Info Popup Modal */
+.day-info-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.day-info-popup {
+    background: #1a1a1a;
+    border: 2px solid #3caea3;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(60, 174, 163, 0.2);
+    padding: 30px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif;
+    font-size: 1.5rem;
+    color: #e0e6ed;
+}
+
+.day-info-popup * {
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif !important;
+}
+
+.day-info-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #3caea3;
+    text-align: center;
+}
+
+.day-info-popup-title {
+    color: #3caea3;
+    font-weight: bold;
+    font-size: 1.8rem;
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+
+.day-info-popup-subtitle {
+    color: #3caea3;
+    font-weight: normal;
+    font-size: 1.8rem;
+    margin: 8px 0 0 0;
+    text-align: center;
+}
+
+.day-info-popup-close {
+    background: #3caea3;
+    color: #1a1a1a;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+.day-info-popup-close:hover {
+    background: #40e0d0;
+}
+
+.day-info-popup-content {
+    line-height: 1.6;
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif;
+}
+
+.day-info-popup #sun-events-content {
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif;
+    color: #e0e6ed;
+}
+
+.day-info-popup .sun-events-pre {
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif !important;
+    color: #e0e6ed;
+    white-space: pre-wrap;
+    margin: 0;
+    padding: 0;
+}
+
+.day-info-popup .secondary-tag {
+    color: #ffa500;
+    font-family: 'HybridFont', 'Pictocrypto', sans-serif !important;
+}
+
+.day-info-popup .special-day-info {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(60, 174, 163, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #3caea3;
+}
+
+/* Mobile optimization for day info popup */
+@media (max-width: 768px) {
+    .day-info-popup {
+        padding: 20px;
+        font-size: 1.2rem;
+        max-width: 95%;
+        margin: 10px;
+    }
+    
+    .day-info-popup-title {
+        font-size: 1.5rem;
+    }
+    
+    .day-info-popup-subtitle {
+        font-size: 1.5rem;
+    }
+    
+    .day-info-popup-close {
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .day-info-popup {
+        padding: 15px;
+        font-size: 1.1rem;
+    }
+    
+    .day-info-popup-title {
+        font-size: 1.3rem;
+    }
+    
+    .day-info-popup-subtitle {
+        font-size: 1.3rem;
+    }
+    
+    .day-info-popup-close {
+        width: 28px;
+        height: 28px;
+        font-size: 18px;
     }
 }

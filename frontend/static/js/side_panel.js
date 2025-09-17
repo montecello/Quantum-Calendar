@@ -288,6 +288,9 @@ function formatSunEventsText(text) {
     // Split into lines and process each line
     const lines = text.split('\n');
     const formattedLines = lines.map(line => {
+        // Replace -> with right arrow emoji
+        line = line.replace(/->/g, '→');
+        
         // Highlight secondary tags (nautical, civil, etc.) in orange
         if (line.includes('(secondary:')) {
             return line.replace(/\(secondary: ([^)]+)\)/, '<span class="secondary-tag">(secondary: $1)</span>');
@@ -299,24 +302,23 @@ function formatSunEventsText(text) {
     return `<pre class="sun-events-pre">${formattedLines.join('\n')}</pre>`;
 }
 
-// Helper to open side panel and load sun events. Centralizes duplicated HTML + fetch logic.
+// Helper to open day info popup and load sun events. Replaces the old side panel.
 function openSidePanel(panel, cols, opts) {
-    if (!panel) return;
-    if (cols) {
-        cols.classList.add('two-col');
-        cols.classList.add('has-side-panel');
-    }
+    // Redirect to the new popup function
+    openDayInfoPopup(opts);
+}
 
-    // Remove any existing closing class
-    panel.classList.remove('closing');
+// New popup-based day info function
+function openDayInfoPopup(opts) {
+    const overlay = document.getElementById('day-info-popup-overlay');
+    const popup = document.querySelector('.day-info-popup');
+    const title = document.getElementById('day-info-title');
+    const subtitle = document.getElementById('day-info-subtitle');
+    const content = document.getElementById('day-info-content');
+    
+    if (!overlay || !popup || !title || !subtitle || !content) return;
 
-    // Determine animation type based on whether panel has been opened before
-    if (sidePanelOpened) {
-        panel.classList.add('page-turn');
-    } else {
-        panel.classList.remove('page-turn');
-    }
-
+    
     const month = opts.month || '';
     const day = opts.day || '';
     const yearRange = opts.yearRange || '';
@@ -326,46 +328,42 @@ function openSidePanel(panel, cols, opts) {
     // Set context for month-specific logic
     currentPanelContext = { month: parseInt(month), day: parseInt(day) };
 
-    // Get special day information, preferring the clicked cell if available
-    // Add small delay for Gregorian mode to allow special classes to be applied
+    // Update popup content
+    title.textContent = `Month ${month}, Day ${day}, ${yearRange}`;
+    subtitle.textContent = gregorianStr;
+    content.innerHTML = SUN_EVENTS_LOADING_TEXT;
+
+    // Get special day information
+    const specialInfo = getSpecialDayInfo(month, day, clickedCell);
+    const specialDayHtml = createSpecialDayHtml(specialInfo);
+    
+    if (specialDayHtml) {
+        content.innerHTML = specialDayHtml + '<div id="sun-events-content" style="margin-top: 20px;">' + SUN_EVENTS_LOADING_TEXT + '</div>';
+    } else {
+        content.innerHTML = '<div id="sun-events-content">' + SUN_EVENTS_LOADING_TEXT + '</div>';
+    }
+
+    // Show the popup
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Handle special day info for Gregorian mode
     const isGregorianMode = window.CalendarMode && window.CalendarMode.mode === 'gregorian';
     if (isGregorianMode && clickedCell) {
-        // For Gregorian mode, wait a bit for async special day classes to be applied
         setTimeout(() => {
-            const specialInfo = getSpecialDayInfo(month, day, clickedCell);
-            const specialDayHtml = createSpecialDayHtml(specialInfo);
+            const updatedSpecialInfo = getSpecialDayInfo(month, day, clickedCell);
+            const updatedSpecialDayHtml = createSpecialDayHtml(updatedSpecialInfo);
             
-            // Update the side panel content with special day info
-            const existingSpecialDiv = panel.querySelector('.special-day-info');
-            if (existingSpecialDiv) {
-                existingSpecialDiv.remove();
-            }
-            
-            if (specialDayHtml) {
-                const sunEventsContent = panel.querySelector('#sun-events-content');
-                if (sunEventsContent) {
-                    sunEventsContent.insertAdjacentHTML('beforebegin', specialDayHtml);
+            if (updatedSpecialDayHtml) {
+                const sunEventsDiv = document.getElementById('sun-events-content');
+                if (sunEventsDiv) {
+                    content.innerHTML = updatedSpecialDayHtml + '<div id="sun-events-content" style="margin-top: 20px;">' + SUN_EVENTS_LOADING_TEXT + '</div>';
                 }
             }
         }, 100);
     }
     
-    const specialInfo = getSpecialDayInfo(month, day, clickedCell);
-    const specialDayHtml = createSpecialDayHtml(specialInfo);
-
-    panel.innerHTML = `
-        <button class="close-btn" aria-label="Close">&times;</button>
-        <h3 style="margin-top:0;color:#20639b;">Month ${month}, Day ${day}, ${yearRange}</h3>
-        <h3 style="margin:0 0 12px 0;color:#20639b;font-weight:normal;">${gregorianStr}</h3>
-        ${specialDayHtml}
-    <div id="sun-events-content" style="color:#173f5f;">${SUN_EVENTS_LOADING_TEXT}</div>
-    `;
-
-    // Start the animation
-    setTimeout(() => {
-        panel.classList.add('open');
-        sidePanelOpened = true; // Mark as opened after first animation starts
-    }, 50);
+    // Load sun events data
 
     if (opts.dateStr) {
         fetch(`/api/sunevents?lat=${navState?.lat || 51.48}&lon=${navState?.lon || 0.0}&tz=${encodeURIComponent(navState?.tz || 'Europe/London')}&date=${opts.dateStr}&name=${encodeURIComponent(navState?.locationName || '')}`)
@@ -373,37 +371,19 @@ function openSidePanel(panel, cols, opts) {
             .then(data => {
                 const el = document.getElementById('sun-events-content');
                 if (!el) return;
-                if (data && data.text) el.innerHTML = formatSunEventsText(data.text);
-                else el.textContent = 'No sun event data available.';
+                if (data && data.text) {
+                    el.innerHTML = formatSunEventsText(data.text);
+                } else {
+                    el.textContent = 'No sun event data available.';
+                }
             })
             .catch(() => {
                 const el = document.getElementById('sun-events-content');
                 if (el) el.textContent = 'Error loading sun event data.';
             });
     } else {
-        const el = document.getElementById('sun-events-content'); if (el) el.textContent = 'Invalid date.';
-    }
-
-    const closeBtn = panel.querySelector('.close-btn');
-    if (closeBtn) {
-        closeBtn.onclick = function() {
-            // Start the closing animation
-            panel.classList.remove('open');
-            panel.classList.add('closing');
-
-            // Wait for animation to complete before removing content
-            setTimeout(() => {
-                panel.classList.remove('closing');
-                panel.classList.remove('open');
-                if (cols) {
-                    cols.classList.remove('two-col');
-                    cols.classList.remove('has-side-panel');
-                }
-                setTimeout(() => {
-                    panel.innerHTML = '';
-                }, 50);
-            }, 500);
-        };
+        const el = document.getElementById('sun-events-content'); 
+        if (el) el.textContent = 'Invalid date.';
     }
 }
 
