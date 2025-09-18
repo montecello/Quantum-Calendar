@@ -13,11 +13,11 @@ const SPECIAL_DAY_INFO = {
         colors: ['#ff1493', '#ff69b4']
     },
     'ruby-red-day': {
-        text: 'Passover',
+        text: 'Festival of Wonders',
         colors: ['#e0115f', '#b22234']
     },
     'emerald-green-day': {
-        text: 'Festival of Unleavened Bread + Rest',
+        text: 'Festival of Sweet Things + Rest',
         colors: ['#50c878', '#228b22']
     },
     'orange-day': {
@@ -25,31 +25,31 @@ const SPECIAL_DAY_INFO = {
         colors: ['#ff9800', '#ffb347']
     },
     'indigo-purple-day': {
-        text: 'Festival of Unleavened Bread',
+        text: 'Festival of Sweet Things',
         colors: ['#6a5acd', '#8e24aa']
     },
     'seventh-emerald-green-day': {
-        text: 'Festival of Trumpets',
+        text: 'Festival of Memories',
         colors: ['#228b22', '#006400']
     },
     'seventh-orange-day': {
-        text: 'Festival of Trumpets',
+        text: 'Festival of Memories',
         colors: ['#ff8c00', '#cc5500']
     },
-    'atonement-magenta-day': {
-        text: 'Festival of Atonement',
+    'Forgiveness-magenta-day': {
+        text: 'Festival of Forgiveness',
         colors: ['#ff00ff', '#cc00cc']
     },
     'seventh-ruby-red-day': {
-        text: 'Festival of Booths + Rest',
+        text: 'Festival of Covering + Rest',
         colors: ['#e0115f', '#b22234']
     },
     'seventh-pink-day': {
-        text: 'Festival of Booths + Rest',
+        text: 'Festival of Covering + Rest',
         colors: ['#ffb7c5', '#ff69b4']
     },
     'seventh-indigo-purple-day': {
-        text: 'Festival of Booths',
+        text: 'Festival of Covering',
         colors: ['#6a5acd', '#8e24aa']
     },
     'gold-bronze-day': {
@@ -189,7 +189,7 @@ function createSpecialDayHtml(specialInfo) {
     
     // Priority order for multiple special classes (most important first)
     const priorityOrder = [
-        'atonement-magenta-day',
+        'Forgiveness-magenta-day',
         'hot-pink-day',
         'seventh-ruby-red-day',      // Moved higher for 7th month days 15/22
         'seventh-pink-day',          // Moved higher for 7th month days 15/22
@@ -239,9 +239,9 @@ function createSpecialDayHtml(specialInfo) {
         // Get month info from the side panel function call context
         const monthFromContext = getCurrentMonthContext();
         if (monthFromContext === 7) {
-            displayText = 'Festival of Booths + Rest';
+            displayText = 'Festival of Covering + Rest';
         } else if (monthFromContext === 1) {
-            displayText = 'Festival of Unleavened Bread + Rest';
+            displayText = 'Festival of Sweet Things + Rest';
         }
     }
     
