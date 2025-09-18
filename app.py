@@ -320,6 +320,16 @@ def primitive_roots():
     ensure_data_loaded()
     return render_template('primitive_roots.html')
 
+@app.route('/art')
+def art():
+    ensure_data_loaded()
+    return render_template('art.html')
+
+@app.route('/festivals')
+def festivals():
+    ensure_data_loaded()
+    return render_template('festivals.html')
+
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
     """Contact form page with MongoDB storage"""

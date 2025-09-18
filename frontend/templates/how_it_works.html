@@ -133,7 +133,7 @@
                             </div>
                             <div class="month-vs" aria-hidden="true">vs</div>
                             <div class="month-col">
-                                <div class="month-label">🌑 Conjunction 🌑</div>
+                                <div class="month-label">🌑 Dark 🌑</div>
                                 <img src="/static/img/month/dark/a.png" alt="Conjunction a" loading="lazy">
                                 <img src="/static/img/month/dark/b.png" alt="Conjunction b" loading="lazy">
                                 <img src="/static/img/month/dark/c.png" alt="Conjunction c" loading="lazy">
@@ -219,32 +219,14 @@
                 </div>
             </div>
 
-            <!-- Special Days (Legend) -->
-            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
-                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Special Days (Legend)</h2>
-                <div class="section-content" style="color: #ffffff;">
-                    <p>Calendar cells are colored to highlight special days. These colors/styles are identical in both Custom and Gregorian views.</p>
-                    <ul>
-                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:gold;margin-right:8px;vertical-align:middle;"></span><strong>New Moon Day</strong> — First dawn after full moon (100%). </li>
-                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:royalblue;margin-right:8px;vertical-align:middle;"></span><strong>7th Day Rests</strong> — Always will be on the 8th, 15th, 22nd, 29th days of the month </li>
-                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:green;margin-right:8px;vertical-align:middle;"></span><strong>Main Bi-Yearly Week-Long Festival Commencements</strong> — Days near peak illumination. </li>
-                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:purple;margin-right:8px;vertical-align:middle;"></span><strong>Festival Days</strong> </li>
-                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:magenta;margin-right:8px;vertical-align:middle;"></span><strong>Passover / Festival of Atonement</strong> </li>
-                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:orange;margin-right:8px;vertical-align:middle;"></span><strong>Festival of Trumpets / Memorial</strong> </li>
-                        <li><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:pink;margin-right:8px;vertical-align:middle;"></span><strong>Festival of Weeks</strong> </li>
-                    </ul>
-                    <p>More clarifications to come in v2.0</p>
-                </div>
-            </div>
-
             <!-- Limitations -->
             <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
-                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Limitations/Likely Errors</h2>
-                <div class="section-content" style="color: #ffffff;">
+                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Current Limitations/Likely Errors</h2>
+                <div class="section-content" style="color: #ffffff; text-align: left;">
                     <ul>
                         <li><strong>Limited Range</strong>: The calendar covers a specific range of dates (2000-2048)</li>
+                        <li><strong>Complete Day Map In Progress</strong>:They take about 2-3 hours per image to render so they will be pushed to the site over time</li>
                         <li><strong>Atmospheric refraction</strong>: Local conditions can shift observed dawn a few minutes.</li>
-                        <li><strong>Time zones/DST</strong>: Transitions are handled, but extreme offsets can surprise.</li>
                         <li><strong>Year Start Error</strong>: script used to calculate New Year's Day uses alignment thresholds that need refinement. Currently it selects the full moon with the smallest time gap to its preceding Spica crossing. If that chosen full moon is on/after the Sun–Hamal crossing for the year, it goes back to the previous full moon. This is causing the New Year to begin a month earlier in many cases than it should.</li>
                         <li><strong>Jubilee/Sabbaticals</strong>: 50 Year and 7 Year Cycles currently cannot be determined with limited astronomical knowledge.</li>
                     </ul>
@@ -255,24 +237,17 @@
                         <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
                 <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Version 2 (Under Construction)</h2>
                 <div class="section-content" style="color: #ffffff;">
-                    <ul>
-                        <li>Refinement of calculating the new year with refined set of rules that the computer can understand</li>
-                        <li>World map with the revised int'l date line after the next New Moon Day to see how that changes with each month.</li>
-                        <li>Transpose special days to their Gregorian equivalents</li>
-                        <li>Numbered co-ordinates to be digital and DD*MM'SS" compatible in search bar</li>
-                        <li>Ability to search areas over bodies of water (currently unavailable)</li>
-                        <li>Including the retrograde schedule of the 'wandering stars'</li>
-                        <li>More visuals on the how the festivals line up with astronomy using this reckoning</li>
-                        <li>Special Days superimposed while on Gregorian calendar mode</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Engage -->
-            <div class="how-it-works-section" style="margin-bottom: 40px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255, 215, 0, 0.2);">
-                <h2 style="color: #ffd700; font-size: 2.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Engage</h2>
-                <div class="section-content" style="color: #ffffff;">
-                    <p>Discord and other Links coming soon.</p>
+                    <p>Retrogrades of the "Wandering Stars"<br>
+                    Indicators for solar and lunar eclipses<br>
+                    A more accurate rendering of when the year begins</p>
+                    
+                    <p style="color: #ffd700; font-weight: bold; font-size: 1.2em; margin: 20px 0;">PLUS</p>
+                    
+                    <p>proofs for the format<br>
+                    festival and special day explanations<br>
+                    hieroglyph artwork</p>
+                    
+                    <p style="color: #ffd700; font-weight: bold; font-size: 1.2em; margin: 20px 0;">& More!</p>
                 </div>
             </div>
         </div>
