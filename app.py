@@ -112,6 +112,10 @@ client, db = get_mongo_client()
 app.config['mongo_client'] = client
 app.config['mongo_db'] = db
 
+# Update global variables for backward compatibility
+mongo_client = client
+mongo_db = db
+
 
 def check_mongo_connection():
     """Check MongoDB connection and database access with colored logs."""
@@ -315,6 +319,67 @@ def the_letters():
 def primitive_roots():
     ensure_data_loaded()
     return render_template('primitive_roots.html')
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    """Contact form page with MongoDB storage"""
+    if request.method == 'POST':
+        try:
+            # Get form data
+            name = request.form.get('name', '').strip()
+            email = request.form.get('email', '').strip()
+            message = request.form.get('message', '').strip()
+            
+            # Validate required fields
+            if not name or not email or not message:
+                return render_template('contact.html', error="All fields are required.")
+            
+            # Enhanced email validation
+            import re
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_pattern, email):
+                return render_template('contact.html', error="Please enter a valid email address (e.g., user@example.com).")
+            
+            # Additional length checks
+            if len(email) > 254:  # RFC 5321 limit
+                return render_template('contact.html', error="Email address is too long.")
+            
+            if len(name) > 100:
+                return render_template('contact.html', error="Name is too long (max 100 characters).")
+            
+            if len(message) > 5000:
+                return render_template('contact.html', error="Message is too long (max 5000 characters).")
+            
+            # Store in MongoDB
+            if mongo_db is not None:
+                try:
+                    from datetime import datetime
+                    contact_collection = mongo_db['contact']
+                    contact_data = {
+                        'name': name,
+                        'email': email,
+                        'message': message,
+                        'created_at': datetime.utcnow().isoformat()
+                    }
+                    
+                    result = contact_collection.insert_one(contact_data)
+                    print(f"✅ Contact form submission saved to MongoDB with ID: {result.inserted_id}")
+                    # Render with success flag to trigger popup
+                    return render_template('contact.html', success=True)
+                    
+                except Exception as e:
+                    print(f"❌ Failed to save contact form to MongoDB: {e}")
+                    return render_template('contact.html', error="Failed to send message. Please try again later.")
+            else:
+                print("⚠️ MongoDB not available, contact form submission not saved")
+                return render_template('contact.html', error="Service temporarily unavailable. Please try again later.")
+                
+        except Exception as e:
+            print(f"❌ Contact form error: {e}")
+            return render_template('contact.html', error="An error occurred. Please try again later.")
+    
+    # GET request - show the form
+    return render_template('contact.html')
 
 @app.route('/font-test')
 def font_test():

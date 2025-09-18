@@ -197,14 +197,37 @@
   color: #ff4444;
 }
 
+.youtube-link:hover .social-icon {
+  filter: brightness(0) saturate(100%) invert(17%) sepia(94%) saturate(7482%) hue-rotate(3deg) brightness(97%) contrast(118%); /* YouTube red */
+}
+
 .discord-link:hover {
   background: rgba(114, 137, 218, 0.1);
   border-color: rgba(114, 137, 218, 0.5);
   color: #7289da;
 }
 
-.social-icon {
+.discord-link:hover .social-icon {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(222deg) brightness(97%) contrast(95%); /* Discord blue */
+}
+
+.contact-link:hover {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.5);
+  color: #ffc107;
+}
+
+.contact-emoji {
   font-size: 1.1rem;
+  display: inline-block;
+}
+
+.social-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Make icons white by default */
+  transition: filter 0.2s ease;
 }
 
 .social-text {
@@ -238,6 +261,11 @@
   }
 
   .social-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .contact-emoji {
     font-size: 1rem;
   }
 

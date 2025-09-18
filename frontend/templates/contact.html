@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reach Out - Quantum Clock v1.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Basic SEO -->
+    <meta name="description" content="Contact the Quantum Clock team. Send us your questions, feedback, or suggestions.">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="{{ (request.url_root | trim('/')) }}/contact">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Reach Out - Quantum Clock">
+    <meta property="og:site_name" content="Quantum Clock">
+    <meta property="og:description" content="Contact the Quantum Clock team with your questions and feedback">
+    <meta property="og:url" content="{{ (request.url_root | trim('/')) }}/contact">
+    <meta property="og:image" content="{{ (request.url_root | trim('/')) }}/static/img/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Reach Out - Quantum Clock">
+    <meta name="twitter:description" content="Contact the Quantum Clock team with your questions and feedback">
+    <meta name="twitter:image" content="{{ (request.url_root | trim('/')) }}/static/img/og-image.png">
+
+    <!-- Theme color (mobile address bar) -->
+    <meta name="theme-color" content="#20639b">
+
+    <link rel="preload" href="/static/fonts/Pictocrypto-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/navbar.css">
+    <link rel="stylesheet" href="/static/css/calendar_grid.css">
+    <link rel="stylesheet" href="/static/css/side_panel.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    {% include 'navbar.html' %}
+
+    <!-- Live background canvas -->
+    <canvas id="bg-matrix" aria-hidden="true"></canvas>
+
+    <div class="app-root">
+        <div class="title-placemat">
+            <h1 class="calendar-title">Reach Out</h1>
+        </div>
+
+        <!-- Contact Form Container -->
+        <div class="contact-container">
+            <div class="contact-section">
+                <div class="section-content">
+                    <p class="contact-intro">Have questions, feedback, or suggestions about the Quantum Clock? We'd love to hear from you!</p>
+                    
+                    {% if error %}
+                    <div class="contact-error">
+                        <h3>❌ Error</h3>
+                        <p>{{ error }}</p>
+                    </div>
+                    {% endif %}
+
+                    <form class="contact-form" method="POST" action="/contact">
+                        <div class="form-group">
+                            <label for="name" class="form-label">Name *</label>
+                            <input type="text" id="name" name="name" class="form-input" required 
+                                   minlength="2" maxlength="100"
+                                   placeholder="Your name" value="{{ request.form.name or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" id="email" name="email" class="form-input" required 
+                                   maxlength="254" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+                                   placeholder="your.email@example.com" value="{{ request.form.email or '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message" class="form-label">Message *</label>
+                            <textarea id="message" name="message" class="form-textarea" required 
+                                      minlength="10" maxlength="5000"
+                                      placeholder="Tell us what's on your mind..." rows="6">{{ request.form.message or '' }}</textarea>
+                        </div>
+
+                        <button type="submit" class="form-submit">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Success Popup -->
+    <div id="contact-success-popup-overlay" class="contact-success-popup-overlay">
+        <div class="contact-success-popup">
+            <div class="contact-success-popup-header">
+                <h2 class="contact-success-popup-title">ה Hey You! ה</h2>
+            </div>
+            <div class="contact-success-popup-content">
+                <p>Thank You. I'll take you back to the home page now...</p>
+                <div id="countdown" class="contact-success-popup-countdown">Redirecting in 3 seconds...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/matrix_rain.js"></script>
+    
+    <!-- Contact Success Popup Script -->
+    {% if success %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            showSuccessPopup();
+        });
+    </script>
+    {% endif %}
+    
+    <script>
+        function showSuccessPopup() {
+            const overlay = document.getElementById('contact-success-popup-overlay');
+            const countdownElement = document.getElementById('countdown');
+            
+            // Show the popup
+            overlay.style.display = 'flex';
+            
+            // Start countdown
+            let seconds = 3;
+            const countdownInterval = setInterval(function() {
+                seconds--;
+                if (seconds > 0) {
+                    countdownElement.textContent = `Redirecting in ${seconds} second${seconds !== 1 ? 's' : ''}...`;
+                } else {
+                    countdownElement.textContent = 'Redirecting now...';
+                    clearInterval(countdownInterval);
+                    
+                    // Redirect to home page
+                    setTimeout(function() {
+                        window.location.href = '/';
+                    }, 500);
+                }
+            }, 1000);
+        }
+    </script>
+
+    <!-- Footer -->
+    {% include 'footer.html' %}
+</body>
+</html>
