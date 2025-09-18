@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const endDisplay = new Date(monthEnd.getTime() - 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
                     const yearDisplay = monthStart.getFullYear();
                     const finalDisplay = `${startDisplay} - ${endDisplay}, ${yearDisplay}`;
-                    currentGregorianDate.textContent = finalDisplay;
+                    currentGregorianDate.innerHTML = `${finalDisplay}<br>(Azimuthal Projection)`;
                     console.log('Updated date display for navigated month:', finalDisplay);
                 } else {
                     console.log('No month data available for current navigation position');
