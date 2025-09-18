@@ -284,7 +284,7 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
         } else if (monthNum === 7 && dayNum === 1) {
             extra = ' seventh-emerald-green-day seventh-orange-day';
         } else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) {
-            extra = ' atonement-magenta-day seventh-orange-day';
+            extra = ' Forgiveness-magenta-day';
         } else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) {
             extra = ' seventh-ruby-red-day seventh-orange-day seventh-pink-day';
         } else if (monthNum === 7 && dayNum >= 16 && dayNum <= 21) {
@@ -2454,7 +2454,7 @@ function computeCustomSpecialClasses(monthNum, dayNum, monthsInYear) {
             else if (monthNum === 1 && dayNum >= 17 && dayNum <= 21) classes.push('indigo-purple-day');
             else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) classes.push('emerald-green-day');
             else if (monthNum === 7 && dayNum === 1) { classes.push('seventh-emerald-green-day','seventh-orange-day'); }
-            else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) { classes.push('atonement-magenta-day','seventh-orange-day'); }
+            else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) { classes.push('Forgiveness-magenta-day','seventh-orange-day'); }
             else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) { classes.push('seventh-ruby-red-day','seventh-orange-day','seventh-pink-day'); }
             else if (monthNum === 7 && dayNum >= 16 && dayNum <= 21) classes.push('seventh-indigo-purple-day');
             else if (dayNum === 1) classes.push('gold-bronze-day');
