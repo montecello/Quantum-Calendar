@@ -1199,7 +1199,7 @@ function renderCalendarForState() {
                     <p style="margin: 5px 0; color: #666; font-size: 14px; font-weight: 500;">Loading lunar month heatmaps...</p>
                 </div>
                 <div class="heatmap-item" style="text-align: center;">
-                    <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif; margin: 0 0 15px 0; text-align: center;">${navState.currentMonthIdx + 1}th Month ${navState.yearsData[navState.currentYearIdx].year}-${String(navState.yearsData[navState.currentYearIdx].year + 1).slice(-2)} (<span id="current-gregorian-date"></span>)</h4>
+                    <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif; margin: 0 0 15px 0; text-align: center;">${navState.currentMonthIdx + 1}th Month ${navState.yearsData[navState.currentYearIdx].year}-${String(navState.yearsData[navState.currentYearIdx].year + 1).slice(-2)} <span id="current-gregorian-date"></span></h4>
                         <div id="current-heatmap" class="heatmap-placeholder">
                             <p>Loading current lunar month heatmap...</p>
                         </div>
@@ -1859,7 +1859,7 @@ function updateMultiYearCalendarUI() {
                     <p style="margin: 5px 0; color: #666; font-size: 14px; font-weight: 500;">Loading lunar month heatmaps...</p>
                 </div>
                 <div class="heatmap-item" style="text-align: center;">
-                    <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif; margin: 0 0 15px 0; text-align: center;">${navState.currentMonthIdx + 1}th Month ${yearObj.year}-${String(yearObj.year + 1).slice(-2)} (<span id="current-gregorian-date"></span>)</h4>
+                    <h4 style="color: #ffd700; text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4); font-family: 'Pictocrypto', sans-serif; margin: 0 0 15px 0; text-align: center;">${navState.currentMonthIdx + 1}th Month ${yearObj.year}-${String(yearObj.year + 1).slice(-2)} <span id="current-gregorian-date"></span></h4>
                         <div id="current-heatmap" class="heatmap-placeholder">
                             <p>Loading current lunar month heatmap...</p>
                         </div>
