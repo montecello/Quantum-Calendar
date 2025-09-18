@@ -57,7 +57,7 @@ const SPECIAL_DAY_INFO = {
         colors: ['#8b6914', '#654321']
     },
     'royal-blue-day': {
-        text: 'Sabbath Rest',
+        text: '7th Day Rest',
         colors: ['#4169e1', '#27408b']
     }
 };
@@ -231,7 +231,7 @@ function createSpecialDayHtml(specialInfo) {
     // Handle special text formatting for royal-blue-day with bronze counter
     let displayText = info.text;
     if (primaryClass === 'royal-blue-day' && specialInfo.bronzeCount !== null) {
-        displayText = `Sabbath Rest <span class="bronze-counter-text">(${specialInfo.bronzeCount} of 7)</span>`;
+        displayText = `7th Day Rest <span class="bronze-counter-text">(${specialInfo.bronzeCount} of 7)</span>`;
     }
     
     // Handle context-specific emerald-green-day text based on month
@@ -254,7 +254,7 @@ function createSpecialDayHtml(specialInfo) {
         }
     }
     
-    // Add silver counter for New Moon Day or Sabbath Rest
+    // Add silver counter for New Moon Day or 7th Day Rest
     if ((primaryClass === 'gold-bronze-day' || primaryClass === 'royal-blue-day') && 
         specialInfo.silverCount !== null) {
         if (primaryClass === 'gold-bronze-day') {
@@ -262,9 +262,9 @@ function createSpecialDayHtml(specialInfo) {
         } else if (primaryClass === 'royal-blue-day') {
             // Add silver counter after bronze counter if both exist
             if (specialInfo.bronzeCount !== null) {
-                displayText = `Sabbath Rest <span class="bronze-counter-text">(${specialInfo.bronzeCount} of 7)</span> <span class="silver-counter-text">(${specialInfo.silverCount} of 50)</span>`;
+                displayText = `7th Day Rest <span class="bronze-counter-text">(${specialInfo.bronzeCount} of 7)</span> <span class="silver-counter-text">(${specialInfo.silverCount} of 50)</span>`;
             } else {
-                displayText = `Sabbath Rest <span class="silver-counter-text">(${specialInfo.silverCount} of 50)</span>`;
+                displayText = `7th Day Rest <span class="silver-counter-text">(${specialInfo.silverCount} of 50)</span>`;
             }
         }
     }
