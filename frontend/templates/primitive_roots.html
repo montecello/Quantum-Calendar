@@ -343,6 +343,61 @@
                 height: 12px;
             }
         }
+
+        /* Upcoming Features Section Styling */
+        .upcoming-features-section {
+            width: 100%;
+            max-width: none !important;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-color: rgba(64, 224, 208, 0.3);
+        }
+
+        .coming-soon {
+            position: relative;
+        }
+
+        /* Desktop: Full width for upcoming features section */
+        @media (min-width: 769px) {
+            .upcoming-features-section {
+                grid-column: 1 / -1;
+                width: calc(100% + 60px); /* Account for grid gap */
+                margin-left: -30px; /* Center by accounting for grid gap */
+                margin-right: -30px;
+            }
+        }
+
+        /* Mobile responsive for upcoming features */
+        @media (max-width: 768px) {
+            .upcoming-features-section {
+                margin-left: 0;
+                margin-right: 0;
+                width: 100%;
+                padding: 20px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .feature-card {
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 <body class="primitive-roots-page">
@@ -463,6 +518,48 @@
 
                         <p style="color: #e0e6ed; line-height: 1.6;">
                             This approach bridges the gap between ancient Hebrew thought and modern understanding.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Features Section -->
+            <div class="upcoming-features-section" style="margin-top: 40px; background: rgba(0,0,0,0.8); border-radius: 12px; padding: 30px; border: 1px solid rgba(255,255,255,0.1);">
+                <h2 style="color: #ffd700; margin-bottom: 20px; text-align: center;">🚀 Upcoming Features</h2>
+                <div class="features-content">
+                    <p style="color: #e0e6ed; margin-bottom: 25px; line-height: 1.6; text-align: center; font-size: 1.1rem;">
+                        New tools and calculators are being developed to enhance your primitive root analysis experience:
+                    </p>
+
+                    <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 30px;">
+                        <!-- Vowel Point Conversion Calculator -->
+                        <div class="feature-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h3 style="color: #40e0d0; margin-bottom: 15px; font-size: 1.2rem;">🔤 Vowel Point Conversion Calculator</h3>
+                            <p style="color: #e0e6ed; line-height: 1.6; margin: 0;">
+                                Adds bonus letters to words to augment and enhance possibilities of what can be found inside words. This tool will help uncover hidden meanings and connections by exploring vowel point variations and their impact on word roots.
+                            </p>
+                        </div>
+
+                        <!-- Letter Pair Concepts -->
+                        <div class="feature-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h3 style="color: #40e0d0; margin-bottom: 15px; font-size: 1.2rem;">⚖️ Letter Pair Concepts</h3>
+                            <p style="color: #e0e6ed; line-height: 1.6; margin: 0;">
+                                One letter from the perspective of its complement in a word. This analytical approach will reveal how paired letters interact and influence each other's meanings.
+                            </p>
+                        </div>
+
+                        <!-- Individual Letter Meaning Approach -->
+                        <div class="feature-card" style="background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <h3 style="color: #40e0d0; margin-bottom: 15px; font-size: 1.2rem;">🔍 Individual Letter Meaning Approach</h3>
+                            <p style="color: #e0e6ed; line-height: 1.6; margin: 0;">
+                                Deep dive into the fundamental significance of each Hebrew letter. This tool will provide detailed analysis of individual letter meanings and their role in shaping word roots and concepts.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="coming-soon" style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(255,215,0,0.05); border-radius: 8px; border: 1px solid rgba(255,215,0,0.2);">
+                        <p style="color: #e0e6ed; margin: 0; font-style: italic;">
+                            These tools will give the user an abundance of freedom on how to visualize and interpret what was once archaic concepts into something much more liberating and individualized to the user.
                         </p>
                     </div>
                 </div>

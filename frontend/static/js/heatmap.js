@@ -15,6 +15,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Track current location separately (this persists across navigation)
     let currentLocation = null;
 
+    // Load saved location from localStorage on initialization
+    function loadSavedLocation() {
+        try {
+            const savedLocation = localStorage.getItem('quantumCalendarLocation');
+            if (savedLocation) {
+                const locationData = JSON.parse(savedLocation);
+                console.log('Loaded saved location from localStorage:', locationData);
+                currentLocation = locationData;
+                searchedLocations = [currentLocation];
+                return true;
+            }
+        } catch (error) {
+            console.error('Error loading saved location from localStorage:', error);
+        }
+        return false;
+    }
+
+    // Save current location to localStorage
+    function saveCurrentLocation(location) {
+        try {
+            localStorage.setItem('quantumCalendarLocation', JSON.stringify(location));
+            console.log('Saved location to localStorage:', location);
+        } catch (error) {
+            console.error('Error saving location to localStorage:', error);
+        }
+    }
+
     // Function to find the correct heatmap for current calendar month
     function findHeatmapForCurrentMonth() {
         console.log('=== findHeatmapForCurrentMonth called ===');
@@ -393,6 +420,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         console.log('Astronomical data loaded, updating heatmaps...');
+
+        // Load saved location before updating heatmaps
+        loadSavedLocation();
+
         updateHeatmapsWithData();
     }
 
@@ -428,6 +459,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('calendar:navigation', function() {
         console.log('Calendar navigation detected, updating heatmap...');
 
+        // Load saved location before navigation update
+        loadSavedLocation();
+
         // NEW PIN LOGIC: Maintain current pin state during navigation
         // If user has set a custom location, keep only that pin
         // If no custom location, show only Greenwich
@@ -454,6 +488,9 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             console.log('Processing calendar:rendered after delay...');
             console.log('Current navState:', window.navState);
+
+            // Load saved location before rendering update
+            loadSavedLocation();
 
             // NEW PIN LOGIC: Maintain current pin state after rendering
             // If user has set a custom location, keep only that pin
@@ -499,6 +536,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('navState or yearsData not available');
             }
 
+            // Load saved location before gregorian rendering update
+            loadSavedLocation();
+
             // NEW PIN LOGIC: Maintain current pin state after gregorian rendering
             // If user has set a custom location, keep only that pin
             // If no custom location, show only Greenwich
@@ -524,6 +564,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Set this as the current location (replaces any previous current location)
             currentLocation = newLocation;
+
+            // Save to localStorage for persistence across page refreshes
+            saveCurrentLocation(newLocation);
 
             // NEW PIN LOGIC: When user changes location, show only the current location pin
             // Greenwich is no longer shown when a custom location is selected
