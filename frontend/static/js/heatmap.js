@@ -42,41 +42,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Function to find the correct heatmap for current calendar month
+    // Function to find the heatmap filename for the current month
     function findHeatmapForCurrentMonth() {
         console.log('=== findHeatmapForCurrentMonth called ===');
+        
         if (!window.navState || !window.navState.yearsData || !window.navState.yearsData.length) {
-            console.log('No navState data available for heatmap lookup');
+            console.log('No navState or yearsData available');
             return null;
         }
 
         const yearData = window.navState.yearsData[window.navState.currentYearIdx];
-        if (!yearData || !yearData.months || !yearData.months.length) {
-            console.log('No year/month data available');
+        if (!yearData || !yearData.months || !yearData.months[window.navState.currentMonthIdx]) {
+            console.log('No yearData or monthData available for current indices');
             return null;
         }
 
         const monthData = yearData.months[window.navState.currentMonthIdx];
-        if (!monthData || !monthData.start) {
-            console.log('No month start date available');
+        console.log('Month data for heatmap lookup:', monthData);
+        
+        if (!monthData.start) {
+            console.log('Month data missing start date');
             return null;
         }
 
-        console.log('Raw monthData.start:', monthData.start);
-        console.log('Raw monthData.full_moon_utc:', monthData.full_moon_utc);
-        console.log('Type of monthData.start:', typeof monthData.start);
-
-        // Try to parse the date, handling different formats
+        let dateToUse = monthData.full_moon_utc || monthData.start;
+        console.log('Using date for filename generation:', dateToUse);
+        
         let monthStart;
         try {
-            // Use full_moon_utc for filename generation (original UTC time from CSV)
-            // Fall back to start if full_moon_utc is not available
-            const dateToUse = monthData.full_moon_utc || monthData.start;
-            console.log('Using date for filename:', dateToUse);
-
-            // Parse the date string (handles all formats: ISO, timezone-aware, etc.)
             monthStart = new Date(dateToUse);
-
+            
             // Check if the date is valid
             if (isNaN(monthStart.getTime())) {
                 console.error('Invalid date parsed from:', dateToUse);
@@ -111,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to update heatmaps using navState data
     function updateHeatmapsWithData() {
-        console.log('=== updateHeatmapsWithData called ===');
         console.log('Current navState:', window.navState);
         console.log('Current mode:', window.CalendarMode?.mode);
         
@@ -119,6 +113,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('navState.currentYearIdx:', window.navState.currentYearIdx);
             console.log('navState.currentMonthIdx:', window.navState.currentMonthIdx);
             console.log('navState.yearsData length:', window.navState.yearsData?.length);
+            if (window.navState.yearsData && window.navState.yearsData.length > window.navState.currentYearIdx) {
+                const yearData = window.navState.yearsData[window.navState.currentYearIdx];
+                console.log('Current year data:', yearData);
+                if (yearData && yearData.months && yearData.months.length > window.navState.currentMonthIdx) {
+                    const monthData = yearData.months[window.navState.currentMonthIdx];
+                    console.log('Current month data:', monthData);
+                }
+            }
         }
 
         const heatmapFilename = findHeatmapForCurrentMonth();
@@ -474,10 +476,19 @@ document.addEventListener('DOMContentLoaded', function() {
         updateHeatmapsWithData();
     });
 
-    // Listen for calendar data loaded event (for initial load)
-    document.addEventListener('calendar:data-loaded', function() {
-        console.log('Calendar data loaded, updating heatmap...');
-        updateHeatmapsWithData();
+    // Listen for calendar data loaded event (for initial load AND location changes)
+    document.addEventListener('calendar:data-loaded', function(e) {
+        console.log('Calendar data loaded (initial or location change), updating heatmap...');
+        console.log('Data loaded event detail:', e.detail);
+
+        // Load saved location in case it changed
+        loadSavedLocation();
+
+        // Add a longer delay to ensure calendar has finished rendering after location change
+        setTimeout(() => {
+            console.log('Updating heatmap after calendar data loaded delay...');
+            updateHeatmapsWithData();
+        }, 1000); // Increased delay for location changes to ensure rendering is complete
     });
 
     // Also listen for calendar render events
@@ -574,7 +585,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             console.log('Updated current location pin (only showing current location):', newLocation);
 
-            // Re-render pins if heatmap is currently displayed
+            // IMPORTANT: When location changes, we need to wait for new calendar data to load
+            // before updating the heatmap. The calendar will dispatch 'calendar:data-loaded'
+            // after fetching new data for the new location.
+            console.log('Location changed, waiting for calendar data reload...');
+
+            // Re-render pins if heatmap is currently displayed (will be updated when data loads)
             let currentContainer = document.getElementById('current-heatmap');
             if (!currentContainer) {
                 // Try to find it inside heatmap-container
