@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchBtn = document.getElementById('search-btn');
     const modePlace = document.getElementById('mode-place');
     const modeCoordinates = document.getElementById('mode-coordinates');
+    const backToMyLocationBtn = document.getElementById('back-to-my-location-btn');
     let suggestions = document.getElementById('suggestions');
     if (!input || !suggestions) {
         console.error('Geoapify: One or more elements not found:', {input, suggestions});
@@ -127,6 +128,70 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Geoapify: Elements found, attaching event listeners.');
 
     let isCoordinatesMode = false;
+    
+    // Track user's geolocation
+    let userGeolocation = null;
+    let hasUserGeolocation = false;
+    
+    // Listen for when calendar initializes with geolocation
+    window.addEventListener('calendar:initialized', function(event) {
+        if (event.detail && event.detail.locationSource === 'user') {
+            userGeolocation = {
+                lat: event.detail.lat,
+                lon: event.detail.lon,
+                tz: event.detail.tz,
+                name: event.detail.name
+            };
+            hasUserGeolocation = true;
+            console.log('User geolocation stored:', userGeolocation);
+        }
+    });
+    
+    // Function to check if current location matches user's geolocation
+    function isAtUserLocation(lat, lon) {
+        if (!userGeolocation) return false;
+        return Math.abs(lat - userGeolocation.lat) < 0.01 && Math.abs(lon - userGeolocation.lon) < 0.01;
+    }
+    
+    // Function to update button visibility
+    function updateBackToLocationButton() {
+        if (!backToMyLocationBtn) return;
+        
+        // Show button if user has geolocation and is not at their location
+        if (hasUserGeolocation && window.navState && !isAtUserLocation(window.navState.lat, window.navState.lon)) {
+            backToMyLocationBtn.style.display = 'block';
+        } else {
+            backToMyLocationBtn.style.display = 'none';
+        }
+    }
+    
+    // Expose function globally so calendar.js can call it
+    window.updateBackToLocationButton = updateBackToLocationButton;
+    
+    // Back to My Location button handler
+    if (backToMyLocationBtn) {
+        backToMyLocationBtn.addEventListener('click', function() {
+            if (!userGeolocation) return;
+            
+            console.log('Returning to user geolocation:', userGeolocation);
+            
+            // Dispatch calendar update event
+            window.dispatchEvent(new CustomEvent('calendar:update', {
+                detail: {
+                    lat: userGeolocation.lat,
+                    lon: userGeolocation.lon,
+                    tz: userGeolocation.tz,
+                    name: userGeolocation.name
+                }
+            }));
+            
+            // Clear search input
+            input.value = '';
+            
+            // Hide button
+            backToMyLocationBtn.style.display = 'none';
+        });
+    }
 
     // Function to perform search
     function performSearch() {
@@ -144,15 +209,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(tzdata => {
                         const tz = tzdata.tz || 'UTC';
                         const name = `${coords.lat.toFixed(4)}, ${coords.lon.toFixed(4)}`;
+                        
+                        // Clear input immediately
+                        input.value = '';
+                        
+                        // Dispatch calendar update
                         window.dispatchEvent(new CustomEvent('calendar:update', {
                             detail: { lat: coords.lat, lon: coords.lon, tz, name }
                         }));
+                        
+                        // Show brief success message
                         suggestions.innerHTML = `<div class="suggestion-success">Using coordinates: ${name}</div>`;
                         suggestions.classList.add('active');
                         setTimeout(() => {
                             suggestions.innerHTML = '';
                             suggestions.classList.remove('active');
                         }, 2000);
+                        
+                        // Update button visibility after location change
+                        updateBackToLocationButton();
                     })
                     .catch(err => {
                         console.error('Error with coordinates:', err);
@@ -203,12 +278,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                 .then(r => r.json())
                                 .then(tzdata => {
                                     const tz = tzdata.tz || 'UTC';
+                                    
+                                    // Clear suggestions immediately
+                                    suggestions.innerHTML = '';
+                                    suggestions.classList.remove('active');
+                                    input.value = '';
+                                    
+                                    // Dispatch calendar update
                                     window.dispatchEvent(new CustomEvent('calendar:update', {
                                         detail: { lat: parseFloat(lat), lon: parseFloat(lon), tz, name }
                                     }));
-                                    suggestions.innerHTML = '';
-                                    suggestions.classList.remove('active');
-                                    input.value = this.textContent;
+                                    
+                                    // Update button visibility after location change
+                                    updateBackToLocationButton();
                                 })
                                 .catch(err => {
                                     console.error('Error fetching timezone:', err);

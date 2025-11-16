@@ -44,14 +44,23 @@
     <canvas id="bg-matrix" aria-hidden="true"></canvas>
 
     <div class="app-root">
+        <!-- Location Status Banner -->
+        <div id="location-status" class="location-banner" style="display: none;">
+            <span id="location-message">📍 Initializing...</span>
+        </div>
+        
         <div class="title-placemat">
             <h1 class="calendar-title">⏰ Quantum Clock ⏰</h1>
         </div>
         <div class="search-bar-container">
             <div class="input-wrapper">
-                <input type="text" class="search-bar" id="location-input" placeholder="Enter location...('Greenwich, England')" autocomplete="off">
+                <input type="text" class="search-bar" id="location-input" placeholder="Enter a Location" autocomplete="off">
                 <div id="suggestions"></div>
             </div>
+            <!-- Button to return to user's geolocation -->
+            <button id="back-to-my-location-btn" class="back-to-location-btn" style="display: none;">
+                📍 Back to My Location
+            </button>
         </div>
 
         <!-- Location mode toggle -->

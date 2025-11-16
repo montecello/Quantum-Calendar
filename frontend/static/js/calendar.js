@@ -969,8 +969,10 @@ function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
             });
             loadingState.loadingCallbacks.clear();
 
-            // Trigger calendar re-render if data changed
-            if (JSON.stringify(oldData) !== JSON.stringify(navState.yearsData)) {
+            // Trigger calendar re-render if data changed (but skip during initial load)
+            // During initial load, the DOMContentLoaded handler will call render after setting up indices
+            const isInitialLoad = !oldData || oldData.length === 0;
+            if (!isInitialLoad && JSON.stringify(oldData) !== JSON.stringify(navState.yearsData)) {
                 console.log('Data changed, triggering calendar re-render');
                 if (window.CalendarMode && window.CalendarMode.mode === 'custom') {
                     if (typeof updateMultiYearCalendarUI === 'function') {
@@ -979,6 +981,8 @@ function fetchMultiYearCalendar(lat, lon, tz, startYear, endYear, cb) {
                 } else {
                     renderCalendarForState();
                 }
+            } else if (isInitialLoad) {
+                console.log('Initial data load complete, skipping auto-render (will be handled by initialization callback)');
             }
 
             // Dispatch event to notify that calendar data has been loaded
@@ -2567,8 +2571,217 @@ function rebindNavForGregorian() {
   });
 }
 
+// ===== GEOLOCATION FUNCTIONS =====
+
+// Request user's location with permission
+function getUserLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation not supported by this browser'));
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                resolve({
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                });
+            },
+            (error) => {
+                let errorMsg = 'Location access denied';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMsg = 'Location permission denied';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMsg = 'Location unavailable';
+                        break;
+                    case error.TIMEOUT:
+                        errorMsg = 'Location request timed out';
+                        break;
+                }
+                reject(new Error(errorMsg));
+            },
+            {
+                timeout: 10000,
+                enableHighAccuracy: false,
+                maximumAge: 300000 // Cache for 5 minutes
+            }
+        );
+    });
+}
+
+// Update location status banner UI
+function updateLocationUI(status, message) {
+    const banner = document.getElementById('location-status');
+    const messageEl = document.getElementById('location-message');
+    
+    if (messageEl) {
+        messageEl.textContent = message;
+    }
+    
+    if (banner) {
+        banner.className = `location-banner ${status}`;
+        banner.style.display = 'block';
+        
+        // Auto-hide success messages after 5 seconds
+        if (status === 'success') {
+            setTimeout(() => {
+                banner.style.opacity = '0';
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                    banner.style.opacity = '1';
+                }, 300);
+            }, 5000);
+        }
+    }
+}
+
+// Initialize calendar with optional geolocation
+async function initializeCalendarWithLocation() {
+    let lat = 51.48;  // Greenwich default
+    let lon = 0.0;
+    let tzname = 'Europe/London';
+    let locationName = 'Greenwich, England';
+    let locationSource = 'default';
+    
+    try {
+        updateLocationUI('loading', '📍 Requesting location permission...');
+        
+        // Request user's location
+        const coords = await getUserLocation();
+        lat = coords.lat;
+        lon = coords.lon;
+        locationSource = 'user';
+        
+        console.log(`📍 User location obtained: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+        
+        // Try to get a friendly location name via reverse geocoding
+        // Using Nominatim (OpenStreetMap) - free and no API key required
+        try {
+            const geocodeResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`, {
+                headers: {
+                    'User-Agent': 'QuantumCalendar/1.0' // Required by Nominatim usage policy
+                }
+            });
+            
+            if (geocodeResponse.ok) {
+                const geocodeData = await geocodeResponse.json();
+                console.log('🔍 Nominatim API response:', JSON.stringify(geocodeData, null, 2));
+                
+                if (geocodeData && geocodeData.address) {
+                    const addr = geocodeData.address;
+                    console.log('📍 Reverse geocode address:', addr);
+                    
+                    // Build a friendly location name - prefer named places over coordinates
+                    const parts = [];
+                    
+                    // Try to get the most specific named place available
+                    if (addr.city) {
+                        parts.push(addr.city);
+                        console.log('✓ Found city:', addr.city);
+                    } else if (addr.town) {
+                        parts.push(addr.town);
+                        console.log('✓ Found town:', addr.town);
+                    } else if (addr.village) {
+                        parts.push(addr.village);
+                        console.log('✓ Found village:', addr.village);
+                    } else if (addr.suburb) {
+                        parts.push(addr.suburb);
+                        console.log('✓ Found suburb:', addr.suburb);
+                    } else if (addr.county) {
+                        parts.push(addr.county);
+                        console.log('✓ Found county:', addr.county);
+                    } else if (addr.municipality) {
+                        parts.push(addr.municipality);
+                        console.log('✓ Found municipality:', addr.municipality);
+                    } else {
+                        console.log('⚠️ No city/town/village/suburb/county/municipality found in result');
+                    }
+                    
+                    // Add state/region if available
+                    if (addr.state) {
+                        parts.push(addr.state);
+                        console.log('✓ Found state:', addr.state);
+                    } else if (addr.state_district) {
+                        parts.push(addr.state_district);
+                        console.log('✓ Found state_district:', addr.state_district);
+                    }
+                    
+                    // Add country
+                    if (addr.country) {
+                        parts.push(addr.country);
+                        console.log('✓ Found country:', addr.country);
+                    }
+                    
+                    // Use the named place or fall back to display_name
+                    if (parts.length > 0) {
+                        locationName = parts.join(', ');
+                        console.log('✓ Location name assembled from parts:', locationName);
+                    } else if (geocodeData.display_name) {
+                        // Use the full display name but try to simplify it
+                        const nameParts = geocodeData.display_name.split(',').slice(0, 3);
+                        locationName = nameParts.join(',');
+                        console.log('✓ Using display name:', locationName);
+                    } else {
+                        // Only use coordinates as last resort
+                        locationName = `Near ${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
+                        console.log('⚠️ No named place found, using coordinates');
+                    }
+                    
+                    console.log(`📍 Location name resolved: ${locationName}`);
+                } else {
+                    console.warn('⚠️ Nominatim API returned no address data');
+                    locationName = `Near ${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
+                }
+            } else {
+                console.error('❌ Nominatim API request failed:', geocodeResponse.status, geocodeResponse.statusText);
+                locationName = `Near ${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
+            }
+        } catch (geocodeError) {
+            console.warn('⚠️ Reverse geocoding failed, using approximate coordinates:', geocodeError);
+            locationName = `Near ${lat.toFixed(2)}°, ${lon.toFixed(2)}°`;
+        }
+        
+        // Fetch timezone for user's coordinates
+        try {
+            const tzResponse = await fetch(`/api/timezone?lat=${lat}&lon=${lon}`);
+            if (tzResponse.ok) {
+                const tzData = await tzResponse.json();
+                tzname = tzData.timezone || tzData.tz || 'UTC';
+                console.log(`🌍 Timezone resolved: ${tzname}`);
+            }
+        } catch (tzError) {
+            console.warn('⚠️ Timezone lookup failed, using UTC:', tzError);
+            tzname = 'UTC';
+        }
+        
+        updateLocationUI('success', `✓ Calendar showing times for ${locationName}`);
+        
+    } catch (error) {
+        console.warn('⚠️ Geolocation failed, using Greenwich default:', error.message);
+        updateLocationUI('info', '📍 Using Greenwich, UK as default location');
+    }
+    
+    // Update navState with location
+    navState.lat = lat;
+    navState.lon = lon;
+    navState.tz = tzname;
+    navState.locationName = locationName;
+    
+    console.log(`🎯 Initializing calendar with: lat=${lat}, lon=${lon}, tz=${tzname}, location=${locationName}, source=${locationSource}`);
+    
+    // Dispatch event to notify other components about initialization
+    window.dispatchEvent(new CustomEvent('calendar:initialized', {
+        detail: { lat, lon, tz: tzname, name: locationName, locationSource }
+    }));
+    
+    return { lat, lon, tzname, locationName, locationSource };
+}
+
 // Re-render on content ready and data updates
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Show startup loading bar immediately
     const startupLoader = showStartupLoadingBar();
 
@@ -2577,18 +2790,29 @@ document.addEventListener('DOMContentLoaded', function() {
     navState.year = today.getFullYear();
     navState.month = null;
 
+    // Get user location (or fall back to Greenwich)
+    const locationData = await initializeCalendarWithLocation();
+
     // Initial fetch with race condition prevention
     const loadingState = window.dataLoadingState;
-    fetchMultiYearCalendar(navState?.lat || 51.48, navState?.lon || 0.0, navState?.tz || 'Europe/London', 2000, 2048, function(data) {
+    fetchMultiYearCalendar(locationData.lat, locationData.lon, locationData.tzname, 2000, 2048, function(data) {
         navState.yearsData = data;
+
+        console.log('📅 Finding current month/year index for date:', today);
+        console.log('📊 Calendar data loaded:', data.length, 'years from', data[0]?.year, 'to', data[data.length-1]?.year);
 
         // Find today's month/year index using helper with dawn info
         fetchCurrentDawnInfo().then(dawnInfo => {
+            console.log('🌅 Dawn info for current month search:', dawnInfo);
             const foundIdx = findQuantumIndexForDate(today, data, dawnInfo);
+            console.log('🔍 findQuantumIndexForDate result:', foundIdx);
+            
             if (foundIdx) {
                 navState.currentYearIdx = foundIdx.yearIdx;
                 navState.currentMonthIdx = foundIdx.monthIdx;
+                console.log(`✅ Set calendar to: Year ${navState.yearsData[foundIdx.yearIdx].year}, Month ${foundIdx.monthIdx + 1}`);
             } else {
+                console.warn('⚠️ Could not find current month in data, defaulting to first month');
                 navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
             }
 
@@ -2613,13 +2837,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Dispatch event to notify heatmap that calendar data has been loaded
                 document.dispatchEvent(new CustomEvent('calendar:data-loaded', { detail: { yearsData: navState.yearsData } }));
             }
-        }).catch(() => {
+        }).catch((error) => {
             // Fallback without dawn info
+            console.warn('⚠️ Dawn info fetch failed, using fallback:', error);
             const foundIdx = findQuantumIndexForDate(today, data);
+            console.log('🔍 findQuantumIndexForDate fallback result:', foundIdx);
+            
             if (foundIdx) {
                 navState.currentYearIdx = foundIdx.yearIdx;
                 navState.currentMonthIdx = foundIdx.monthIdx;
+                console.log(`✅ Set calendar to (fallback): Year ${navState.yearsData[foundIdx.yearIdx].year}, Month ${foundIdx.monthIdx + 1}`);
             } else {
+                console.warn('⚠️ Could not find current month in fallback, defaulting to first month');
                 navState.currentYearIdx = 0; navState.currentMonthIdx = 0;
             }
 
@@ -2751,6 +2980,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Dispatch event to notify heatmap that calendar data has been loaded for new location
                 document.dispatchEvent(new CustomEvent('calendar:data-loaded', { detail: { yearsData: navState.yearsData } }));
+                
+                // Update back-to-location button visibility
+                if (window.updateBackToLocationButton) {
+                    window.updateBackToLocationButton();
+                }
             }
         });
     });

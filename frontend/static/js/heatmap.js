@@ -15,9 +15,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // Track current location separately (this persists across navigation)
     let currentLocation = null;
 
+    // Initialize current location from navState (geolocation or default)
+    function initializeCurrentLocation() {
+        // Check if navState has location data from geolocation
+        if (window.navState && window.navState.lat && window.navState.lon) {
+            const locationFromNavState = {
+                lat: window.navState.lat,
+                lon: window.navState.lon,
+                name: window.navState.locationName || `${window.navState.lat.toFixed(2)}°, ${window.navState.lon.toFixed(2)}°`
+            };
+            
+            // Only update if this is a different location or if currentLocation is null
+            if (!currentLocation || 
+                Math.abs(currentLocation.lat - locationFromNavState.lat) > 0.01 || 
+                Math.abs(currentLocation.lon - locationFromNavState.lon) > 0.01) {
+                
+                console.log('Initializing heatmap pin from navState location:', locationFromNavState);
+                currentLocation = locationFromNavState;
+                searchedLocations = [currentLocation];
+                saveCurrentLocation(currentLocation);
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Load saved location from localStorage on initialization
     function loadSavedLocation() {
         try {
+            // First try to initialize from navState (geolocation)
+            if (initializeCurrentLocation()) {
+                return true;
+            }
+            
+            // Fall back to localStorage
             const savedLocation = localStorage.getItem('quantumCalendarLocation');
             if (savedLocation) {
                 const locationData = JSON.parse(savedLocation);
@@ -481,6 +512,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Calendar data loaded (initial or location change), updating heatmap...');
         console.log('Data loaded event detail:', e.detail);
 
+        // Initialize location from navState (handles geolocation updates)
+        initializeCurrentLocation();
+        
         // Load saved location in case it changed
         loadSavedLocation();
 
@@ -608,44 +642,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Automatically load heatmap on page startup
     console.log('Starting automatic heatmap loading on page startup...');
+    
+    // Initialize location from navState (geolocation) if available
+    initializeCurrentLocation();
+    
     updateHeatmapsWhenReady();
+
+    // Expose debug functions globally (inside DOMContentLoaded so they have access to inner scope)
+    window.clearLocationPins = function() {
+        searchedLocations = [defaultLocation]; // Keep only Greenwich
+        currentLocation = null; // Clear current location
+
+        // Find the heatmap container
+        let heatmapContainer = document.getElementById('current-heatmap');
+        if (!heatmapContainer) {
+            // Try to find it inside heatmap-container
+            const parentContainer = document.getElementById('heatmap-container');
+            if (parentContainer) {
+                heatmapContainer = parentContainer.querySelector('#current-heatmap');
+            }
+        }
+
+        if (heatmapContainer) {
+            const existingOverlay = heatmapContainer.querySelector('.location-pins-overlay');
+            if (existingOverlay) {
+                existingOverlay.remove();
+            }
+        }
+    };
+
+    window.addTestLocation = function(lat, lon, name) {
+        const testLocation = { lat, lon, name };
+        currentLocation = testLocation; // Set as current location
+        searchedLocations = [testLocation]; // NEW PIN LOGIC: Show only current location
+        console.log(`Added test location: ${name} (${lat}, ${lon})`);
+        renderLocationPins();
+    };
+
+    // Make functions available globally for debugging
+    window.heatmapDebug = {
+        clearLocationPins: window.clearLocationPins,
+        addTestLocation: window.addTestLocation,
+        renderLocationPins: renderLocationPins,
+        latLonToPixel: latLonToPixel
+    };
 });
-
-// Debug functions for testing location pins
-function clearLocationPins() {
-    searchedLocations = [defaultLocation]; // Keep only Greenwich
-    currentLocation = null; // Clear current location
-
-    // Find the heatmap container
-    let heatmapContainer = document.getElementById('current-heatmap');
-    if (!heatmapContainer) {
-        // Try to find it inside heatmap-container
-        const parentContainer = document.getElementById('heatmap-container');
-        if (parentContainer) {
-            heatmapContainer = parentContainer.querySelector('#current-heatmap');
-        }
-    }
-
-    if (heatmapContainer) {
-        const existingOverlay = heatmapContainer.querySelector('.location-pins-overlay');
-        if (existingOverlay) {
-            existingOverlay.remove();
-        }
-    }
-}
-
-function addTestLocation(lat, lon, name) {
-    const testLocation = { lat, lon, name };
-    currentLocation = testLocation; // Set as current location
-    searchedLocations = [testLocation]; // NEW PIN LOGIC: Show only current location
-    console.log(`Added test location: ${name} (${lat}, ${lon})`);
-    renderLocationPins();
-}
-
-// Make functions available globally for debugging
-window.heatmapDebug = {
-    clearLocationPins,
-    addTestLocation,
-    renderLocationPins,
-    latLonToPixel
-};
