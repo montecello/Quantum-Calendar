@@ -42,7 +42,7 @@ def _pick_data_dir() -> str:
 DATA_DIR = _pick_data_dir()
 
 FULL_MOON_CSV = os.path.join(DATA_DIR, 'full_moon_times.csv')
-NEW_YEARS_CSV = os.path.join(DATA_DIR, 'new_years_day.csv')
+NEW_YEARS_CSV = os.path.join(DATA_DIR, 'new_years_day_2.csv')
 SPICA_MOON_CSV = os.path.join(DATA_DIR, 'spica_moon_crossings.csv')
 SUN_HAMAL_CSV = os.path.join(DATA_DIR, 'sun_hamal_crossings.csv')
 
