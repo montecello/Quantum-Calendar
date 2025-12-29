@@ -566,10 +566,20 @@ def get_kjv_data():
                 print(f"INFO: Retrieved {len(data)} verses from MongoDB (no query)")
                 return jsonify({'verses': data, 'strongsFrequency': [], 'totalVerses': len(data)})
         
-        # Fallback to JSON
-        print("INFO: Using JSON fallback for KJV data")
+        # Fallback to JSON (only available locally)
+        print("⚠️  INFO: Using JSON fallback for KJV data (only available in local development)")
         try:
-            with open(os.path.join(BASE_DIR, 'backend', 'data', 'verses.json'), 'r') as f:
+            verses_path = os.path.join(BASE_DIR, 'backend', 'data', 'verses.json')
+            if not os.path.exists(verses_path):
+                print("⚠️  INFO: verses.json not found (expected in production deployment)")
+                return jsonify({
+                    'verses': [],
+                    'strongsFrequency': [],
+                    'totalVerses': 0,
+                    'message': 'Data source unavailable - MongoDB connection required'
+                })
+            
+            with open(verses_path, 'r') as f:
                 all_data = json.load(f)
             
             print(f"INFO: JSON loaded with {len(all_data)} verses")
@@ -606,9 +616,22 @@ def get_kjv_data():
             else:
                 return jsonify({'verses': all_data[:limit], 'strongsFrequency': [], 'totalVerses': len(all_data[:limit])})
             
+        except FileNotFoundError as e:
+            print(f"⚠️  INFO: verses.json not found (expected in production): {e}")
+            return jsonify({
+                'verses': [],
+                'strongsFrequency': [],
+                'totalVerses': 0,
+                'message': 'Data source unavailable - MongoDB connection required'
+            })
         except Exception as e:
             print(f"ERROR: Failed to load verses.json: {e}")
-            return jsonify({'verses': [], 'strongsFrequency': [], 'totalVerses': 0})
+            return jsonify({
+                'verses': [],
+                'strongsFrequency': [],
+                'totalVerses': 0,
+                'message': 'Data source error'
+            })
     except Exception as e:
         print(f"ERROR: Error in get_kjv_data: {e}")
         return jsonify({'verses': [], 'strongsFrequency': [], 'totalVerses': 0})
