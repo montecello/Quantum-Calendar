@@ -35,9 +35,6 @@ backend/data/kjv_verses.json
 backend/data/verses.json
 backend/data/strongs_complete.json
 
-# Large media files
-frontend/static/effects/matrix_rain.gif
-
 Hebrew.xml
 hebrew_enhanced.json
 verses.json
