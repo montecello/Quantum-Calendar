@@ -1,20 +1,8 @@
 # Security Notice
 
-## ⚠️ CRITICAL: Before Making This Repository Public
 
-### 1. Rotate Your MongoDB Password IMMEDIATELY
 
-**Your MongoDB password was exposed in log files that were previously in the repository.**
-
-Even though the log files have been deleted, anyone with access to the git history may have seen them. You MUST:
-
-1. Go to [MongoDB Atlas](https://cloud.mongodb.com/)
-2. Navigate to Database Access
-3. Edit user: `bluewaters2_db_user`
-4. Change the password
-5. Update the `MONGODB_URI` environment variable in Vercel with the new password
-
-### 2. Environment Variables Setup
+### 1. Environment Variables Setup
 
 This project requires the following environment variables:
 
@@ -24,7 +12,7 @@ This project requires the following environment variables:
 
 See [.env.example](.env.example) for the template.
 
-### 3. Never Commit Sensitive Data
+### 2. Never Commit Sensitive Data
 
 The `.gitignore` file is configured to exclude:
 - `.env` files
@@ -38,7 +26,7 @@ git status
 git diff --cached
 ```
 
-### 4. For Contributors
+### 3. For Contributors
 
 If you're contributing to this project:
 - Never commit API keys, passwords, or tokens
