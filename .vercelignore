@@ -1,8 +1,12 @@
 # Local env and caches
 .venv/
+.venv
 venv/
+venv
 **/.venv/**
+**/.venv
 **/venv/**
+**/venv
 __pycache__/
 **/__pycache__/**
 *.pyc
@@ -11,6 +15,17 @@ __pycache__/
 .DS_Store
 node_modules/
 **/node_modules/**
+
+# Development/test files
+*.log
+logs/
+test_*.py
+*_test.py
+debug_*.py
+analyze_*.py
+inspect_*.py
+quick_*.js
+fetch_and_analyze.js
 
 # Don’t upload the separate service
 astro-service/
@@ -21,4 +36,15 @@ astro-service/
 *.bin
 *.dat
 *.ipynb
-# REMOVED: *.csv
+
+# CAD output files (not needed for web deployment)
+font_to_cad_converter.py
+CAD_CONVERSION_README.md
+
+# Font analysis (not needed for production)
+font_analysis/
+analyze_fonts.py
+analyze_dxf_dimensions.py
+
+# HTML test files (not needed for production)
+*_test.html
