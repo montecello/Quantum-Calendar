@@ -28,6 +28,9 @@ key.pem
 
 .vscode/
 
+# CAD output files (not needed in webapp yet)
+cad_output/
+
 # Large data files (keep local only)
 kjv_verses.json
 strongs_complete.json
