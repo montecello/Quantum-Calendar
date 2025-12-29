@@ -48,3 +48,16 @@ analyze_dxf_dimensions.py
 
 # HTML test files (not needed for production)
 *_test.html
+
+# Large data files (should be in MongoDB, not deployed)
+backend/data/verses.json
+backend/data/kjv_verses.json
+backend/data/strongs_complete.json
+
+# Large backup and debug files
+backend/data/mongo_backups/
+backend/astronomy/map/debug_*.csv
+backend/astronomy/map/*.png
+
+# Large heatmap images
+backend/astronomy/map/month_length_heatmap*.png

@@ -16,6 +16,12 @@ venv/
 *.log
 logs/
 
+# SSL certificates and private keys - NEVER commit
+*.pem
+*.key
+cert.pem
+key.pem
+
 # OS/editor
 .DS_Store
 
@@ -25,7 +31,12 @@ logs/
 # Large data files (keep local only)
 kjv_verses.json
 strongs_complete.json
+backend/data/kjv_verses.json
+backend/data/verses.json
+backend/data/strongs_complete.json
 
+# Large media files
+frontend/static/effects/matrix_rain.gif
 
 Hebrew.xml
 hebrew_enhanced.json
