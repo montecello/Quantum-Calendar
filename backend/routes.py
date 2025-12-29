@@ -319,11 +319,6 @@ def api_strongs_data():
         from flask import current_app
         client, db = current_app.config.get('mongo_client'), current_app.config.get('mongo_db')
 
-        if client is not None and db is not None:
-            print("✓ DATA SOURCE: Using MongoDB Atlas for Strong's data (PRIMARY)")
-            from config import STRONG_COLLECTION
-            collection = db[STRONG_COLLECTION]
-
         # Get query parameters
         strongs_num = request.args.get('strongs_num', type=int)
         search = request.args.get('search', type=str)
@@ -375,8 +370,16 @@ def api_strongs_data():
         if language:
             query['language'] = language
 
-        results = list(collection.find(query, {'_id': 0}).limit(limit))
-        return jsonify(results)
+        # Use MongoDB if available
+        if client is not None and db is not None:
+            print("✓ DATA SOURCE: Using MongoDB Atlas for Strong's data (PRIMARY)")
+            from config import STRONG_COLLECTION
+            collection = db[STRONG_COLLECTION]
+            results = list(collection.find(query, {'_id': 0}).limit(limit))
+            return jsonify(results)
+        else:
+            print("⚠️  DATA SOURCE: MongoDB not available, returning empty results")
+            return jsonify([])
 
     except Exception as e:
         logging.exception("Exception in /api/strongs-data")
