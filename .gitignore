@@ -22,6 +22,11 @@ logs/
 cert.pem
 key.pem
 
+# Security/utility scripts (not part of the app)
+check_secrets.sh
+scan_*.sh
+*_security_*.sh
+
 # OS/editor
 .DS_Store
 
