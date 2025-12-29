@@ -12,6 +12,10 @@ venv/
 # Skyfield kernel files
 *.bsp
 
+# Log files - NEVER commit (may contain credentials)
+*.log
+logs/
+
 # OS/editor
 .DS_Store
 
