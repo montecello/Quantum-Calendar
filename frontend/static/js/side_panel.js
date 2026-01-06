@@ -28,6 +28,10 @@ const SPECIAL_DAY_INFO = {
         text: 'Festival of Sweet Things',
         colors: ['#6a5acd', '#8e24aa']
     },
+    'seventh-high-day': {
+        text: '7th High Day',
+        colors: ['#50c878', '#228b22']
+    },
     'seventh-emerald-green-day': {
         text: 'Festival of Memories',
         colors: ['#228b22', '#006400']
@@ -251,6 +255,15 @@ function createSpecialDayHtml(specialInfo) {
         const dayFromContext = currentPanelContext.day;
         if (monthFromContext === 1 && dayFromContext === 1) {
             displayText = 'New Year\'s Day';
+        }
+    }
+    
+    // Handle special case for 21st day of 1st month (7th High Day)
+    if (primaryClass === 'emerald-green-day') {
+        const monthFromContext = getCurrentMonthContext();
+        const dayFromContext = currentPanelContext.day;
+        if (monthFromContext === 1 && dayFromContext === 21) {
+            displayText = '7th High Day';
         }
     }
     

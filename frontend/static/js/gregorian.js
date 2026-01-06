@@ -126,11 +126,10 @@
     if (!showCounter) return null;
 
     if (monthNum === 1) {
-      if (dayNum < 22) return null;
-      if (![22,29].includes(dayNum)) return null;
-      return dayNum === 22 ? 1 : (dayNum === 29 ? 2 : null);
+      if (dayNum !== 29) return null;
+      return 1;
     } else {
-      let nStart = 3 + (monthNum-2)*4;
+      let nStart = 2 + (monthNum-2)*4;
       if ([8,15,22,29].includes(dayNum)) {
         let idx = [8,15,22,29].indexOf(dayNum);
         let n = nStart + idx;

@@ -191,7 +191,7 @@ window.getSpecialDayClassesForISO = async function(iso) {
             }
             absDay += (dayNum - 1); // 0-based
 
-            // 3rd month, 9th day (0-based)
+            // 3rd month, 16th day (0-based)
             let silverStartAbsDay = 0;
             if (Array.isArray(monthsInYear) && monthsInYear.length >= 2) {
                 for (let i = 0; i < 2; i++) {
@@ -207,7 +207,7 @@ window.getSpecialDayClassesForISO = async function(iso) {
                 console.warn('getSilverCounter: Cannot calculate silver start day');
                 return null;
             }
-            silverStartAbsDay += (9 - 1); // 0-based
+            silverStartAbsDay += (16 - 1); // 0-based
 
             let n = absDay - silverStartAbsDay + 1;
             if (n >= 1 && n <= 50) {
@@ -264,7 +264,7 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
         } else {
             pinkStartAbsDay = 2 * 29; // Safe fallback
         }
-        pinkStartAbsDay += 9 + 50; // day after n=50
+        pinkStartAbsDay += 16 + 50; // day after n=50 (silver counter starts day 16)
         if (absDay === pinkStartAbsDay) {
             isDarkPink = true;
         }
@@ -275,15 +275,17 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
             extra = ' ruby-red-day';
         } else if (monthNum === 1 && dayNum === 15) {
             extra = ' emerald-green-day';
-        } else if (monthNum === 1 && dayNum === 16) {
-            extra = ' orange-day';
-        } else if (monthNum === 1 && dayNum >= 17 && dayNum <= 21) {
+        } else if (monthNum === 1 && dayNum >= 16 && dayNum <= 20) {
             extra = ' indigo-purple-day';
+        } else if (monthNum === 1 && dayNum === 21) {
+            extra = ' emerald-green-day indigo-purple-day';
+        } else if (monthNum === 1 && dayNum === 23) {
+            extra = ' orange-day';
         } else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) {
             extra = ' emerald-green-day';
         } else if (monthNum === 7 && dayNum === 1) {
             extra = ' seventh-emerald-green-day seventh-orange-day';
-        } else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) {
+        } else if (monthNum === 7 && dayNum === 10) {
             extra = ' Forgiveness-magenta-day';
         } else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) {
             extra = ' seventh-ruby-red-day seventh-orange-day seventh-pink-day';
@@ -318,11 +320,10 @@ function renderCalendarGrid(monthNum, currentDay, daysInMonth, yearLabel, highli
     function getCounter(dayNum) {
         if (!showCounter) return null;
         if (monthNum === 1) {
-            if (dayNum < 22) return null;
-            if (![22,29].includes(dayNum)) return null;
-            return dayNum === 22 ? 1 : (dayNum === 29 ? 2 : null);
+            if (dayNum !== 29) return null;
+            return 1;
         } else {
-            let nStart = 3 + (monthNum-2)*4;
+            let nStart = 2 + (monthNum-2)*4;
             if ([8,15,22,29].includes(dayNum)) {
                 let idx = [8,15,22,29].indexOf(dayNum);
                 let n = nStart + idx;
@@ -2445,7 +2446,7 @@ function computeCustomSpecialClasses(monthNum, dayNum, monthsInYear) {
         } else {
             pinkStartAbsDay = 2 * 29; // Safe fallback for first two months
         }
-        pinkStartAbsDay += 9 + 50; // 3rd month 9th day + 50 days => next day
+        pinkStartAbsDay += 16 + 50; // 3rd month 16th day + 50 days => next day
 
         const isDarkPink = (absDay === pinkStartAbsDay); // Exact match, no fractional comparison
         if (isDarkPink) classes.push('hot-pink-day');
@@ -2454,11 +2455,12 @@ function computeCustomSpecialClasses(monthNum, dayNum, monthsInYear) {
         if (!isDarkPink) {
             if (monthNum === 1 && dayNum === 14) classes.push('ruby-red-day');
             else if (monthNum === 1 && dayNum === 15) classes.push('emerald-green-day');
-            else if (monthNum === 1 && dayNum === 16) classes.push('orange-day');
-            else if (monthNum === 1 && dayNum >= 17 && dayNum <= 21) classes.push('indigo-purple-day');
+            else if (monthNum === 1 && dayNum >= 16 && dayNum <= 20) classes.push('indigo-purple-day');
+            else if (monthNum === 1 && dayNum === 21) { classes.push('emerald-green-day','indigo-purple-day'); }
+            else if (monthNum === 1 && dayNum === 23) classes.push('orange-day');
             else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) classes.push('emerald-green-day');
             else if (monthNum === 7 && dayNum === 1) { classes.push('seventh-emerald-green-day','seventh-orange-day'); }
-            else if (monthNum === 7 && (dayNum === 9 || dayNum === 10)) { classes.push('Forgiveness-magenta-day','seventh-orange-day'); }
+            else if (monthNum === 7 && dayNum === 10) { classes.push('Forgiveness-magenta-day','seventh-orange-day'); }
             else if (monthNum === 7 && (dayNum === 15 || dayNum === 22)) { classes.push('seventh-ruby-red-day','seventh-orange-day','seventh-pink-day'); }
             else if (monthNum === 7 && dayNum >= 16 && dayNum <= 21) classes.push('seventh-indigo-purple-day');
             else if (dayNum === 1) classes.push('gold-bronze-day');

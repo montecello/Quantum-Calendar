@@ -16,7 +16,7 @@ from backend.astronomy.map.generate_lunar_heatmaps import generate_heatmap_for_d
 
 def main():
     # Load full moon times
-    csv_path = 'data/full_moon_times.csv'
+    csv_path = 'backend/data/full_moon_times.csv'
     df = pd.read_csv(csv_path)
     
     # Parse dates
