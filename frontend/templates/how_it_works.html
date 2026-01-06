@@ -61,11 +61,17 @@
                     <div class="island-list-container">
                         <div class="tech-list">
                             <div class="no-image-container">
-                                <img src="/static/img/no.png" alt="no" loading="lazy">
+                                <picture>
+                                    <source srcset="/static/img/no.webp" type="image/webp">
+                                    <img src="/static/img/no.png" alt="no" loading="lazy">
+                                </picture>
                             </div>
                         </div>
                         <div class="island-image">
-                            <img src="/static/img/intro/island.png" alt="island" loading="lazy">
+                            <picture>
+                                <source srcset="/static/img/intro/island.webp" type="image/webp">
+                                <img src="/static/img/intro/island.png" alt="island" loading="lazy">
+                            </picture>
                         </div>
                     </div>
 
@@ -88,15 +94,24 @@
                     <p>A day begins for most people when they wake up. The expression "start you day" comes to mind. It typically starts at first light (astronomical dawn) for the selected location. If astronomical dawn is not available (high latitudes/seasonal extremes), the app falls back to nautical or civil dawn. The side panel labels these as secondary types, e.g., <strong class="secondary-tag">(secondary: nautical/civil/sunrise)</strong>.</p>
                     <div class="day-begins-comparison" role="group" aria-label="When a Day Begins comparison">
                         <div class="day-card gold-glow first-day-pulse">
-                            <img src="/static/img/day/AB.png" alt="AB illustration" loading="lazy">
+                            <picture>
+                                <source srcset="/static/img/day/AB.webp" type="image/webp">
+                                <img src="/static/img/day/AB.png" alt="AB illustration" loading="lazy">
+                            </picture>
                         </div>
                         <div class="vs" aria-hidden="true">vs</div>
                         <div class="day-card">
-                            <img src="/static/img/day/EF.png" alt="EF illustration" loading="lazy">
+                            <picture>
+                                <source srcset="/static/img/day/EF.webp" type="image/webp">
+                                <img src="/static/img/day/EF.png" alt="EF illustration" loading="lazy">
+                            </picture>
                         </div>
                         <div class="vs" aria-hidden="true">vs</div>
                         <div class="day-card">
-                            <img src="/static/img/day/CD.png" alt="CD illustration" loading="lazy">
+                            <picture>
+                                <source srcset="/static/img/day/CD.webp" type="image/webp">
+                                <img src="/static/img/day/CD.png" alt="CD illustration" loading="lazy">
+                            </picture>
                         </div>
                     </div>
                     <p><h2>"...and [the mighty ones] called the light 'day' and the darkness [they] called night" <br>(Genesis 1:5)</h2></p>
@@ -116,7 +131,10 @@
                             </h1>
                         </div>
                         <div style="flex: 1; min-width: 200px; text-align: center;">
-                            <img src="/static/img/special/New_Moon.png" alt="New Moon" style="max-width:420px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;" loading="lazy">
+                            <picture>
+                                <source srcset="/static/img/special/New_Moon.webp" type="image/webp">
+                                <img src="/static/img/special/New_Moon.png" alt="New Moon" style="max-width:420px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;" loading="lazy">
+                            </picture>
                         </div>
                     </div>
                     <P></P>
@@ -127,24 +145,51 @@
                         <div class="month-new-grid">
                             <div class="month-col">
                                 <div class="month-label">🌙 Crescent 🌙</div>
-                                <img src="/static/img/month/crescent/a.png" alt="Crescent a" loading="lazy">
-                                <img src="/static/img/month/crescent/b.png" alt="Crescent b" loading="lazy">
-                                <img src="/static/img/month/crescent/c.png" alt="Crescent c" loading="lazy">
+                                <picture>
+                                    <source srcset="/static/img/month/crescent/a.webp" type="image/webp">
+                                    <img src="/static/img/month/crescent/a.png" alt="Crescent a" loading="lazy">
+                                </picture>
+                                <picture>
+                                    <source srcset="/static/img/month/crescent/b.webp" type="image/webp">
+                                    <img src="/static/img/month/crescent/b.png" alt="Crescent b" loading="lazy">
+                                </picture>
+                                <picture>
+                                    <source srcset="/static/img/month/crescent/c.webp" type="image/webp">
+                                    <img src="/static/img/month/crescent/c.png" alt="Crescent c" loading="lazy">
+                                </picture>
                             </div>
                             <div class="month-vs" aria-hidden="true">vs</div>
                             <div class="month-col">
                                 <div class="month-label">🌑 Dark 🌑</div>
-                                <img src="/static/img/month/dark/a.png" alt="Conjunction a" loading="lazy">
-                                <img src="/static/img/month/dark/b.png" alt="Conjunction b" loading="lazy">
-                                <img src="/static/img/month/dark/c.png" alt="Conjunction c" loading="lazy">
+                                <picture>
+                                    <source srcset="/static/img/month/dark/a.webp" type="image/webp">
+                                    <img src="/static/img/month/dark/a.png" alt="Conjunction a" loading="lazy">
+                                </picture>
+                                <picture>
+                                    <source srcset="/static/img/month/dark/b.webp" type="image/webp">
+                                    <img src="/static/img/month/dark/b.png" alt="Conjunction b" loading="lazy">
+                                </picture>
+                                <picture>
+                                    <source srcset="/static/img/month/dark/c.webp" type="image/webp">
+                                    <img src="/static/img/month/dark/c.png" alt="Conjunction c" loading="lazy">
+                                </picture>
                             </div>
                             <div class="month-vs" aria-hidden="true">vs</div>
                             <div class="month-col full-moon-pulse">
                                 <div class="month-label">🌕 Full 🌕
                                 </div>
-                                <img src="/static/img/month/full/a.png" alt="Full a" loading="lazy">
-                                <img src="/static/img/month/full/b.png" alt="Full b" loading="lazy">
-                                <img src="/static/img/month/full/c.png" alt="Full c" loading="lazy">
+                                <picture>
+                                    <source srcset="/static/img/month/full/a.webp" type="image/webp">
+                                    <img src="/static/img/month/full/a.png" alt="Full a" loading="lazy">
+                                </picture>
+                                <picture>
+                                    <source srcset="/static/img/month/full/b.webp" type="image/webp">
+                                    <img src="/static/img/month/full/b.png" alt="Full b" loading="lazy">
+                                </picture>
+                                <picture>
+                                    <source srcset="/static/img/month/full/c.webp" type="image/webp">
+                                    <img src="/static/img/month/full/c.png" alt="Full c" loading="lazy">
+                                </picture>
                             </div>
                         </div>
                     </div>
@@ -165,7 +210,10 @@
                     <p>2nd day of the month will always be the beginning of the 1st week of every month of the year.</p>
                     <p>More organic that way. A natural rhythm. The month is divided into four 7‑day periods. </p>
                     <div style="width:100%;text-align:center;margin-top:18px;">
-                        <img src="/static/img/grid.png" alt="Weekly Structure Grid" style="max-width:420px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;" loading="lazy">
+                        <picture>
+                            <source srcset="/static/img/grid.webp" type="image/webp">
+                            <img src="/static/img/grid.png" alt="Weekly Structure Grid" style="max-width:420px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;" loading="lazy">
+                        </picture>
                     </div>
                 </div>
             </div>
@@ -178,7 +226,10 @@
                         <h2 style="color: white; margin-bottom: 12px; font-style: italic;">Ideally it's the first full moon day after Spica visibly crosses the moon and is seen leading it.</h2>
                     </div>
                     <div style="width:100%;text-align:center;margin-top:18px;">
-                        <img src="/static/img/spica.png" alt="Spica and Moon" style="max-width:520px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;" loading="lazy">
+                        <picture>
+                            <source srcset="/static/img/spica.webp" type="image/webp">
+                            <img src="/static/img/spica.png" alt="Spica and Moon" style="max-width:520px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;" loading="lazy">
+                        </picture>
                     </div>
                     <div style="margin-top: 20px; padding: 16px; background: rgba(255, 215, 0, 0.05); border-radius: 8px; border-left: 3px solid #ffd700;">
                         <h2 style="color: white; margin-bottom: 12px; font-style: italic;">...in the month of 'abib' you came out of [distress]...(Exodus 34:18b)</h2>
@@ -187,7 +238,10 @@
                         <h2 style="color: white; margin-bottom: 12px; font-style: italic;">...and [the mighty ones] said 'let there be lights in the [molten looking glass - Job 37:18] of the heavens' and let them be for the markers and appointments...And [the mighty ones] made the two great lights: the greater light to rule the day, and the lesser light to rule the night. The stars also..(Genesis 1:14,16)</h2>
 
                         <div style="width:100%;text-align:center;margin:20px 0;">
-                            <img src="/static/img/snowglobe.png" alt="Snowglobe illustration" style="max-width:400px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;" loading="lazy">
+                            <picture>
+                                <source srcset="/static/img/snowglobe.webp" type="image/webp">
+                                <img src="/static/img/snowglobe.png" alt="Snowglobe illustration" style="max-width:400px;width:100%;height:auto;border-radius:12px;box-shadow:0 2px 16px #0003;" loading="lazy">
+                            </picture>
                         </div>
 
                         <p style="font-style: italic; line-height: 1.6; color: #e0e6ed;">
@@ -198,10 +252,16 @@
                         <div class="spica-virgo-container" style="margin: 20px 0; text-align: center;">
                             <div class="spica-images-grid">
                                 <div class="spica-image-item">
-                                    <img src="/static/img/virgo.png" alt="Virgo constellation" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" loading="lazy">
+                                    <picture>
+                                        <source srcset="/static/img/virgo.webp" type="image/webp">
+                                        <img src="/static/img/virgo.png" alt="Virgo constellation" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" loading="lazy">
+                                    </picture>
                                 </div>
                                 <div class="spica-image-item">
-                                    <img src="/static/img/zoom.png" alt="Spica zoom detail" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" loading="lazy">
+                                    <picture>
+                                        <source srcset="/static/img/zoom.webp" type="image/webp">
+                                        <img src="/static/img/zoom.png" alt="Spica zoom detail" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" loading="lazy">
+                                    </picture>
                                 </div>
                             </div>
                             <p class="spica-caption" style="font-style: italic; color: #cfe0f2; font-size: 0.9rem; margin-top: 12px; text-align: center;">
